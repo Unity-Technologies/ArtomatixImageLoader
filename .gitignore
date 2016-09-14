@@ -1,0 +1,15 @@
+*.swp
+*.swo
+*.sql
+*.opendb
+*.pyc
+*.so
+*.zip
+packages
+.paket/paket.exe
+built_packages
+build/
+CMakeLists.txt.user
+*.pyc
+*.autosave
+test_images/testOut

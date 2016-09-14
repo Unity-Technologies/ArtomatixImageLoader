@@ -1,0 +1,6 @@
+framework: net46
+
+source https://api.nuget.org/v3/index.json
+nuget NativeCodeBuilder 0.1.3 framework: >= net45, content: once
+nuget NUnit == 2.6.4
+nuget Stugo.Interop == 0.2

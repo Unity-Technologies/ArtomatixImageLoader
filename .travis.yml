@@ -1,0 +1,25 @@
+# Enable C++ support
+language: cpp
+sudo: required
+install:
+    - sudo apt-get -y purge cmake
+    - sudo apt-get install build-essential
+    - wget http://www.cmake.org/files/v3.2/cmake-3.2.2.tar.gz
+    - tar xf cmake-3.2.2.tar.gz
+    - cd cmake-3.2.2
+    - sudo apt-get install openssl libssl-dev
+    - ./bootstrap --system-curl
+    - make -j2
+    - sudo make install
+
+
+
+# Compiler selection
+compiler:
+  - clang
+# Build steps
+script:  
+  - cd ../src_c
+  - mkdir build
+  - cd build
+  - cmake .. -DBUILD_SHARE_TYPE=SHARED && make -j2 && make aitest
