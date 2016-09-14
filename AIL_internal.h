@@ -1,0 +1,6 @@
+#ifndef ARTOMATIX_AIL_INTERNAL_H
+#define ARTOMATIX_AIL_INTERNAL_H
+
+#define AIL_UNUSED_PARAM(name) (void)(name)
+
+#endif // ARTOMATIX_AIL_INTERNAL_H
