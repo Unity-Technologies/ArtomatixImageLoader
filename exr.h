@@ -9,6 +9,7 @@ namespace AImg
     {
         public:
 
+        virtual int32_t initialise();
         virtual bool canLoadImage(ReadCallback readCallback, TellCallback tellCallback, SeekCallback seekCallback, void* callbackData);
         virtual std::string getFileExtension();
         virtual int32_t getAImgFileFormatValue();

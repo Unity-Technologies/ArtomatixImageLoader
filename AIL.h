@@ -75,10 +75,12 @@ const char* GetLastErrorDetails();
 
 // detectedFileFormat will be set to a member from AImgFileFormat if non-null, otherwise it is ignored.
 int32_t AImgOpen(ReadCallback readCallback, TellCallback tellCallback, SeekCallback seekCallback, void* callbackData, AImgHandle* imgPtr, int32_t* detectedFileFormat);
+void AImgClose(AImgHandle img);
 
 int32_t AImgGetInfo(AImgHandle img, int32_t* width, int32_t* height, int32_t* numChannels, int32_t* bytesPerChannel, int32_t* floatOrInt, int32_t* decodedImgFormat);
 int32_t AImgDecodeImage(AImgHandle img, void* destBuffer, int32_t forceImageFormat);
 int32_t AImgInitialise();
+void AImgCleanUp();
 
 void AIGetSimpleMemoryBufferCallbacks(ReadCallback* readCallback, TellCallback* tellCallback, SeekCallback* seekCallback, void** callbackData, void* buffer, int32_t size);
 void AIDestroySimpleMemoryBufferCallbacks(ReadCallback readCallback, TellCallback tellCallback, SeekCallback seekCallback, void* callbackData);

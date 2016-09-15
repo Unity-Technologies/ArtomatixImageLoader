@@ -6,26 +6,33 @@
 
 #include "../AIL.h"
 
-std::vector<uint8_t> readFile(const std::string& path)
+template <typename T>
+std::vector<T> readFile(const std::string& path)
 {
     FILE* f = fopen(path.c_str(), "rb");
     fseek(f, 0, SEEK_END);
     size_t size = ftell(f);
     fseek(f, 0, SEEK_SET);
 
-    std::vector<uint8_t> retval(size);
+    std::vector<T> retval(size/sizeof(T));
     fread(&retval[0], 1, size, f);
+
+    fclose(f);
     
     return retval; 
 }
 
-std::string imagesDir = "/home/wheybags/ArtomatixImageLoader/tests/images";
+std::string getImagesDir()
+{
+    std::string thisFile = __FILE__;
+    std::string thisFolder = thisFile.substr(0, thisFile.size() - std::string("/exr.cpp").length());
+
+    return thisFolder + "/images";
+}
 
 TEST(Exr, TestDetectExr)
 {
-    auto data = readFile(imagesDir + "/exr/grad_32.exr");
-
-    AImgInitialise();
+    auto data = readFile<uint8_t>(getImagesDir() + "/exr/grad_32.exr");
 
     ReadCallback readCallback = NULL;
     TellCallback tellCallback = NULL;
@@ -40,14 +47,13 @@ TEST(Exr, TestDetectExr)
 
     ASSERT_EQ(fileFormat, EXR_IMAGE_FORMAT);
 
+    AImgClose(img);
     AIDestroySimpleMemoryBufferCallbacks(readCallback, tellCallback, seekCallback, callbackData);
 }
 
 TEST(Exr, TestReadExrAttrs)
 {
-    auto data = readFile(imagesDir + "/exr/grad_32.exr");
-
-    AImgInitialise();
+    auto data = readFile<uint8_t>(getImagesDir() + "/exr/grad_32.exr");
 
     ReadCallback readCallback = NULL;
     TellCallback tellCallback = NULL;
@@ -76,6 +82,7 @@ TEST(Exr, TestReadExrAttrs)
     ASSERT_EQ(decodedImgFormat, AImgFormat::RGB32F);
 
 
+    AImgClose(img);
     AIDestroySimpleMemoryBufferCallbacks(readCallback, tellCallback, seekCallback, callbackData);
 }
 
@@ -126,10 +133,51 @@ TEST(Exr, TestMemoryCallbacksRead)
     AIDestroySimpleMemoryBufferCallbacks(readCallback, tellCallback, seekCallback, callbackData);
 }
 
+TEST(Exr, TestReadExr)
+{
+    auto data = readFile<uint8_t>(getImagesDir() + "/exr/grad_32.exr");
+
+    ReadCallback readCallback = NULL;
+    TellCallback tellCallback = NULL;
+    SeekCallback seekCallback = NULL;
+    void* callbackData = NULL;
+
+    AIGetSimpleMemoryBufferCallbacks(&readCallback, &tellCallback, &seekCallback, &callbackData, &data[0], data.size());
+
+    AImgHandle img = NULL;
+    AImgOpen(readCallback, tellCallback, seekCallback, callbackData, &img, NULL);
+
+    int32_t width = 64;
+    int32_t height = 32;
+
+    std::vector<float> imgData(width*height*3, 0.0f);
+
+    AImgDecodeImage(img, &imgData[0], AImgFormat::INVALID_FORMAT);
+
+    auto knownData = readFile<float>(getImagesDir() + "/exr/grad_32.bin");
+
+    for(int32_t y = 0; y < height; y++)
+    {
+        for(int32_t x = 0; x < width; x++)
+        {
+            ASSERT_EQ(knownData[x + width*y], imgData[(x + width*y) * 3]);
+        }
+    }
+
+    AImgClose(img);
+    AIDestroySimpleMemoryBufferCallbacks(readCallback, tellCallback, seekCallback, callbackData);
+}
+
+
 
 int main(int argc, char **argv) 
 {
+    AImgInitialise();
+
     ::testing::InitGoogleTest(&argc, argv);
     int retval = RUN_ALL_TESTS();
+
+    AImgCleanUp();
+
     return retval;
 }

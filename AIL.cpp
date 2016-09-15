@@ -28,7 +28,27 @@ int32_t AImgInitialise()
 {
     loaders.push_back(new AImg::ExrImageLoader());
 
-    return AIMG_SUCCESS;
+    for(uint32_t i = 0; i < loaders.size(); i++)
+    {
+        int32_t err = loaders[i]->initialise();
+        if(err != AImgErrorCode::AIMG_SUCCESS)
+            return err;
+    }
+
+    return AImgErrorCode::AIMG_SUCCESS;
+}
+
+void AImgCleanUp()
+{
+    for(uint32_t i = 0; i < loaders.size(); i++)
+        delete loaders[i];
+    loaders.clear();
+}
+
+namespace AImg
+{
+    AImgBase::~AImgBase() {} // go away c++
+    ImageLoaderBase::~ImageLoaderBase() {}
 }
 
 int32_t AImgOpen(ReadCallback readCallback, TellCallback tellCallback, SeekCallback seekCallback, void* callbackData, AImgHandle* imgH, int32_t* detectedFileFormat)
@@ -61,12 +81,23 @@ int32_t AImgOpen(ReadCallback readCallback, TellCallback tellCallback, SeekCallb
     return retval;
 }
 
+void AImgClose(AImgHandle imgH)
+{
+    AImg::AImgBase* img = (AImg::AImgBase*)imgH;
+    delete img;
+}
+
 int32_t AImgGetInfo(AImgHandle imgH, int32_t* width, int32_t* height, int32_t* numChannels, int32_t* bytesPerChannel, int32_t* floatOrInt, int32_t* decodedImgFormat)
 {
     AImg::AImgBase* img = (AImg::AImgBase*)imgH;
     return img->getImageInfo(width, height, numChannels, bytesPerChannel, floatOrInt, decodedImgFormat);
 }
 
+int32_t AImgDecodeImage(AImgHandle imgH, void* destBuffer, int32_t forceImageFormat)
+{
+    AImg::AImgBase* img = (AImg::AImgBase*)imgH;
+    return img->decodeImage(destBuffer, forceImageFormat);
+}
 
 
 struct SimpleMemoryCallbackData

@@ -1,8 +1,3 @@
-// This is the main DLL file.
-
-//#include "ArtomatixImageLoaders.h"
-
-
 #include <ImfInputFile.h>
 #include <ImfOutputFile.h>
 #include <ImfChannelList.h>
@@ -12,6 +7,7 @@
 #include <stdint.h>
 #include <vector>
 #include <exception>
+#include <algorithm>
 
 #include "AIL.h"
 #include "exr.h"
@@ -91,6 +87,19 @@ namespace AImg
             SeekCallback mSeekCallback;
             void* mCallbackData;
     };
+
+    int32_t ExrImageLoader::initialise()
+    {
+        try
+        {
+            Imf::staticInitialize();
+        }
+        catch (const std::exception &e)
+        {
+            AISetLastErrorDetails(e.what());
+            return AImgErrorCode::AIMG_LOAD_FAILED_INTERNAL;
+        }
+    }
     
     bool ExrImageLoader::canLoadImage(ReadCallback readCallback, TellCallback tellCallback, SeekCallback seekCallback, void* callbackData)
     {
@@ -121,6 +130,12 @@ namespace AImg
             CallbackIStream* data;
             Imf::InputFile* file;
             Imath::Box2i dw;
+
+            virtual ~ExrFile()
+            {
+                delete data;
+                delete file;
+            }
 
             int32_t getDecodeFormat()
             {
@@ -202,6 +217,79 @@ namespace AImg
 
                 return AImgErrorCode::AIMG_SUCCESS;
             }
+
+            virtual int32_t decodeImage(void* destBuffer, int32_t forceImageFormat)
+            {
+                try
+                {
+                    int32_t width = dw.max.x - dw.min.x + 1;
+
+                    std::vector<std::string> allChannelNames;
+                    bool isRgba = true;
+
+                    const Imf::ChannelList &channels = file->header().channels();
+                    for (Imf::ChannelList::ConstIterator it = channels.begin(); it != channels.end(); ++it)
+                    {
+                        std::string name = it.name();
+                        allChannelNames.push_back(it.name());
+                        if(name != "R" && name != "G" && name != "B" && name != "A")
+                            isRgba = false;
+                    }
+
+                    std::vector<std::string> usedChannelNames;
+
+                    // ensure RGBA byte order, when loading an rgba image
+                    if(isRgba)
+                    {
+                        if(std::find(allChannelNames.begin(), allChannelNames.end(), "R") != allChannelNames.end())
+                            usedChannelNames.push_back("R");
+                        if(std::find(allChannelNames.begin(), allChannelNames.end(), "G") != allChannelNames.end())
+                            usedChannelNames.push_back("G");
+                        if(std::find(allChannelNames.begin(), allChannelNames.end(), "B") != allChannelNames.end())
+                            usedChannelNames.push_back("B");
+                        if(std::find(allChannelNames.begin(), allChannelNames.end(), "A") != allChannelNames.end())
+                            usedChannelNames.push_back("A");
+                    }
+                    // otherwise just whack em in in order
+                    else
+                    {
+                        for(uint32_t i = 0; i < allChannelNames.size(); i++)
+                        {
+                            if(usedChannelNames.size() >= 4)
+                                break;
+
+                            if(std::find(usedChannelNames.begin(), usedChannelNames.end(), allChannelNames[i]) == allChannelNames.end())
+                                usedChannelNames.push_back(allChannelNames[i]);
+                        }
+                    }
+
+                    Imf::FrameBuffer frameBuffer;
+
+                    for (uint32_t i = 0; i < usedChannelNames.size(); i++)
+                    {
+                        frameBuffer.insert(usedChannelNames[i],
+                            Imf::Slice(Imf::FLOAT,
+                                ((char*)destBuffer) + i*sizeof(float),
+                                sizeof(float) * usedChannelNames.size(),
+                                sizeof(float) * width * usedChannelNames.size(),
+                                1, 1,
+                                0.0
+                            )
+                        );
+                    }
+
+                    file->setFrameBuffer(frameBuffer);
+                    file->readPixels(dw.min.y, dw.max.y);
+
+                    return AImgErrorCode::AIMG_SUCCESS;
+                }
+                catch (const std::exception &e)
+                {
+                    AISetLastErrorDetails(e.what());
+                    return AImgErrorCode::AIMG_LOAD_FAILED_INTERNAL;
+                }
+            }
+
     };
 
 
