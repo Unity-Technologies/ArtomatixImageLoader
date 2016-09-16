@@ -60,7 +60,7 @@ enum AImgErrorCode
 enum AImgFileFormat
 {
     UNKNOWN_IMAGE_FORMAT = -1,
-    EXR_IMAGE_FORMAT = 0
+    EXR_IMAGE_FORMAT = 1
 };
 
 enum AImgFloatOrIntType

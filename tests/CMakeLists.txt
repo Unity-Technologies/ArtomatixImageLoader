@@ -47,7 +47,7 @@ if(AIMG_TESTS_ENABLED)
     endfunction(fa_add_test)
 
     # actual tests go here
-    fa_add_test(exr "ArtomatixImageLoader" Yes)
+    fa_add_test(exr AIL Yes)
 
     
     add_custom_target(aitest ${all_tests})
