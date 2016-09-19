@@ -7,6 +7,12 @@
 
 #include "exr.h"
 
+#define HAVE_EXR // TODO: generate this in the cmake project files
+
+#ifdef HAVE_EXR
+    #include <half.h>
+#endif
+
 std::vector<AImg::ImageLoaderBase*> loaders;
 std::string lastError;
 
@@ -26,7 +32,9 @@ const char* AIGetLastErrorDetails()
 
 int32_t AImgInitialise()
 {
-    loaders.push_back(new AImg::ExrImageLoader());
+    #ifdef HAVE_EXR
+        loaders.push_back(new AImg::ExrImageLoader());
+    #endif
 
     for(uint32_t i = 0; i < loaders.size(); i++)
     {
@@ -99,6 +107,414 @@ int32_t AImgDecodeImage(AImgHandle imgH, void* destBuffer, int32_t forceImageFor
     return img->decodeImage(destBuffer, forceImageFormat);
 }
 
+void convertToRGBA32F(void* src, std::vector<float>& dest, size_t i, int32_t inFormat)
+{
+    switch (inFormat)
+    {
+        case AImgFormat::R8U:
+        {
+            uint8_t* srcF = ((uint8_t*)src) + (i*1);
+
+            dest[0] = ((float)srcF[0]) / 255.0f;
+            dest[1] = 0;
+            dest[2] = 0;
+            dest[3] = 1;
+
+            break;
+        }
+
+        case AImgFormat::RG8U:
+        {
+            uint8_t* srcF = ((uint8_t*)src) + (i*2);
+
+            dest[0] = ((float)srcF[0]) / 255.0f;
+            dest[1] = ((float)srcF[1]) / 255.0f;
+            dest[2] = 0;
+            dest[3] = 1;
+
+            break;
+        }
+
+        case AImgFormat::RGB8U:
+        {
+            uint8_t* srcF = ((uint8_t*)src) + (i*3);
+
+            dest[0] = ((float)srcF[0]) / 255.0f;
+            dest[1] = ((float)srcF[1]) / 255.0f;
+            dest[2] = ((float)srcF[2]) / 255.0f;
+            dest[3] = 1;
+
+            break;
+        }
+
+        case AImgFormat::RGBA8U:
+        {
+            uint8_t* srcF = ((uint8_t*)src) + (i*4);
+
+            dest[0] = ((float)srcF[0]) / 255.0f;
+            dest[1] = ((float)srcF[1]) / 255.0f;
+            dest[2] = ((float)srcF[2]) / 255.0f;
+            dest[3] = ((float)srcF[3]) / 255.0f;
+
+            break;
+        }
+
+        #ifdef HAVE_EXR
+        case AImgFormat::R16F:
+        {
+            half* srcF = ((half*)src) + (i*1);
+
+            dest[0] = (float)srcF[0];
+            dest[1] = 0;
+            dest[2] = 0;
+            dest[3] = 1;
+
+            break;
+        }
+
+        case AImgFormat::RG16F:
+        {
+            half* srcF = ((half*)src) + (i*2);
+
+            dest[0] = (float)srcF[0];
+            dest[1] = (float)srcF[1];
+            dest[2] = 0;
+            dest[3] = 1;
+
+            break;
+        }
+
+        case AImgFormat::RGB16F:
+        {
+            half* srcF = ((half*)src) + (i*3);
+
+            dest[0] = (float)srcF[0];
+            dest[1] = (float)srcF[1];
+            dest[2] = (float)srcF[2];
+            dest[3] = 1;
+
+            break;
+        }
+
+        case AImgFormat::RGBA16F:
+        {
+            half* srcF = ((half*)src) + (i*4);
+
+            dest[0] = (float)srcF[0];
+            dest[1] = (float)srcF[1];
+            dest[2] = (float)srcF[2];
+            dest[3] = (float)srcF[3];
+
+            break;
+        }
+        #endif
+
+        case AImgFormat::R16U:
+        {
+            uint16_t* srcF = ((uint16_t*)src) + (i*1);
+
+            dest[0] = ((float)srcF[0]) / 65535.0f;
+            dest[1] = 0;
+            dest[2] = 0;
+            dest[3] = 1;
+
+            break;
+        }
+
+        case AImgFormat::RG16U:
+        {
+            uint16_t* srcF = ((uint16_t*)src) + (i*2);
+
+            dest[0] = ((float)srcF[0]) / 65535.0f;
+            dest[1] = ((float)srcF[1]) / 65535.0f;
+            dest[2] = 0;
+            dest[3] = 1;
+
+            break;
+        }
+
+        case AImgFormat::RGB16U:
+        {
+            uint16_t* srcF = ((uint16_t*)src) + (i*3);
+
+            dest[0] = ((float)srcF[0]) / 65535.0f;
+            dest[1] = ((float)srcF[1]) / 65535.0f;
+            dest[2] = ((float)srcF[2]) / 65535.0f;
+            dest[3] = 1;
+
+            break;
+        }
+
+        case AImgFormat::RGBA16U:
+        {
+            uint16_t* srcF = ((uint16_t*)src) + (i*4);
+
+            dest[0] = ((float)srcF[0]) / 65535.0f;
+            dest[1] = ((float)srcF[1]) / 65535.0f;
+            dest[2] = ((float)srcF[2]) / 65535.0f;
+            dest[3] = ((float)srcF[3]) / 65535.0f;
+
+            break;
+        }
+
+        case AImgFormat::R32F:
+        {
+            float* srcF = ((float*)src) + (i*1);
+
+            dest[0] = srcF[0];
+            dest[1] = 0;
+            dest[2] = 0;
+            dest[3] = 1;
+
+            break;
+        }
+
+        case AImgFormat::RG32F:
+        {
+            float* srcF = ((float*)src) + (i*2);
+
+            dest[0] = srcF[0];
+            dest[1] = srcF[1];
+            dest[2] = 0;
+            dest[3] = 1;
+
+            break;
+        }
+
+        case AImgFormat::RGB32F:
+        {
+            float* srcF = ((float*)src) + (i*3);
+
+            dest[0] = srcF[0];
+            dest[1] = srcF[1];
+            dest[2] = srcF[2];
+            dest[3] = 1;
+
+            break;
+        }
+
+        case AImgFormat::RGBA32F:
+        {
+            float* srcF = ((float*)src) + (i*4);
+
+            dest[0] = srcF[0];
+            dest[1] = srcF[1];
+            dest[2] = srcF[2];
+            dest[3] = srcF[3];
+
+            break;
+        }
+
+        default:
+        {
+            break;
+        }
+    }
+}
+
+void convertFromRGBA32F(std::vector<float>& src, void* dst, size_t i, int32_t outFormat)
+{
+    switch (outFormat)
+    {
+        case AImgFormat::R8U:
+        {
+            uint8_t* dstF = ((uint8_t*)dst) + (i*1);
+
+            dstF[0] = (uint8_t)(src[0] * 255.0f);
+
+            break;
+        }
+
+        case AImgFormat::RG8U:
+        {
+            uint8_t* dstF = ((uint8_t*)dst) + (i*2);
+
+            dstF[0] = (uint8_t)(src[0] * 255.0f);
+            dstF[1] = (uint8_t)(src[1] * 255.0f);
+
+            break;
+        }
+
+        case AImgFormat::RGB8U:
+        {
+            uint8_t* dstF = ((uint8_t*)dst) + (i*3);
+
+            dstF[0] = (uint8_t)(src[0] * 255.0f);
+            dstF[1] = (uint8_t)(src[1] * 255.0f);
+            dstF[2] = (uint8_t)(src[2] * 255.0f);
+
+            break;
+        }
+
+        case AImgFormat::RGBA8U:
+        {
+            uint8_t* dstF = ((uint8_t*)dst) + (i*4);
+
+            dstF[0] = (uint8_t)(src[0] * 255.0f);
+            dstF[1] = (uint8_t)(src[1] * 255.0f);
+            dstF[2] = (uint8_t)(src[2] * 255.0f);
+            dstF[3] = (uint8_t)(src[3] * 255.0f);
+
+            break;
+        }
+
+        #ifdef HAVE_EXR
+        case AImgFormat::R16F:
+        {
+            half* dstF = ((half*)dst) + (i*1);
+
+            dstF[0] = src[0];
+
+            break;
+        }
+
+        case AImgFormat::RG16F:
+        {
+            half* dstF = ((half*)dst) + (i*2);
+
+            dstF[0] = src[0];
+            dstF[1] = src[1];
+
+            break;
+        }
+
+        case AImgFormat::RGB16F:
+        {
+            half* dstF = ((half*)dst) + (i*3);
+
+            dstF[0] = src[0];
+            dstF[1] = src[1];
+            dstF[2] = src[2];
+
+            break;
+        }
+
+        case AImgFormat::RGBA16F:
+        {
+            half* dstF = ((half*)dst) + (i*4);
+
+            dstF[0] = src[0];
+            dstF[1] = src[1];
+            dstF[2] = src[2];
+            dstF[3] = src[3];
+
+            break;
+        }
+        #endif
+
+        case AImgFormat::R16U:
+        {
+            uint16_t* dstF = ((uint16_t*)dst) + (i*1);
+
+            dstF[0] = (uint16_t)(src[0] * 65535.0f);
+
+            break;
+        }
+
+        case AImgFormat::RG16U:
+        {
+            uint16_t* dstF = ((uint16_t*)dst) + (i*2);
+
+            dstF[0] = (uint16_t)(src[0] * 65535.0f);
+            dstF[1] = (uint16_t)(src[1] * 65535.0f);
+
+            break;
+        }
+
+        case AImgFormat::RGB16U:
+        {
+            uint16_t* dstF = ((uint16_t*)dst) + (i*3);
+
+            dstF[0] = (uint16_t)(src[0] * 65535.0f);
+            dstF[1] = (uint16_t)(src[1] * 65535.0f);
+            dstF[2] = (uint16_t)(src[2] * 65535.0f);
+
+            break;
+        }
+
+        case AImgFormat::RGBA16U:
+        {
+            uint16_t* dstF = ((uint16_t*)dst) + (i*4);
+
+            dstF[0] = (uint16_t)(src[0] * 65535.0f);
+            dstF[1] = (uint16_t)(src[1] * 65535.0f);
+            dstF[2] = (uint16_t)(src[2] * 65535.0f);
+            dstF[3] = (uint16_t)(src[3] * 65535.0f);
+
+            break;
+        }
+
+        case AImgFormat::R32F:
+        {
+            float* dstF = ((float*)dst) + (i*1);
+
+            dstF[0] = src[0];
+
+            break;
+        }
+
+        case AImgFormat::RG32F:
+        {
+            float* dstF = ((float*)dst) + (i*2);
+
+            dstF[0] = src[0];
+            dstF[1] = src[1];
+
+            break;
+        }
+
+        case AImgFormat::RGB32F:
+        {
+            float* dstF = ((float*)dst) + (i*3);
+
+            dstF[0] = src[0];
+            dstF[1] = src[1];
+            dstF[2] = src[2];
+
+            break;
+        }
+
+        case AImgFormat::RGBA32F:
+        {
+            float* dstF = ((float*)dst) + (i*4);
+
+            dstF[0] = src[0];
+            dstF[1] = src[1];
+            dstF[2] = src[2];
+            dstF[3] = src[3];
+
+            break;
+        }
+
+        default:
+        {
+            break;
+        }
+    }
+}
+
+
+int32_t AImgConvertFormat(void* src, void* dest, int32_t width, int32_t height, int32_t inFormat, int32_t outFormat)
+{
+    #ifndef HAVE_EXR
+    if(inFormat == AImgFormat::R16F || inFormat == AImgFormat::RG16F || inFormat == AImgFormat::RGB16F || inFormat == AImgFormat::RGBA16F ||
+       outFormat == AImgFormat::R16F || outFormat == AImgFormat::RG16F || outFormat == AImgFormat::RGB16F || outFormat == AImgFormat::RGBA16F)
+    {
+        AISetLastErrorDetails("Bad format requested, 16 bit float formats not available when compiled without EXR support");
+        return AImgErrorCode::AIMG_CONVERSION_FAILED_BAD_FORMAT;
+    }
+    #endif
+
+    std::vector<float> scratch(4);
+
+    for(int32_t i = 0; i < width*height; i++)
+    {
+        convertToRGBA32F(src, scratch, i, inFormat);
+        convertFromRGBA32F(scratch, dest, i, outFormat);
+    }
+
+    return AImgErrorCode::AIMG_SUCCESS;
+}
 
 struct SimpleMemoryCallbackData
 {

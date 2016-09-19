@@ -168,6 +168,41 @@ TEST(Exr, TestReadExr)
     AIDestroySimpleMemoryBufferCallbacks(readCallback, tellCallback, seekCallback, callbackData);
 }
 
+TEST(Exr, TestConvertDataFormat)
+{
+    int32_t width = 16;
+    int32_t height = 16;
+
+    std::vector<uint8_t> startingData(width*height);
+
+    for(int32_t y = 0; y < height; y++)
+    {
+        for(int32_t x = 0; x < width; x++)
+        {
+            startingData[x + y*width] = x+y;
+        }
+    }
+
+    std::vector<float> convertedF(width*height*4, 0);
+
+    AImgConvertFormat(&startingData[0], &convertedF[0], width, height, AImgFormat::R8U, AImgFormat::RGBA32F);
+
+    for(int32_t y = 0; y < height; y++)
+    {
+        for(int32_t x = 0; x < width; x++)
+        {
+            ASSERT_EQ((uint8_t)(convertedF[(x + y*width) * 4] * 255.0f), startingData[x + y*width]);
+        }
+    }
+
+    std::vector<uint8_t> convertedBack(width*height, 0);
+
+    AImgConvertFormat(&convertedF[0], &convertedBack[0], width, height, AImgFormat::RGBA32F, AImgFormat::R8U);
+
+    for(int32_t i = 0; i < convertedBack.size(); i++)
+        ASSERT_EQ(startingData[i], convertedBack[i]);
+}
+
 
 
 int main(int argc, char **argv) 

@@ -54,7 +54,8 @@ enum AImgErrorCode
     AIMG_SUCCESS = 0,
     AIMG_UNSUPPORTED_FILETYPE = -1,
     AIMG_LOAD_FAILED_EXTERNAL = -2, // load failed in an external library
-    AIMG_LOAD_FAILED_INTERNAL = -3  // load failed inside ArtomatixImageLoader
+    AIMG_LOAD_FAILED_INTERNAL = -3, // load failed inside ArtomatixImageLoader
+    AIMG_CONVERSION_FAILED_BAD_FORMAT = -4
 };
 
 enum AImgFileFormat
@@ -81,6 +82,8 @@ int32_t AImgGetInfo(AImgHandle img, int32_t* width, int32_t* height, int32_t* nu
 int32_t AImgDecodeImage(AImgHandle img, void* destBuffer, int32_t forceImageFormat);
 int32_t AImgInitialise();
 void AImgCleanUp();
+
+int32_t AImgConvertFormat(void* src, void* dest, int32_t width, int32_t height, int32_t inFormat, int32_t outFormat);
 
 void AIGetSimpleMemoryBufferCallbacks(ReadCallback* readCallback, TellCallback* tellCallback, SeekCallback* seekCallback, void** callbackData, void* buffer, int32_t size);
 void AIDestroySimpleMemoryBufferCallbacks(ReadCallback readCallback, TellCallback tellCallback, SeekCallback seekCallback, void* callbackData);
