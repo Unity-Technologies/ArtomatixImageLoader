@@ -1,3 +1,4 @@
+#include <map>
 #include <vector>
 #include <iostream>
 #include <cstring>
@@ -13,7 +14,7 @@
     #include <half.h>
 #endif
 
-std::vector<AImg::ImageLoaderBase*> loaders;
+std::map<int32_t, AImg::ImageLoaderBase*> loaders;
 std::string lastError;
 
 void AISetLastErrorDetails(const char* err)
@@ -33,12 +34,12 @@ const char* AIGetLastErrorDetails()
 int32_t AImgInitialise()
 {
     #ifdef HAVE_EXR
-        loaders.push_back(new AImg::ExrImageLoader());
+        loaders[AImgFileFormat::EXR_IMAGE_FORMAT] = new AImg::ExrImageLoader();
     #endif
 
-    for(uint32_t i = 0; i < loaders.size(); i++)
+    for(auto it = loaders.begin(); it != loaders.end(); ++it)
     {
-        int32_t err = loaders[i]->initialise();
+        int32_t err = it->second->initialise();
         if(err != AImgErrorCode::AIMG_SUCCESS)
             return err;
     }
@@ -48,8 +49,9 @@ int32_t AImgInitialise()
 
 void AImgCleanUp()
 {
-    for(uint32_t i = 0; i < loaders.size(); i++)
-        delete loaders[i];
+    for(auto it = loaders.begin(); it != loaders.end(); ++it)
+        delete it->second;
+
     loaders.clear();
 }
 
@@ -67,12 +69,12 @@ int32_t AImgOpen(ReadCallback readCallback, TellCallback tellCallback, SeekCallb
     int32_t fileFormat = UNKNOWN_IMAGE_FORMAT;
     int32_t retval = AIMG_UNSUPPORTED_FILETYPE;
 
-    for(uint32_t i = 0; i < loaders.size(); ++i)
+    for(auto it = loaders.begin(); it != loaders.end(); ++it)
     {
-        if(loaders[i]->canLoadImage(readCallback, tellCallback, seekCallback, callbackData))
+        if(it->second->canLoadImage(readCallback, tellCallback, seekCallback, callbackData))
         {
-            fileFormat = loaders[i]->getAImgFileFormatValue();
-            *imgH = loaders[i]->openImage(readCallback, tellCallback, seekCallback, callbackData);
+            fileFormat = it->second->getAImgFileFormatValue();
+            *imgH = it->second->openImage(readCallback, tellCallback, seekCallback, callbackData);
 
             if(*imgPtr != NULL)
                 retval = AImgErrorCode::AIMG_SUCCESS;
@@ -493,6 +495,147 @@ void convertFromRGBA32F(std::vector<float>& src, void* dst, size_t i, int32_t ou
     }
 }
 
+void AIGetFormatDetails(int32_t format, int32_t* numChannels, int32_t* bytesPerChannel, int32_t* floatOrInt)
+{
+    switch(format)
+    {
+        case AImgFormat::R8U:
+        {
+            *numChannels = 1;
+            *bytesPerChannel = 1;
+            *floatOrInt = AImgFloatOrIntType::FITYPE_INT;
+            break;
+        }
+
+        case AImgFormat::RG8U:
+        {
+            *numChannels = 2;
+            *bytesPerChannel = 1;
+            *floatOrInt = AImgFloatOrIntType::FITYPE_INT;
+            break;
+        }
+
+        case AImgFormat::RGB8U:
+        {
+            *numChannels = 3;
+            *bytesPerChannel = 1;
+            *floatOrInt = AImgFloatOrIntType::FITYPE_INT;
+            break;
+        }
+
+        case AImgFormat::RGBA8U:
+        {
+            *numChannels = 4;
+            *bytesPerChannel = 1;
+            *floatOrInt = AImgFloatOrIntType::FITYPE_INT;
+            break;
+        }
+
+        case AImgFormat::R16F:
+        {
+            *numChannels = 1;
+            *bytesPerChannel = 2;
+            *floatOrInt = AImgFloatOrIntType::FITYPE_FLOAT;
+            break;
+        }
+
+        case AImgFormat::RG16F:
+        {
+            *numChannels = 2;
+            *bytesPerChannel = 2;
+            *floatOrInt = AImgFloatOrIntType::FITYPE_FLOAT;
+            break;
+        }
+
+        case AImgFormat::RGB16F:
+        {
+            *numChannels = 3;
+            *bytesPerChannel = 2;
+            *floatOrInt = AImgFloatOrIntType::FITYPE_FLOAT;
+            break;
+        }
+
+        case AImgFormat::RGBA16F:
+        {
+            *numChannels = 4;
+            *bytesPerChannel = 2;
+            *floatOrInt = AImgFloatOrIntType::FITYPE_FLOAT;
+            break;
+        }
+
+        case AImgFormat::R16U:
+        {
+            *numChannels = 1;
+            *bytesPerChannel = 2;
+            *floatOrInt = AImgFloatOrIntType::FITYPE_INT;
+            break;
+        }
+
+        case AImgFormat::RG16U:
+        {
+            *numChannels = 2;
+            *bytesPerChannel = 2;
+            *floatOrInt = AImgFloatOrIntType::FITYPE_INT;
+            break;
+        }
+
+        case AImgFormat::RGB16U:
+        {
+            *numChannels = 3;
+            *bytesPerChannel = 2;
+            *floatOrInt = AImgFloatOrIntType::FITYPE_INT;
+            break;
+        }
+
+        case AImgFormat::RGBA16U:
+        {
+            *numChannels = 4;
+            *bytesPerChannel = 2;
+            *floatOrInt = AImgFloatOrIntType::FITYPE_INT;
+            break;
+        }
+
+        case AImgFormat::R32F:
+        {
+            *numChannels = 1;
+            *bytesPerChannel = 4;
+            *floatOrInt = AImgFloatOrIntType::FITYPE_FLOAT;
+            break;
+        }
+
+        case AImgFormat::RG32F:
+        {
+            *numChannels = 2;
+            *bytesPerChannel = 4;
+            *floatOrInt = AImgFloatOrIntType::FITYPE_FLOAT;
+            break;
+        }
+
+        case AImgFormat::RGB32F:
+        {
+            *numChannels = 3;
+            *bytesPerChannel = 4;
+            *floatOrInt = AImgFloatOrIntType::FITYPE_FLOAT;
+            break;
+        }
+
+        case AImgFormat::RGBA32F:
+        {
+            *numChannels = 4;
+            *bytesPerChannel = 4;
+            *floatOrInt = AImgFloatOrIntType::FITYPE_FLOAT;
+            break;
+        }
+
+        default:
+        {
+            *numChannels = -1;
+            *bytesPerChannel = -1;
+            *floatOrInt = AImgFloatOrIntType::FITYPE_UNKNOWN;
+            break;
+        }
+    }
+}
 
 int32_t AImgConvertFormat(void* src, void* dest, int32_t width, int32_t height, int32_t inFormat, int32_t outFormat)
 {
@@ -514,6 +657,17 @@ int32_t AImgConvertFormat(void* src, void* dest, int32_t width, int32_t height, 
     }
 
     return AImgErrorCode::AIMG_SUCCESS;
+}
+
+int32_t AImgGetWhatFormatWillBeWrittenForData(int32_t fileFormat, int32_t inputFormat)
+{
+    return loaders[fileFormat]->getWhatFormatWillBeWrittenForData(inputFormat);
+}
+
+int32_t AImgWriteImage(int32_t fileFormat, void* data, int32_t width, int32_t height, int32_t inputFormat, WriteCallback writeCallback,
+                   TellCallback tellCallback, SeekCallback seekCallback, void* callbackData)
+{
+    return loaders[fileFormat]->writeImage(data, width, height, inputFormat, writeCallback, tellCallback, seekCallback, callbackData);
 }
 
 struct SimpleMemoryCallbackData
@@ -540,6 +694,21 @@ int32_t CALLCONV simpleMemoryReadCallback(void* callbackData, uint8_t* dest, int
     return toWrite;
 }
 
+void CALLCONV simpleMemoryWriteCallback(void* callbackData, const uint8_t* src, int32_t count)
+{
+    auto data = (SimpleMemoryCallbackData*)callbackData;
+
+    int32_t toWrite = count;
+    int32_t end = data->currentPos + count;
+
+    if(end > data->size)
+        toWrite = data->size - data->currentPos;
+
+    memcpy(data->buffer + data->currentPos, src, toWrite);
+
+    data->currentPos += toWrite;
+}
+
 int32_t CALLCONV simpleMemoryTellCallback(void* callbackData)
 {
     auto data = (SimpleMemoryCallbackData*)callbackData;
@@ -552,9 +721,10 @@ void CALLCONV simpleMemorySeekCallback(void* callbackData, int32_t pos)
     data->currentPos = pos;
 }
 
-void AIGetSimpleMemoryBufferCallbacks(ReadCallback* readCallback, TellCallback* tellCallback, SeekCallback* seekCallback, void** callbackData, void* buffer, int32_t size)
+void AIGetSimpleMemoryBufferCallbacks(ReadCallback* readCallback, WriteCallback* writeCallback, TellCallback* tellCallback, SeekCallback* seekCallback, void** callbackData, void* buffer, int32_t size)
 {
-    *readCallback = &simpleMemoryReadCallback;    
+    *readCallback = &simpleMemoryReadCallback;
+    *writeCallback = &simpleMemoryWriteCallback;
     *tellCallback = &simpleMemoryTellCallback;    
     *seekCallback = &simpleMemorySeekCallback;
 
@@ -566,9 +736,10 @@ void AIGetSimpleMemoryBufferCallbacks(ReadCallback* readCallback, TellCallback* 
     *callbackData = data;
 }
 
-void AIDestroySimpleMemoryBufferCallbacks(ReadCallback readCallback, TellCallback tellCallback, SeekCallback seekCallback, void* callbackData)
+void AIDestroySimpleMemoryBufferCallbacks(ReadCallback readCallback, WriteCallback writeCallback, TellCallback tellCallback, SeekCallback seekCallback, void* callbackData)
 {
     AIL_UNUSED_PARAM(readCallback);
+    AIL_UNUSED_PARAM(writeCallback);
     AIL_UNUSED_PARAM(tellCallback);
     AIL_UNUSED_PARAM(seekCallback);
 

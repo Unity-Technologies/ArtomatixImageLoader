@@ -93,6 +93,8 @@ namespace AImg
         try
         {
             Imf::staticInitialize();
+
+            return AImgErrorCode::AIMG_SUCCESS;
         }
         catch (const std::exception &e)
         {
@@ -310,6 +312,107 @@ namespace AImg
             return NULL;
         }
     }
+
+    AImgFormat ExrImageLoader::getWhatFormatWillBeWrittenForData(int32_t inputFormat)
+    {
+        int32_t bytesPerChannel, numChannels, floatOrInt;
+        AIGetFormatDetails(inputFormat, &numChannels, &bytesPerChannel, &floatOrInt);
+
+        // TODO: allow writing 16-bit float exrs too
+        /*if(bytesPerChannel < 2)
+        {
+            switch(numChannels)
+            {
+                case 1: return AImgFormat::R16F;
+                case 2: return AImgFormat::RG16F;
+                case 3: return AImgFormat::RGB16F;
+                case 4: return AImgFormat::RGBA16F;
+            }
+        }
+        else*/
+        {
+            switch(numChannels)
+            {
+                case 1: return AImgFormat::R32F;
+                case 2: return AImgFormat::RG32F;
+                case 3: return AImgFormat::RGB32F;
+                case 4: return AImgFormat::RGBA32F;
+            }
+        }
+
+        return AImgFormat::INVALID_FORMAT;
+    }
+
+    int32_t ExrImageLoader::writeImage(void* data, int32_t width, int32_t height, int32_t inputFormat, WriteCallback writeCallback,
+                                       TellCallback tellCallback, SeekCallback seekCallback, void* callbackData)
+    {
+        try
+        {
+            std::vector<uint8_t> reformattedDataTmp(0);
+
+            void* inputBuf = data;
+            AImgFormat inputBufFormat = (AImgFormat)inputFormat;
+
+            // need 32F data, so convert if necessary
+            if(inputFormat < AImgFormat::R32F || inputFormat > AImgFormat::RGBA32F)
+            {
+                // set inputBufFormat to the format with the same number of channels as inputFormat, but is 32F
+                int32_t bytesPerChannelTmp, numChannelsTmp, floatOrIntTmp;
+                AIGetFormatDetails(inputFormat, &numChannelsTmp, &bytesPerChannelTmp, &floatOrIntTmp);
+                inputBufFormat = (AImgFormat)(AImgFormat::R32F + numChannelsTmp - 1);
+
+                // resize reformattedDataTmp to fit the converted image data
+                AIGetFormatDetails(inputBufFormat, &numChannelsTmp, &bytesPerChannelTmp, &floatOrIntTmp);
+                reformattedDataTmp.resize(numChannelsTmp * bytesPerChannelTmp * width * height);
+
+                AImgConvertFormat(data, &reformattedDataTmp[0], width, height, inputFormat, inputBufFormat);
+                inputBuf = &reformattedDataTmp[0];
+            }
+
+            int32_t bytesPerChannel, numChannels, floatOrInt;
+            AIGetFormatDetails(inputBufFormat, &numChannels, &bytesPerChannel, &floatOrInt);
+
+
+            const char* channelNames[] = { "R", "G", "B", "A" };
+
+            Imf::Header header(width, height);
+
+            for(int32_t i = 0; i < numChannels; i++)
+            {
+                header.channels().insert(channelNames[i], Imf::Channel(Imf::FLOAT));
+            }
+
+            Imf::FrameBuffer frameBuffer;
+
+            for(int32_t i = 0; i < numChannels; i++)
+            {
+                frameBuffer.insert(
+                    channelNames[i],
+                    Imf::Slice(
+                        Imf::FLOAT,
+                        &((char*)inputBuf)[bytesPerChannel * i],
+                        bytesPerChannel * numChannels,
+                        bytesPerChannel * width * numChannels,
+                        1, 1,
+                        0.0
+                    )
+                );
+            }
+
+            CallbackOStream ostream(writeCallback, tellCallback, seekCallback, callbackData);
+            Imf::OutputFile file(ostream, header);
+            file.setFrameBuffer(frameBuffer);
+            file.writePixels(height);
+
+            return AImgErrorCode::AIMG_SUCCESS;
+        }
+        catch (const std::exception &e)
+        {
+            AISetLastErrorDetails(e.what());
+            return AImgErrorCode::AIMG_WRITE_FAILED_EXTERNAL;
+        }
+    }
+
 
 
 

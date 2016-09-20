@@ -55,7 +55,8 @@ enum AImgErrorCode
     AIMG_UNSUPPORTED_FILETYPE = -1,
     AIMG_LOAD_FAILED_EXTERNAL = -2, // load failed in an external library
     AIMG_LOAD_FAILED_INTERNAL = -3, // load failed inside ArtomatixImageLoader
-    AIMG_CONVERSION_FAILED_BAD_FORMAT = -4
+    AIMG_CONVERSION_FAILED_BAD_FORMAT = -4,
+    AIMG_WRITE_FAILED_EXTERNAL = -5
 };
 
 enum AImgFileFormat
@@ -83,10 +84,15 @@ int32_t AImgDecodeImage(AImgHandle img, void* destBuffer, int32_t forceImageForm
 int32_t AImgInitialise();
 void AImgCleanUp();
 
+void AIGetFormatDetails(int32_t format, int32_t* numChannels, int32_t* bytesPerChannel, int32_t* floatOrInt);
 int32_t AImgConvertFormat(void* src, void* dest, int32_t width, int32_t height, int32_t inFormat, int32_t outFormat);
 
-void AIGetSimpleMemoryBufferCallbacks(ReadCallback* readCallback, TellCallback* tellCallback, SeekCallback* seekCallback, void** callbackData, void* buffer, int32_t size);
-void AIDestroySimpleMemoryBufferCallbacks(ReadCallback readCallback, TellCallback tellCallback, SeekCallback seekCallback, void* callbackData);
+int32_t AImgGetWhatFormatWillBeWrittenForData(int32_t fileFormat, int32_t inputFormat);
+int32_t AImgWriteImage(int32_t fileFormat, void* data, int32_t width, int32_t height, int32_t inputFormat, WriteCallback writeCallback,
+                   TellCallback tellCallback, SeekCallback seekCallback, void* callbackData);
+
+void AIGetSimpleMemoryBufferCallbacks(ReadCallback* readCallback, WriteCallback* writeCallback, TellCallback* tellCallback, SeekCallback* seekCallback, void** callbackData, void* buffer, int32_t size);
+void AIDestroySimpleMemoryBufferCallbacks(ReadCallback readCallback, WriteCallback writeCallback, TellCallback tellCallback, SeekCallback seekCallback, void* callbackData);
 
 
 #ifdef __cplusplus
