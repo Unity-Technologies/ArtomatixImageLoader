@@ -1,11 +1,11 @@
-#ifndef ARTOMATIX_EXR_H
-#define ARTOMATIX_EXR_H
+#ifndef ARTOMATIX_PNG_H
+#define ARTOMATIX_PNG_H
 
 #include "ImageLoaderBase.h"
 
 namespace AImg
 {
-    class ExrImageLoader : public ImageLoaderBase
+    class PNGImageLoader : public ImageLoaderBase
     {
         public:
 
@@ -21,4 +21,4 @@ namespace AImg
     };
 }
 
-#endif //ARTOMATIX_EXR_H 
+#endif //ARTOMATIX_PNG_H

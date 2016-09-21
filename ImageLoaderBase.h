@@ -25,7 +25,7 @@ namespace AImg
             virtual bool canLoadImage(ReadCallback readCallback, TellCallback tellCallback, SeekCallback seekCallback, void* callbackData) = 0;
             virtual std::string getFileExtension() = 0;
             virtual int32_t getAImgFileFormatValue() = 0;
-            virtual AImgBase* openImage(ReadCallback readCallback, TellCallback tellCallback, SeekCallback seekCallback, void* callbackData) = 0;
+            virtual AImgBase* openImage(ReadCallback readCallback, WriteCallback writeCallback, TellCallback tellCallback, SeekCallback seekCallback, void* callbackData) = 0;
 
             virtual AImgFormat getWhatFormatWillBeWrittenForData(int32_t inputFormat) = 0;
             virtual int32_t writeImage(void* data, int32_t width, int32_t height, int32_t inputFormat, WriteCallback writeCallback,

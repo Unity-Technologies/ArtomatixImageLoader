@@ -61,7 +61,7 @@ namespace AImg
     ImageLoaderBase::~ImageLoaderBase() {}
 }
 
-int32_t AImgOpen(ReadCallback readCallback, TellCallback tellCallback, SeekCallback seekCallback, void* callbackData, AImgHandle* imgH, int32_t* detectedFileFormat)
+int32_t AImgOpen(ReadCallback readCallback, WriteCallback writeCallback, TellCallback tellCallback, SeekCallback seekCallback, void* callbackData, AImgHandle* imgH, int32_t* detectedFileFormat)
 {
     *imgH = (AImgHandle*)2;
     AImg::AImgBase** imgPtr = (AImg::AImgBase**)imgH;
@@ -74,7 +74,7 @@ int32_t AImgOpen(ReadCallback readCallback, TellCallback tellCallback, SeekCallb
         if(it->second->canLoadImage(readCallback, tellCallback, seekCallback, callbackData))
         {
             fileFormat = it->second->getAImgFileFormatValue();
-            *imgH = it->second->openImage(readCallback, tellCallback, seekCallback, callbackData);
+            *imgH = it->second->openImage(readCallback, writeCallback, tellCallback, seekCallback, callbackData);
 
             if(*imgPtr != NULL)
                 retval = AImgErrorCode::AIMG_SUCCESS;

@@ -5,6 +5,8 @@ PROJECT (AIL)
 add_library(AIL SHARED
 	exr.cpp
     exr.h
+    png.h
+    png.cpp
     AIL.cpp
     AIL.h
     AIL_internal.h
@@ -22,9 +24,11 @@ set_target_properties(AIL PROPERTIES COMPILE_FLAGS "${AIL_COMPILE_FLAGS}")
 set(CMAKE_MODULE_PATH ${CMAKE_MODULE_PATH} "${CMAKE_SOURCE_DIR}/cmake/")
 
 find_package(OpenEXR REQUIRED)
+find_package(PNG REQUIRED)
 
 target_link_libraries(AIL
 	${OPENEXR_LIBRARIES}
+    ${PNG_LIBRARIES}
 )
 
 include_directories(

@@ -10,6 +10,7 @@
 #include <algorithm>
 
 #include "AIL.h"
+#include "AIL_internal.h"
 #include "exr.h"
 
 namespace AImg
@@ -114,7 +115,7 @@ namespace AImg
 
         return header[0] == 0x76 && header[1] == 0x2f && header[2] == 0x31 && header[3] == 0x01;
     }
-        
+
     std::string ExrImageLoader::getFileExtension()
     {
         return "EXR";
@@ -295,8 +296,9 @@ namespace AImg
     };
 
 
-    AImgBase* ExrImageLoader::openImage(ReadCallback readCallback, TellCallback tellCallback, SeekCallback seekCallback, void* callbackData)
+    AImgBase* ExrImageLoader::openImage(ReadCallback readCallback, WriteCallback writeCallback, TellCallback tellCallback, SeekCallback seekCallback, void* callbackData)
     {
+        AIL_UNUSED_PARAM(writeCallback);
         try
         {
             ExrFile* exr = new ExrFile();
