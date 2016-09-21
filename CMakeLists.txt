@@ -11,9 +11,13 @@ add_library(AIL SHARED
     ImageLoaderBase.h
 )
 
+set(AIL_COMPILE_FLAGS "")
+
 if(UNIX)
-    set_target_properties(AIL PROPERTIES COMPILE_FLAGS "-Wall -pedantic -Wextra -g -std=c++11 -Wno-unknown-pragmas")
+    set(AIL_COMPILE_FLAGS "-Wall -pedantic -Wextra -g -std=c++11 -Wno-unknown-pragmas")
 endif()
+
+set_target_properties(AIL PROPERTIES COMPILE_FLAGS "${AIL_COMPILE_FLAGS}")
 
 set(CMAKE_MODULE_PATH ${CMAKE_MODULE_PATH} "${CMAKE_SOURCE_DIR}/cmake/")
 

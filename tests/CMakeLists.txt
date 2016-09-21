@@ -37,8 +37,8 @@ if(AIMG_TESTS_ENABLED)
         target_include_directories("test_${test_name}" PRIVATE ${GTEST_INCLUDES})
         target_compile_definitions("test_${test_name}" PRIVATE TEST_DIR="${CMAKE_CURRENT_SOURCE_DIR}")
         target_link_libraries("test_${test_name}" ${GTEST_LIBRARY} ${GTEST_MAINLIB} ${link_libs} ${CMAKE_THREAD_LIBS_INIT})
-        
-        set_target_properties("test_${test_name}" PROPERTIES COMPILE_FLAGS "${FA_COMPILER_FLAGS}")
+       
+        set_target_properties("test_${test_name}" PROPERTIES COMPILE_FLAGS "${AIL_COMPILE_FLAGS}")
 
         if(in_aitest)
             list(APPEND all_tests COMMAND "test_${test_name}")
