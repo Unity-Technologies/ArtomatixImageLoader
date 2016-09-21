@@ -74,6 +74,29 @@ namespace ArtomatixImageLoader
             pinnedArray.Free();
         }
 
+        public static AImgFormat getWhatFormatWillBeWrittenForData(AImgFileFormat fileFormat, AImgFormat format)
+        {
+            return (AImgFormat)ImgLoader.AImgGetWhatFormatWillBeWrittenForData((Int32)fileFormat, (Int32)format);
+        }
+
+        public static void writeImage<T>(AImgFileFormat fileFormat, T[] data, int width, int height, AImgFormat format, Stream s) where T : struct
+        {
+            var writeCallback = ImgLoader.getWriteCallback(s);
+            var tellCallback = ImgLoader.getTellCallback(s);
+            var seekCallback = ImgLoader.getSeekCallback(s);
+
+            GCHandle pinnedArray = GCHandle.Alloc(data, GCHandleType.Pinned);
+            IntPtr pointer = pinnedArray.AddrOfPinnedObject();
+
+            ImgLoader.AImgWriteImage((Int32)fileFormat, pointer, width, height, (Int32)format, writeCallback, tellCallback, seekCallback, IntPtr.Zero);
+
+            pinnedArray.Free();
+
+            GC.KeepAlive(writeCallback);
+            GC.KeepAlive(tellCallback);
+            GC.KeepAlive(seekCallback);
+        }
+
         private void Dispose(bool disposing)
         {
             if (!disposed)

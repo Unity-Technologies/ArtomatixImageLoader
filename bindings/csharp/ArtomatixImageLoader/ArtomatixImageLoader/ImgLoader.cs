@@ -59,7 +59,18 @@ namespace ArtomatixImageLoader
         [DllImport("libAIL.so")]
         static extern void AImgCleanUp();
 
+        [DllImport("libAIL.so")]
+        public static extern Int32 AImgGetWhatFormatWillBeWrittenForData(Int32 fileFormat, Int32 inputFormat);
+
+        [DllImport("libAIL.so")]
+        public static extern Int32 AImgWriteImage(Int32 fileFormat, IntPtr data, Int32 width, Int32 height, Int32 inputFormat, 
+            [MarshalAs(UnmanagedType.FunctionPtr)] WriteCallback writeCallback,
+            [MarshalAs(UnmanagedType.FunctionPtr)] TellCallback tellCallback,
+            [MarshalAs(UnmanagedType.FunctionPtr)] SeekCallback seekCallback, 
+            IntPtr callbackData);
+
         public delegate int ReadCallback(IntPtr callbackData, IntPtr dest, int count);
+        public delegate void WriteCallback(IntPtr callbackData, IntPtr src, Int32 count);
         public delegate int TellCallback(IntPtr callbackData);
         public delegate void SeekCallback(IntPtr callbackData, int pos);
 
@@ -81,6 +92,25 @@ namespace ArtomatixImageLoader
                 }
 
                 return bytesRead;
+            };
+        }
+
+        public static WriteCallback getWriteCallback(Stream s)
+        {
+            return (_, src, count) =>
+            {
+                unsafe
+                {
+                    byte* srcPtr = (byte*)src.ToPointer();
+                    UnmanagedMemoryStream readStream = new UnmanagedMemoryStream(srcPtr, count);
+
+                    byte[] data = new byte[count];
+                    readStream.Read(data, 0, count);
+
+                    s.Write(data, 0, count);
+
+                    readStream.Close();
+                }
             };
         }
 

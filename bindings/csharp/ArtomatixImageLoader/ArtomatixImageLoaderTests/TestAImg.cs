@@ -61,5 +61,37 @@ namespace ArtomatixImageLoaderTests
                 }
             }
         }
+
+        [Test]
+        public static void TestGetWhatFormatWIllBeWritten()
+        {
+            AImgFormat res = AImg.getWhatFormatWillBeWrittenForData(AImgFileFormat.EXR_IMAGE_FORMAT, AImgFormat.RGBA32F);
+            Assert.AreEqual(AImgFormat.RGBA32F, res);
+        }
+
+        [Test]
+        public static void TestWriteExr()
+        {
+            using (AImg img = new AImg(File.Open(getImagesDir() + "/exr/grad_32.exr", FileMode.Open)))
+            {
+                float[] data = new float[img.width * img.height * img.decodedImgFormat.numChannels()];
+                img.decodeImage(data);
+
+                using (var writeStream = new MemoryStream())
+                {
+                    AImg.writeImage(AImgFileFormat.EXR_IMAGE_FORMAT, data, img.width, img.height, img.decodedImgFormat, writeStream);
+                    writeStream.Seek(0, SeekOrigin.Begin);
+
+                    using (AImg img2 = new AImg(writeStream))
+                    {
+                        float[] data2 = new float[img.width * img.height * img.decodedImgFormat.numChannels()];
+                        img.decodeImage(data2);
+
+                        for (int i = 0; i < data.Length; i++)
+                            Assert.AreEqual(data[i], data2[i]);
+                    }
+                }
+            }
+        }
     }
 }
