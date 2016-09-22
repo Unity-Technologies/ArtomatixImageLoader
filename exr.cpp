@@ -10,7 +10,6 @@
 #include <algorithm>
 
 #include "AIL.h"
-#include "AIL_internal.h"
 #include "exr.h"
 
 namespace AImg
@@ -296,9 +295,8 @@ namespace AImg
     };
 
 
-    AImgBase* ExrImageLoader::openImage(ReadCallback readCallback, WriteCallback writeCallback, TellCallback tellCallback, SeekCallback seekCallback, void* callbackData)
+    AImgBase* ExrImageLoader::openImage(ReadCallback readCallback, TellCallback tellCallback, SeekCallback seekCallback, void* callbackData)
     {
-        AIL_UNUSED_PARAM(writeCallback);
         try
         {
             ExrFile* exr = new ExrFile();

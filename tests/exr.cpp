@@ -44,7 +44,7 @@ TEST(Exr, TestDetectExr)
 
     AImgHandle img = NULL;
     int32_t fileFormat = UNKNOWN_IMAGE_FORMAT;
-    AImgOpen(readCallback, writeCallback, tellCallback, seekCallback, callbackData, &img, &fileFormat);
+    AImgOpen(readCallback, tellCallback, seekCallback, callbackData, &img, &fileFormat);
 
     ASSERT_EQ(fileFormat, EXR_IMAGE_FORMAT);
 
@@ -65,7 +65,7 @@ TEST(Exr, TestReadExrAttrs)
     AIGetSimpleMemoryBufferCallbacks(&readCallback, &writeCallback, &tellCallback, &seekCallback, &callbackData, &data[0], data.size());
 
     AImgHandle img = NULL;
-    AImgOpen(readCallback, writeCallback, tellCallback, seekCallback, callbackData, &img, NULL);
+    AImgOpen(readCallback, tellCallback, seekCallback, callbackData, &img, NULL);
 
     int32_t width = 0;
     int32_t height = 0;
@@ -149,7 +149,7 @@ TEST(Exr, TestReadExr)
     AIGetSimpleMemoryBufferCallbacks(&readCallback, &writeCallback, &tellCallback, &seekCallback, &callbackData, &data[0], data.size());
 
     AImgHandle img = NULL;
-    AImgOpen(readCallback, writeCallback, tellCallback, seekCallback, callbackData, &img, NULL);
+    AImgOpen(readCallback, tellCallback, seekCallback, callbackData, &img, NULL);
 
     int32_t width = 64;
     int32_t height = 32;
@@ -185,7 +185,7 @@ TEST(Exr, TesWriteExr)
     AIGetSimpleMemoryBufferCallbacks(&readCallback, &writeCallback, &tellCallback, &seekCallback, &callbackData, &data[0], data.size());
 
     AImgHandle img = NULL;
-    AImgOpen(readCallback, writeCallback, tellCallback, seekCallback, callbackData, &img, NULL);
+    AImgOpen(readCallback, tellCallback, seekCallback, callbackData, &img, NULL);
 
     int32_t width = 64;
     int32_t height = 32;
@@ -203,7 +203,7 @@ TEST(Exr, TesWriteExr)
     seekCallback(callbackData, 0);
 
 
-    AImgOpen(readCallback, writeCallback, tellCallback, seekCallback, callbackData, &img, NULL);
+    AImgOpen(readCallback, tellCallback, seekCallback, callbackData, &img, NULL);
     std::vector<float> imgData2(width*height*3, 0.0f);
     AImgDecodeImage(img, &imgData2[0], AImgFormat::INVALID_FORMAT);
     AImgClose(img);

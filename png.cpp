@@ -145,14 +145,33 @@ namespace AImg
 
             virtual int32_t decodeImage(void *destBuffer, int32_t forceImageFormat)
             {
-                return 0;
+                try
+                {
+                    // This sets a restore point for libpng if reading fails internally
+                    // Crazy old C exceptions without exceptions
+
+                    if (setjmp(png_jmpbuf(png_read_ptr)))
+                    {
+                        AISetLastErrorDetails("[PNGImageLoader::PNGFile::decodeImage] Failed to read file");
+                        return AImgErrorCode::AIMG_LOAD_FAILED_INTERNAL;
+                    }
+                    png_read_info(png_read_ptr, png_info_ptr);
+                    png_read_image(png_read_ptr, (png_bytepp)destBuffer);
+                    return AImgErrorCode::AIMG_SUCCESS;
+                }
+                catch (std::exception &e)
+                {
+                    AISetLastErrorDetails(e.what());
+                    return AImgErrorCode::AIMG_LOAD_FAILED_INTERNAL;
+                }
+
             }
 
     };
 
 
 
-    AImgBase* PNGImageLoader::openImage(ReadCallback readCallback, WriteCallback writeCallback, TellCallback tellCallback, SeekCallback seekCallback, void *callbackData)
+    AImgBase* PNGImageLoader::openImage(ReadCallback readCallback, TellCallback tellCallback, SeekCallback seekCallback, void *callbackData)
     {
         try
         {
@@ -161,7 +180,6 @@ namespace AImg
             png->data->tellCallback = tellCallback;
             png->data->seekCallback = seekCallback;
             png->data->callbackData = callbackData;
-            png->data->writeCallback = writeCallback;
 
             png->png_read_ptr = png_create_read_struct(PNG_LIBPNG_VER_STRING, NULL, NULL, NULL);
             png->png_write_ptr = png_create_write_struct(PNG_LIBPNG_VER_STRING, NULL, NULL, NULL);
@@ -187,11 +205,31 @@ namespace AImg
 
     AImgFormat PNGImageLoader::getWhatFormatWillBeWrittenForData(int32_t inputFormat)
     {
-        return AImgFormat::INVALID_FORMAT;
+        return (AImgFormat)inputFormat;
     }
 
     int32_t PNGImageLoader::writeImage(void *data, int32_t width, int32_t height, int32_t inputFormat, WriteCallback writeCallback, TellCallback tellCallback, SeekCallback seekCallback, void *callbackData)
     {
-        return 0;
+        try
+        {
+            if (setjmp(png_jmpbuf(png_write_ptr)))
+            {
+                AISetLastErrorDetails("[PNGImageLoader::writeImage] Failed to write file");
+                return AImgErrorCode::AIMG_WRITE_FAILED_EXTERNAL;
+            }
+
+            //png_setIHDR(png_write_ptr, )
+
+            return AImgErrorCode::AIMG_SUCCESS;
+        }
+
+        catch(std::exception &e)
+        {
+
+            AISetLastErrorDetails(e.what());
+            return  AImgErrorCode::AIMG_WRITE_FAILED_EXTERNAL;
+        }
+
+
     }
 }
