@@ -7,6 +7,8 @@ add_library(AIL SHARED
     exr.h
     png.h
     png.cpp
+    jpeg.h
+    jpeg.cpp
     AIL.cpp
     AIL.h
     AIL_internal.h
@@ -25,10 +27,12 @@ set(CMAKE_MODULE_PATH ${CMAKE_MODULE_PATH} "${CMAKE_SOURCE_DIR}/cmake/")
 
 find_package(OpenEXR REQUIRED)
 find_package(PNG REQUIRED)
+find_package(JPEG REQUIRED)
 
 target_link_libraries(AIL
 	${OPENEXR_LIBRARIES}
     ${PNG_LIBRARIES}
+    ${JPEG_LIBRARIES}
 )
 
 include_directories(
