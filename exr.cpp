@@ -114,7 +114,7 @@ namespace AImg
 
         return header[0] == 0x76 && header[1] == 0x2f && header[2] == 0x31 && header[3] == 0x01;
     }
-        
+
     std::string ExrImageLoader::getFileExtension()
     {
         return "EXR";

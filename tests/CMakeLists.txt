@@ -30,8 +30,8 @@ if(AIMG_TESTS_ENABLED)
     
     set(all_tests)
 
-    function(fa_add_test test_name link_libs in_aitest)
-        add_executable("test_${test_name}" "${test_name}.cpp")
+    function(ail_add_test test_name link_libs in_aitest)
+        add_executable("test_${test_name}" "${test_name}.cpp" "testCommon.cpp" "testCommon.h")
 
         add_dependencies("test_${test_name}" gtest)
         target_include_directories("test_${test_name}" PRIVATE ${GTEST_INCLUDES})
@@ -44,10 +44,11 @@ if(AIMG_TESTS_ENABLED)
             list(APPEND all_tests COMMAND "test_${test_name}")
             set(all_tests "${all_tests}" PARENT_SCOPE)
         endif()
-    endfunction(fa_add_test)
+    endfunction(ail_add_test)
 
     # actual tests go here
-    fa_add_test(exr AIL Yes)
+    ail_add_test(exr AIL Yes)
+    ail_add_test(png "AIL;${PNG_LIBRARIES}" Yes)
 
     
     add_custom_target(aitest ${all_tests})

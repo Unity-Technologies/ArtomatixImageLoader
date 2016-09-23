@@ -62,7 +62,8 @@ enum AImgErrorCode
 enum AImgFileFormat
 {
     UNKNOWN_IMAGE_FORMAT = -1,
-    EXR_IMAGE_FORMAT = 1
+    EXR_IMAGE_FORMAT = 1,
+    PNG_IMAGE_FORMAT = 2
 };
 
 enum AImgFloatOrIntType
@@ -73,7 +74,7 @@ enum AImgFloatOrIntType
 };
 
 void AISetLastErrorDetails(const char* err);
-const char* GetLastErrorDetails();
+const char* AIGetLastErrorDetails();
 
 // detectedFileFormat will be set to a member from AImgFileFormat if non-null, otherwise it is ignored.
 int32_t AImgOpen(ReadCallback readCallback, TellCallback tellCallback, SeekCallback seekCallback, void* callbackData, AImgHandle* imgPtr, int32_t* detectedFileFormat);

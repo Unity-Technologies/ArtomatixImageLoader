@@ -7,12 +7,16 @@
 #include "AIL_internal.h"
 
 #include "exr.h"
+#include "png.h"
 
 #define HAVE_EXR // TODO: generate this in the cmake project files
 
 #ifdef HAVE_EXR
     #include <half.h>
 #endif
+
+#define HAVE_PNG
+
 
 std::map<int32_t, AImg::ImageLoaderBase*> loaders;
 std::string lastError;
@@ -35,6 +39,10 @@ int32_t AImgInitialise()
 {
     #ifdef HAVE_EXR
         loaders[AImgFileFormat::EXR_IMAGE_FORMAT] = new AImg::ExrImageLoader();
+    #endif
+
+    #ifdef HAVE_PNG
+        loaders[AImgFileFormat::PNG_IMAGE_FORMAT] = new AImg::PNGImageLoader();
     #endif
 
     for(auto it = loaders.begin(); it != loaders.end(); ++it)
@@ -63,7 +71,7 @@ namespace AImg
 
 int32_t AImgOpen(ReadCallback readCallback, TellCallback tellCallback, SeekCallback seekCallback, void* callbackData, AImgHandle* imgH, int32_t* detectedFileFormat)
 {
-    *imgH = (AImgHandle*)2;
+    *imgH = (AImgHandle*)NULL;
     AImg::AImgBase** imgPtr = (AImg::AImgBase**)imgH;
 
     int32_t fileFormat = UNKNOWN_IMAGE_FORMAT;
