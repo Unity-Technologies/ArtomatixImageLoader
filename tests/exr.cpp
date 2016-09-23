@@ -1,92 +1,21 @@
 #include <gtest/gtest.h>
-
-#include <stdio.h>
-#include <vector>
-#include <string>
+#include "testCommon.h"
 
 #include "../AIL.h"
 
-template <typename T>
-std::vector<T> readFile(const std::string& path)
-{
-    FILE* f = fopen(path.c_str(), "rb");
-    fseek(f, 0, SEEK_END);
-    size_t size = ftell(f);
-    fseek(f, 0, SEEK_SET);
-
-    std::vector<T> retval(size/sizeof(T));
-    fread(&retval[0], 1, size, f);
-
-    fclose(f);
-    
-    return retval; 
-}
-
-std::string getImagesDir()
-{
-    std::string thisFile = __FILE__;
-    std::string thisFolder = thisFile.substr(0, thisFile.size() - std::string("/exr.cpp").length());
-
-    return thisFolder + "/images";
-}
 
 TEST(Exr, TestDetectExr)
 {
-    auto data = readFile<uint8_t>(getImagesDir() + "/exr/grad_32.exr");
-
-    ReadCallback readCallback = NULL;
-    WriteCallback writeCallback = NULL;
-    TellCallback tellCallback = NULL;
-    SeekCallback seekCallback = NULL;
-    void* callbackData = NULL;
-
-    AIGetSimpleMemoryBufferCallbacks(&readCallback, &writeCallback, &tellCallback, &seekCallback, &callbackData, &data[0], data.size());
-
-    AImgHandle img = NULL;
-    int32_t fileFormat = UNKNOWN_IMAGE_FORMAT;
-    AImgOpen(readCallback, tellCallback, seekCallback, callbackData, &img, &fileFormat);
-
-    ASSERT_EQ(fileFormat, EXR_IMAGE_FORMAT);
-
-    AImgClose(img);
-    AIDestroySimpleMemoryBufferCallbacks(readCallback, writeCallback, tellCallback, seekCallback, callbackData);
+    ASSERT_TRUE(detectImage("/exr/grad_32.exr", EXR_IMAGE_FORMAT));
 }
 
 TEST(Exr, TestReadExrAttrs)
 {
-    auto data = readFile<uint8_t>(getImagesDir() + "/exr/grad_32.exr");
-
-    ReadCallback readCallback = NULL;
-    WriteCallback writeCallback = NULL;
-    TellCallback tellCallback = NULL;
-    SeekCallback seekCallback = NULL;
-    void* callbackData = NULL;
-
-    AIGetSimpleMemoryBufferCallbacks(&readCallback, &writeCallback, &tellCallback, &seekCallback, &callbackData, &data[0], data.size());
-
-    AImgHandle img = NULL;
-    AImgOpen(readCallback, tellCallback, seekCallback, callbackData, &img, NULL);
-
-    int32_t width = 0;
-    int32_t height = 0;
-    int32_t numChannels = 0;
-    int32_t bytesPerChannel = 0;
-    int32_t floatOrInt = 0;
-    int32_t decodedImgFormat = 0;
-
-    AImgGetInfo(img, &width, &height, &numChannels, &bytesPerChannel, &floatOrInt, &decodedImgFormat);
-
-    ASSERT_EQ(width, 64);
-    ASSERT_EQ(height, 32);
-    ASSERT_EQ(numChannels, 3);
-    ASSERT_EQ(bytesPerChannel, 4);
-    ASSERT_EQ(floatOrInt, AImgFloatOrIntType::FITYPE_FLOAT);
-    ASSERT_EQ(decodedImgFormat, AImgFormat::RGB32F);
-
-
-    AImgClose(img);
-    AIDestroySimpleMemoryBufferCallbacks(readCallback, writeCallback, tellCallback, seekCallback, callbackData);
+    ASSERT_TRUE(validateImageHeaders("/exr/grad_32.exr", 64, 32, 3, 4, AImgFloatOrIntType::FITYPE_FLOAT, AImgFormat::RGB32F));
 }
+
+
+// THIS HAS NOTHING TO DO WITH EXRS
 
 TEST(Exr, TestMemoryCallbacksRead)
 {

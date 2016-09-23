@@ -92,6 +92,8 @@ namespace AImg
             virtual ~PNGFile()
             {
                 delete data;
+                png_destroy_read_struct(&png_read_ptr, &png_info_ptr, (png_infopp)NULL);
+                png_destroy_info_struct(png_read_ptr, &png_info_ptr);
             }
 
             virtual int32_t getImageInfo(int32_t *width, int32_t *height, int32_t *numChannels, int32_t *bytesPerChannel, int32_t *floatOrInt, int32_t *decodedImgFormat)
@@ -152,8 +154,14 @@ namespace AImg
                     AISetLastErrorDetails("[PNGImageLoader::PNGFile::decodeImage] Failed to read file");
                     return AImgErrorCode::AIMG_LOAD_FAILED_INTERNAL;
                 }
-                png_read_info(png_read_ptr, png_info_ptr);
-                png_read_image(png_read_ptr, (png_bytepp)destBuffer);
+
+                void **ptrs = (void **)malloc(height * sizeof(size_t));
+
+                for (uint32_t y = 0; y < height; y++)
+                    ptrs[y] = (void *)((size_t)destBuffer + (y*width * (bit_depth/8) * numChannels));
+
+
+                png_read_image(png_read_ptr, (png_bytepp)ptrs);
 
                 if (forceImageFormat != AImgFormat::INVALID_FORMAT)
                 {
@@ -168,7 +176,7 @@ namespace AImg
                         return convertError;
 
                 }
-
+                free(ptrs);
                 return AImgErrorCode::AIMG_SUCCESS;
             }
     };
@@ -185,12 +193,15 @@ namespace AImg
         png->png_read_ptr = png_create_read_struct(PNG_LIBPNG_VER_STRING, NULL, NULL, NULL);
         png->png_info_ptr = png_create_info_struct(png->png_read_ptr);
 
+
+        png_set_read_fn(png->png_read_ptr, (void *)(png->data), png_custom_read_data);
+        png_read_info(png->png_read_ptr, png->png_info_ptr);
         png->width = png_get_image_width(png->png_read_ptr, png->png_info_ptr);
         png->height = png_get_image_height(png->png_read_ptr, png->png_info_ptr);
         png->bit_depth = png_get_bit_depth(png->png_read_ptr, png->png_info_ptr);
         png->numChannels = png_get_channels(png->png_read_ptr, png->png_info_ptr);
         png->colour_type = png_get_color_type(png->png_read_ptr, png->png_info_ptr);
-        png_set_read_fn(png->png_read_ptr, (void *)(png->data), png_custom_read_data);
+
         return png;
     }
 
@@ -215,6 +226,7 @@ namespace AImg
     {
         AIL_UNUSED_PARAM(tellCallback);
         AIL_UNUSED_PARAM(seekCallback);
+
         png_struct * png_write_ptr = png_create_write_struct(PNG_LIBPNG_VER_STRING, NULL, NULL, NULL);
         png_info * png_info_ptr = png_create_info_struct(png_write_ptr);
 
@@ -224,7 +236,6 @@ namespace AImg
         callbackDataStruct->callbackData = callbackData;
 
         png_set_write_fn(png_write_ptr, (void *)callbackDataStruct, png_custom_write_data, flush_data_noop_func);
-
 
         int32_t writeFormat = getWhatFormatWillBeWrittenForData(inputFormat);
 
@@ -242,6 +253,8 @@ namespace AImg
                 return convertError;
             data = &convertBuffer[0];
         }
+
+
 
         png_byte colour_type;
         png_byte bit_depth;
@@ -289,7 +302,17 @@ namespace AImg
             return AImgErrorCode::AIMG_WRITE_FAILED_EXTERNAL;
         }
 
+        int32_t numChannels, bytesPerChannel, floatOrInt;
+        AIGetFormatDetails(inputFormat, &numChannels, &bytesPerChannel, &floatOrInt);
+
+        void ** ptrs = (void **)malloc(sizeof(size_t) * height);
+
+        for (int32_t y=0; y < height; y++)
+            ptrs[y] = (void *)((size_t)data + y*width * numChannels * bytesPerChannel);
+
+
         png_set_IHDR(png_write_ptr, png_info_ptr, width, height, bit_depth, colour_type, PNG_INTERLACE_NONE, PNG_COMPRESSION_TYPE_DEFAULT, PNG_FILTER_TYPE_DEFAULT);
+
         png_write_info(png_write_ptr, png_info_ptr);
 
 
@@ -299,7 +322,7 @@ namespace AImg
             return AImgErrorCode::AIMG_WRITE_FAILED_EXTERNAL;
         }
 
-        png_write_image(png_write_ptr, (png_bytepp)data);
+        png_write_image(png_write_ptr, (png_bytepp)ptrs);
 
         if (setjmp(png_jmpbuf(png_write_ptr)))
         {
@@ -309,7 +332,9 @@ namespace AImg
 
         png_write_end(png_write_ptr, png_info_ptr);
 
-
+        free(ptrs);
+        png_destroy_write_struct(&png_write_ptr, &png_info_ptr);
+        png_destroy_info_struct(png_write_ptr, &png_info_ptr);
         delete callbackDataStruct;
         return AImgErrorCode::AIMG_SUCCESS;
     }
