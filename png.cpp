@@ -6,7 +6,6 @@
 
 namespace AImg
 {
-
     typedef struct CallbackData
     {
             ReadCallback readCallback;
@@ -33,16 +32,13 @@ namespace AImg
         uint8_t png_signature[8] = {137, 80, 78, 71, 13, 10, 26, 10};
 
         return ((int32_t)(memcmp(&header[0], &png_signature[0], 8))) == 0;
-
     }
-
 
     void png_custom_read_data(png_struct* png_ptr, png_byte* data, png_size_t length)
     {
         CallbackData callbackData = *((CallbackData *)png_get_io_ptr(png_ptr));
 
         callbackData.readCallback(callbackData.callbackData, data, length);
-
     }
 
     void png_custom_write_data(png_struct* png_ptr, png_byte* data, png_size_t length)
@@ -50,15 +46,12 @@ namespace AImg
         CallbackData callbackData = *((CallbackData *)png_get_io_ptr(png_ptr));
 
         callbackData.writeCallback(callbackData.callbackData, data, length);
-
-
     }
 
     std::string PNGImageLoader::getFileExtension()
     {
         return "PNG";
     }
-
 
     int32_t PNGImageLoader::getAImgFileFormatValue()
     {
@@ -69,7 +62,6 @@ namespace AImg
     {
         AIL_UNUSED_PARAM(png_ptr);
     }
-
 
     class PNGFile : public AImgBase
     {
@@ -82,7 +74,6 @@ namespace AImg
             uint8_t colour_type;
             uint8_t bit_depth;
             uint8_t numChannels;
-
 
             PNGFile()
             {
@@ -111,7 +102,7 @@ namespace AImg
 
                 *decodedImgFormat = getDecodeFormat();
 
-                return 0;
+                return AImgErrorCode::AIMG_SUCCESS;
             }
 
             int32_t getDecodeFormat()
@@ -193,9 +184,9 @@ namespace AImg
         png->png_read_ptr = png_create_read_struct(PNG_LIBPNG_VER_STRING, NULL, NULL, NULL);
         png->png_info_ptr = png_create_info_struct(png->png_read_ptr);
 
-
         png_set_read_fn(png->png_read_ptr, (void *)(png->data), png_custom_read_data);
         png_read_info(png->png_read_ptr, png->png_info_ptr);
+
         png->width = png_get_image_width(png->png_read_ptr, png->png_info_ptr);
         png->height = png_get_image_height(png->png_read_ptr, png->png_info_ptr);
         png->bit_depth = png_get_bit_depth(png->png_read_ptr, png->png_info_ptr);
@@ -254,8 +245,6 @@ namespace AImg
             data = &convertBuffer[0];
         }
 
-
-
         png_byte colour_type;
         png_byte bit_depth;
 
@@ -310,11 +299,9 @@ namespace AImg
         for (int32_t y=0; y < height; y++)
             ptrs[y] = (void *)((size_t)data + y*width * numChannels * bytesPerChannel);
 
-
         png_set_IHDR(png_write_ptr, png_info_ptr, width, height, bit_depth, colour_type, PNG_INTERLACE_NONE, PNG_COMPRESSION_TYPE_DEFAULT, PNG_FILTER_TYPE_DEFAULT);
 
         png_write_info(png_write_ptr, png_info_ptr);
-
 
         if (setjmp(png_jmpbuf(png_write_ptr)))
         {
