@@ -8,6 +8,7 @@
 
 #include "exr.h"
 #include "png.h"
+#include "jpeg.h"
 
 #define HAVE_EXR // TODO: generate this in the cmake project files
 
@@ -17,6 +18,7 @@
 
 #define HAVE_PNG
 
+#define HAVE_JPEG
 
 std::map<int32_t, AImg::ImageLoaderBase*> loaders;
 std::string lastError;
@@ -43,6 +45,10 @@ int32_t AImgInitialise()
 
     #ifdef HAVE_PNG
         loaders[AImgFileFormat::PNG_IMAGE_FORMAT] = new AImg::PNGImageLoader();
+    #endif
+
+    #ifdef HAVE_JPEG
+        loaders[AImgFileFormat::JPEG_IMAGE_FORMAT] = new AImg::JPEGImageLoader();
     #endif
 
     for(auto it = loaders.begin(); it != loaders.end(); ++it)
