@@ -60,8 +60,15 @@ class AImg(object):
         return destBuffer
 
 
+def write(io_or_path, data, fileFormat):
+    if type(io_or_path) == str:
+        stream = open(io_or_path, "wb")
+    else:
+        stream = io_or_path
 
+    callbackData = native.getCallbackDataFromFileLikeObject(stream)
 
+    fmt = enums.getFormatFromNumpyArray(data)
+    height, width = data.shape[0:2]
 
-
-
+    native.write(fileFormat.val, data, stream, width, height, fmt.val)

@@ -25,6 +25,7 @@ set(CMAKE_MODULE_PATH ${CMAKE_MODULE_PATH} "${CMAKE_SOURCE_DIR}/cmake/")
 
 find_package(OpenEXR REQUIRED)
 find_package(PythonLibs 2 REQUIRED)
+find_package(NumPy REQUIRED)
 
 target_link_libraries(AIL_py
     AIL

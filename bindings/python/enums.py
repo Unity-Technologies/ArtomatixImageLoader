@@ -86,3 +86,27 @@ def getFormatInfo(f):
             npType = np.uint8
 
     return AImgFormatInfo(channels, bytesPerChannel, floatOrInt, npType)
+
+def getFormatFromNumpyArray(data):
+    if len(data.shape) < 3:
+        numChannels = 1
+    else:
+        numChannels = data.shape[2]
+
+    if numChannels > 4:
+        raise ValueError("array has too many channels")
+    
+    formatStr = "RGBA"[0:numChannels]
+
+    if data.dtype == np.uint8:
+        formatStr += "8U"
+    elif data.dtype == np.uint16:
+        formatStr += "16U"
+    elif data.dtype == np.float16:
+        formatStr += "16F"
+    elif data.dtype == np.float32:
+        formatStr += "32F"
+    else:
+        raise ValueError("format " + str(data.dtype) + " is not supported")
+
+    return AImgFormats[formatStr]

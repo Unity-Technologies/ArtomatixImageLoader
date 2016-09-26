@@ -2,6 +2,7 @@ import unittest
 import AImg
 import enums
 import os
+import io
 import numpy as np
 
 imagesDir = os.path.abspath(os.path.dirname(os.path.abspath(__file__)) + "/../../tests/images")
@@ -18,7 +19,6 @@ class TestAImg(unittest.TestCase):
 
     def test_read_exr(self):
         img = AImg.AImg(imagesDir + "/exr/grad_32.exr")
-
         decoded = img.decode()
 
         groundTruth = np.fromfile(imagesDir + "/exr/grad_32.bin", dtype=np.float32)
@@ -26,6 +26,24 @@ class TestAImg(unittest.TestCase):
         for y in range(img.height):
             for x in range(img.width):
                 self.assertEqual(groundTruth[x + y*img.width], decoded[y][x][0])
+
+    def test_write_exr(self):
+        img = AImg.AImg(imagesDir + "/exr/grad_32.exr")
+        decoded = img.decode()
+        
+        outFile = io.BytesIO()
+
+        AImg.write(outFile, decoded, enums.AImgFileFormats["EXR_IMAGE_FORMAT"])
+
+        outFile.seek(0)
+        img2 = AImg.AImg(outFile)
+
+        decoded2 = img2.decode()
+
+        for y in range(img2.height):
+            for x in range(img2.width):
+                for c in range(decoded.shape[2]):
+                    self.assertEqual(decoded2[y][x][c], decoded[y][x][c])
 
 
 if __name__ == "__main__":

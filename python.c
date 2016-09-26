@@ -15,7 +15,45 @@ typedef struct
     PyObject* seekMethod;
 } PyAIL_callback_data;
 
+PyAIL_callback_data* pyail_getCallbackData(PyObject* fileLikeObj)
+{
+    PyObject* readMethod;
+    if ((readMethod = PyObject_GetAttrString(fileLikeObj, "read")) == NULL)
+       return NULL;
 
+    PyObject* writeMethod;
+    if ((writeMethod = PyObject_GetAttrString(fileLikeObj, "write")) == NULL)
+       return NULL;
+
+    PyObject* tellMethod;
+    if ((tellMethod = PyObject_GetAttrString(fileLikeObj, "tell")) == NULL)
+       return NULL;
+
+    PyObject* seekMethod;
+    if ((seekMethod = PyObject_GetAttrString(fileLikeObj, "seek")) == NULL)
+       return NULL;
+
+    PyAIL_callback_data* callbackData = malloc(sizeof(PyAIL_callback_data));
+
+    callbackData->fileLikeObj = fileLikeObj;
+
+    callbackData->readMethod = readMethod;
+    callbackData->writeMethod = writeMethod;
+    callbackData->tellMethod = tellMethod;
+    callbackData->seekMethod = seekMethod;
+
+    return callbackData;
+}
+
+void pyail_destroyCallbackData(PyAIL_callback_data* callbackData)
+{
+    Py_DECREF(callbackData->readMethod);
+    Py_DECREF(callbackData->writeMethod);
+    Py_DECREF(callbackData->tellMethod);
+    Py_DECREF(callbackData->seekMethod);
+
+    free(callbackData);
+}
 
 int32_t CALLCONV pyail_ReadCallback(void* callbackDataV, uint8_t* dest, int32_t count)
 {
@@ -71,13 +109,9 @@ void CALLCONV pyail_SeekCallback (void* callbackDataV, int32_t pos)
 void pyail_callbackDataDestructor(PyObject* callbackDataCapsule)
 {
     PyAIL_callback_data* callbackData = PyCapsule_GetPointer(callbackDataCapsule, NULL);
-    Py_DECREF(callbackData->readMethod);
-    Py_DECREF(callbackData->writeMethod);
-    Py_DECREF(callbackData->tellMethod);
-    Py_DECREF(callbackData->seekMethod);
-    Py_DECREF(callbackData->fileLikeObj);
 
-    free(callbackData);
+    Py_DECREF(callbackData->fileLikeObj);
+    pyail_destroyCallbackData(callbackData);
 }
 
 static PyObject* pyail_getCallbackDataFromFileLikeObject(PyObject* self, PyObject* args)
@@ -89,30 +123,9 @@ static PyObject* pyail_getCallbackDataFromFileLikeObject(PyObject* self, PyObjec
 
     Py_INCREF(fileLikeObj);
 
-    PyObject* readMethod;
-    if ((readMethod = PyObject_GetAttrString(fileLikeObj, "read")) == NULL)
-       return NULL;
-
-    PyObject* writeMethod;
-    if ((writeMethod = PyObject_GetAttrString(fileLikeObj, "write")) == NULL)
-       return NULL;
-
-    PyObject* tellMethod;
-    if ((tellMethod = PyObject_GetAttrString(fileLikeObj, "tell")) == NULL)
-       return NULL;
-
-    PyObject* seekMethod;
-    if ((seekMethod = PyObject_GetAttrString(fileLikeObj, "seek")) == NULL)
-       return NULL;
-
-    PyAIL_callback_data* callbackData = malloc(sizeof(PyAIL_callback_data));
-
-    callbackData->fileLikeObj = fileLikeObj;
-
-    callbackData->readMethod = readMethod;
-    callbackData->writeMethod = writeMethod;
-    callbackData->tellMethod = tellMethod;
-    callbackData->seekMethod = seekMethod;
+    PyAIL_callback_data* callbackData;
+    if((callbackData = pyail_getCallbackData(fileLikeObj)) == NULL)
+        return NULL;
 
     return PyCapsule_New(callbackData, NULL, pyail_callbackDataDestructor);
 }
@@ -174,7 +187,6 @@ static PyObject* pyail_decode(PyObject* self, PyObject* args)
     if((img = PyCapsule_GetPointer(imgCapsule, NULL)) == NULL)
         return NULL;
 
-
     void* dest = PyArray_DATA(destObj);
 
     int err = AImgDecodeImage(img, dest, forceImageFormat);
@@ -183,12 +195,32 @@ static PyObject* pyail_decode(PyObject* self, PyObject* args)
     return Py_BuildValue("i", err);
 }
 
+static PyObject* pyail_write(PyObject* self, PyObject* args)
+{
+    int fileFormat;
+    PyArrayObject* sourceArrayObj;
+    PyObject* fileLikeObj;
+    int width, height;
+    int inputFormat;
+    if (!PyArg_ParseTuple(args, "iOOiii", &fileFormat, &sourceArrayObj, &fileLikeObj, &width, &height, &inputFormat))
+        return NULL;
+
+    PyAIL_callback_data* callbackData;
+    if((callbackData = pyail_getCallbackData(fileLikeObj)) == NULL)
+        return NULL;
+
+    AImgWriteImage(fileFormat, PyArray_DATA(sourceArrayObj), width, height, inputFormat, pyail_WriteCallback, pyail_TellCallback, pyail_SeekCallback, callbackData);
+
+    Py_RETURN_NONE;
+}
+
 static PyMethodDef module_methods[] =
 {
     {"getCallbackDataFromFileLikeObject", pyail_getCallbackDataFromFileLikeObject, METH_VARARGS, NULL},
     {"open", pyail_open, METH_VARARGS, NULL},
     {"getInfo", pyail_getInfo, METH_VARARGS, NULL},
     {"decode", pyail_decode, METH_VARARGS, NULL},
+    {"write", pyail_write, METH_VARARGS, NULL},
 
     {NULL, NULL, 0, NULL}
 };
