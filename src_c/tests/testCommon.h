@@ -14,7 +14,7 @@ inline std::string getImagesDir()
 
     std::string thisFolder = thisFile.substr(0, thisFile.size() - filenameLength);
 
-    return thisFolder + "/images";
+    return thisFolder + "/../../test_images";
 }
 
 template <typename T>
