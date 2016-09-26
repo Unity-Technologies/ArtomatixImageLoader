@@ -3,6 +3,7 @@
 #include "AIL_internal.h"
 #include <vector>
 #include <png.h>
+#include <string.h>
 
 namespace AImg
 {
