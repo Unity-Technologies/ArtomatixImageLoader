@@ -5,7 +5,7 @@ import os
 import io
 import numpy as np
 
-imagesDir = os.path.abspath(os.path.dirname(os.path.abspath(__file__)) + "/../../tests/images")
+imagesDir = os.path.abspath(os.path.dirname(os.path.abspath(__file__)) + "/../../test_images")
 
 class TestAImg(unittest.TestCase):
     
