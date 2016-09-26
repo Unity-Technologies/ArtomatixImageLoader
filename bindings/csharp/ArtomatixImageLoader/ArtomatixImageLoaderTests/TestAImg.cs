@@ -20,7 +20,7 @@ namespace ArtomatixImageLoaderTests
             string thisFile = getCsFilePath();
             string thisDir = Path.GetDirectoryName(thisFile);
 
-            return Path.GetFullPath(thisDir + "/../../../../tests/images");
+            return Path.GetFullPath(thisDir + "/../../../../test_images");
         }
 
         [Test]
