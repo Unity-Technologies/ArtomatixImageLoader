@@ -16,6 +16,13 @@ namespace ArtomatixImageLoader
             if (forceStaticConstructorCall == null)
                 forceStaticConstructorCall = null;
 
+
+            using (var f = File.OpenWrite("libAIL.so"))
+            {
+                var rStream = System.Reflection.Assembly.GetExecutingAssembly().GetManifestResourceStream("ArtomatixImageLoader.embedded_files.native_code");
+                rStream.CopyTo(f);
+            }
+
             AImgInitialise();
         }
 
