@@ -1,6 +1,14 @@
 CMAKE_MINIMUM_REQUIRED(VERSION 2.8)
 
+include("cmake/HunterGate.cmake")
+HunterGate(
+    URL "https://github.com/Artomatix/hunter/archive/OpenEXR-test-2.tar.gz"
+    SHA1 "c86e9e6fde6b96fc57ac2184692baeb4d71e9fd6"
+    LOCAL
+)
+
 PROJECT (AIL)
+
 
 add_library(AIL SHARED
 	exr.cpp
@@ -22,6 +30,8 @@ set(PYTHON_ENABLED ON CACHE BOOL "enable python binding")
 set(EXR_ENABLED ON CACHE BOOL "enable loading EXR files")
 set(PNG_ENABLED ON CACHE BOOL "enable loading PNG files")
 
+set(CMAKE_MODULE_PATH ${CMAKE_MODULE_PATH} "${CMAKE_SOURCE_DIR}/cmake/")
+
 if(PYTHON_ENABLED)
 	add_library(AIL_py SHARED python.c)
 	set_target_properties(AIL_py PROPERTIES OUTPUT_NAME "ail_py_native" PREFIX "")
@@ -38,14 +48,14 @@ endif()
 
 set_target_properties(AIL PROPERTIES COMPILE_FLAGS "${AIL_COMPILE_FLAGS}")
 
-set(CMAKE_MODULE_PATH ${CMAKE_MODULE_PATH} "${CMAKE_SOURCE_DIR}/cmake/")
-
 if(EXR_ENABLED)
+    hunter_add_package(OpenEXR)
 	find_package(OpenEXR REQUIRED)
 	target_link_libraries(AIL ${OPENEXR_LIBRARIES})
-	add_definitions(-DHAVE_EXR -DOPENEXR_DLL)
+	add_definitions(-DHAVE_EXR)
 endif()
 if(PNG_ENABLED)
+    hunter_add_package(PNG)
 	find_package(PNG REQUIRED)
 	target_link_libraries(AIL ${PNG_LIBRARIES})
 	add_definitions(-DHAVE_PNG)
