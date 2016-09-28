@@ -175,16 +175,16 @@ namespace AImg
 
         bool goodHeader = false;
 
-        std::vector<uint8_t> header(4);
-        seekCallback(callbackData, 0);
+        int startingPosition = tellCallback(callbackData);
+        std::vector<uint8_t> header(4);        
         readCallback(callbackData, &header[0], 4);
 
         goodHeader = ((int32_t)memcmp(&header[0], possible_magic1, 4)) == 0;
 
-        std::vector<uint8_t> header_end(6);
-        seekCallback(callbackData, 6);
+        std::vector<uint8_t> header_end(6);        
+        seekCallback(callbackData, startingPosition + 6);
         readCallback(callbackData, &header_end[0], 6);
-        seekCallback(callbackData, 0);
+        seekCallback(callbackData, startingPosition);
 
 
         if (goodHeader)
@@ -261,7 +261,8 @@ namespace AImg
 
                 int row_stride = jpeg_read_struct.output_components * jpeg_read_struct.output_width;
 
-                JSAMPARRAY buffer = (JSAMPARRAY) malloc(sizeof(JSAMPROW));
+                JSAMPROW buffer[1];
+
                 buffer[0] = (JSAMPROW) destBuffer;
 
                 if (setjmp(err_ptr->buf))
@@ -290,8 +291,6 @@ namespace AImg
                     if (convertError != AImgErrorCode::AIMG_SUCCESS)
                         return convertError;
                 }
-
-                free(buffer);
 
                 return AImgErrorCode::AIMG_SUCCESS;
             }
@@ -324,9 +323,10 @@ namespace AImg
     int32_t JPEGImageLoader::writeImage(void *data, int32_t width, int32_t height, int32_t inputFormat, WriteCallback writeCallback, TellCallback tellCallback, SeekCallback seekCallback, void *callbackData)
     {
 
+        std::vector<uint8_t> convertBuffer(0);
         if (inputFormat != getWhatFormatWillBeWrittenForData(inputFormat))
         {
-            std::vector<uint8_t> convertBuffer(width * height * 3);
+            convertBuffer.resize(width * height * 3);
 
             int32_t convertError = AImgConvertFormat(data, &convertBuffer[0], width, height, inputFormat, getWhatFormatWillBeWrittenForData(inputFormat));
 
