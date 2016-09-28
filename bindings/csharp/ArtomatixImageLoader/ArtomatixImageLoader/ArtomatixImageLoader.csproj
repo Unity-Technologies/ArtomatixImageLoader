@@ -62,6 +62,6 @@
   </ItemGroup>
   <PropertyGroup>
     <PreBuildEvent Condition="'$(OS)' != 'Windows_NT'">"$(SolutionDir)/scripts/linux_pre_build.sh" "$(ProjectDir)" "$(ProjectConfigName)"</PreBuildEvent>
-    <PreBuildEvent Condition="'$(OS)' == 'Windows_NT'">"$(SolutionDir)/scripts/windows_pre_build.bat" "$(ProjectDir)" "$(ProjectConfigName)"</PreBuildEvent>
+    <PreBuildEvent Condition="'$(OS)' == 'Windows_NT'">"$(SolutionDir)/scripts/windows_pre_build.bat" "$(ProjectDir)" "$(ConfigurationName)" $(PlatformName)</PreBuildEvent>
   </PropertyGroup>
 </Project>

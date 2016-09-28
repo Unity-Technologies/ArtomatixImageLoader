@@ -1,21 +1,31 @@
 ﻿using System.Runtime.InteropServices;
 using System;
 using System.IO;
+using System.Runtime.CompilerServices;
 
 namespace ArtomatixImageLoader
 {
     public class ImgLoader
     {
         // This instance and the constructor and finalizer below are just a way of ensuring
-        // that the AImgInitialise and AImgCleanUp functions get called when they need to be
-        private static ImgLoader forceStaticConstructorCall = new ImgLoader();
+        // that the AImgInitialise and AImgCleanUp functions get called when they need to be.
+        // The static constructoris there because when we just had the instantiation inline with
+        // the declaration, the c# compiler on windows would optimise it out, even though
+        // its constructor had side effects. That's also why we have no optimise
+        // flags on the static constructor. yaaaaaaaaaay
+        private static ImgLoader forceStaticConstructorCall = null;
+
+        [MethodImpl(MethodImplOptions.NoOptimization | MethodImplOptions.NoInlining)]
+        static ImgLoader()
+        {
+            forceStaticConstructorCall = new ImgLoader();
+        }
 
         private ImgLoader()
         {
             // make compiler warnings go away
             if (forceStaticConstructorCall == null)
                 forceStaticConstructorCall = null;
-
 
             using (var f = File.OpenWrite("libAIL.so"))
             {
