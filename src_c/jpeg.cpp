@@ -19,51 +19,93 @@ namespace AImg
 
     typedef struct
     {
+        jpeg_destination_mgr pub;
+        void *buffer;
+        CallbackData callbackFunctionData;
+    } ArtomatixJPEGDestinationMGR;
+
+    typedef struct
+    {
             jpeg_error_mgr pub;
             jmp_buf buf;
-    }ArtomatixErrorStruct;
+    } ArtomatixErrorStruct;
+
+    namespace JPEGConsts
+    {
+        // Buffer size used in libjpeg
+        const size_t BUFFER_SIZE = 4096;
+        const int Quality = 99;
+
+    }
 
     namespace JPEGCallbackFunctions
     {
-        // Buffer size used in libjpeg
-        const size_t INPUT_BUFFER_SIZE = 4096;
-
-        void initSource(j_decompress_ptr cinfo)
+        namespace WriteFunctions
         {
-            AIL_UNUSED_PARAM(cinfo);
-        }
-
-        void skipInputData(j_decompress_ptr cinfo, long num_bytes)
-        {
-            ArtomatixJPEGSourceMGR * src = (ArtomatixJPEGSourceMGR *)cinfo->src;
-            if (num_bytes > 0)
+            void initDestination(j_compress_ptr cinfo)
             {
-                while (num_bytes > (long)src->pub.bytes_in_buffer)
-                {
+                AIL_UNUSED_PARAM(cinfo);
+            }
 
-                    num_bytes -= src->pub.bytes_in_buffer;
-                    (*src->pub.fill_input_buffer)(cinfo);
-                }
+            boolean emptyOutputBuffer(j_compress_ptr cinfo)
+            {
+                ArtomatixJPEGDestinationMGR * dst = (ArtomatixJPEGDestinationMGR *) cinfo->dest;
+
+                dst->callbackFunctionData.writeCallback(dst->callbackFunctionData.callbackData, (uint8_t *)dst->buffer, JPEGConsts::BUFFER_SIZE);
+                dst->pub.next_output_byte = (JOCTET *) dst->buffer;
+                dst->pub.free_in_buffer = JPEGConsts::BUFFER_SIZE;
+                return TRUE;
+            }
+
+            void termDestination(j_compress_ptr cinfo)
+            {
+
+                ArtomatixJPEGDestinationMGR * dst = (ArtomatixJPEGDestinationMGR *) cinfo->dest;
+                size_t datacount = JPEGConsts::BUFFER_SIZE - dst->pub.free_in_buffer;
+                if (datacount > 0)
+                    dst->callbackFunctionData.writeCallback(dst->callbackFunctionData.callbackData, (uint8_t *)dst->buffer, datacount);
             }
         }
 
-        boolean fillInputBuffer(j_decompress_ptr cinfo)
+        namespace ReadFunctions
         {
-            ArtomatixJPEGSourceMGR * src  = (ArtomatixJPEGSourceMGR *)cinfo->src;
-            size_t bytesRead = src->callbackFunctionData.readCallback(src->callbackFunctionData.callbackData, (uint8_t *)src->data, INPUT_BUFFER_SIZE);
+            void initSource(j_decompress_ptr cinfo)
+            {
+                AIL_UNUSED_PARAM(cinfo);
+            }
 
-            if (bytesRead <= 0)
-                return FALSE;
+            void skipInputData(j_decompress_ptr cinfo, long num_bytes)
+            {
+                ArtomatixJPEGSourceMGR * src = (ArtomatixJPEGSourceMGR *)cinfo->src;
+                if (num_bytes > 0)
+                {
+                    while (num_bytes > (long)src->pub.bytes_in_buffer)
+                    {
 
-            src->pub.bytes_in_buffer = bytesRead;
-            src->pub.next_input_byte = (JOCTET *)src->data;
+                        num_bytes -= src->pub.bytes_in_buffer;
+                        (*src->pub.fill_input_buffer)(cinfo);
+                    }
+                }
+            }
 
-            return TRUE;
-        }
+            boolean fillInputBuffer(j_decompress_ptr cinfo)
+            {
+                ArtomatixJPEGSourceMGR * src  = (ArtomatixJPEGSourceMGR *)cinfo->src;
+                size_t bytesRead = src->callbackFunctionData.readCallback(src->callbackFunctionData.callbackData, (uint8_t *)src->data, JPEGConsts::BUFFER_SIZE);
 
-        void termSource(j_decompress_ptr cinfo)
-        {
-            AIL_UNUSED_PARAM(cinfo);
+                if (bytesRead <= 0)
+                    return FALSE;
+
+                src->pub.bytes_in_buffer = bytesRead;
+                src->pub.next_input_byte = (JOCTET *)src->data;
+
+                return TRUE;
+            }
+
+            void termSource(j_decompress_ptr cinfo)
+            {
+                AIL_UNUSED_PARAM(cinfo);
+            }
         }
 
         void lessAnnoyingEmitMessage(j_common_ptr cinfo, int msg_level)
@@ -84,18 +126,36 @@ namespace AImg
         if (cinfo->src == NULL)
         {
             cinfo->src = (jpeg_source_mgr *)(*cinfo->mem->alloc_small)((j_common_ptr)cinfo, JPOOL_PERMANENT, sizeof(ArtomatixJPEGSourceMGR));
-            ((ArtomatixJPEGSourceMGR * )cinfo->src)->data = malloc(JPEGCallbackFunctions::INPUT_BUFFER_SIZE);
+            ((ArtomatixJPEGSourceMGR * )cinfo->src)->data = (void *)(*cinfo->mem->alloc_small)((j_common_ptr)cinfo, JPOOL_PERMANENT, JPEGConsts::BUFFER_SIZE);
             ((ArtomatixJPEGSourceMGR *)cinfo->src)->callbackFunctionData = callbackData;
         }
 
         ArtomatixJPEGSourceMGR * src  = (ArtomatixJPEGSourceMGR *)cinfo->src;
-        src->pub.init_source = JPEGCallbackFunctions::initSource;
-        src->pub.fill_input_buffer = JPEGCallbackFunctions::fillInputBuffer;
-        src->pub.skip_input_data = JPEGCallbackFunctions::skipInputData;
-        src->pub.term_source = JPEGCallbackFunctions::termSource;
-        src->pub.resync_to_restart = jpeg_resync_to_restart;
+        src->pub.init_source = JPEGCallbackFunctions::ReadFunctions::initSource;
+        src->pub.fill_input_buffer = JPEGCallbackFunctions::ReadFunctions::fillInputBuffer;
+        src->pub.skip_input_data = JPEGCallbackFunctions::ReadFunctions::skipInputData;
+        src->pub.term_source = JPEGCallbackFunctions::ReadFunctions::termSource;
+        src->pub.resync_to_restart = jpeg_resync_to_restart; // Default function from libjpeg
         src->pub.next_input_byte = (JOCTET *)src->data;
         src->pub.bytes_in_buffer = 0;
+    }
+
+
+    void setArtomatixDestinationMGR(j_compress_ptr cinfo, CallbackData callbackData)
+    {
+        if (cinfo->dest == NULL)
+        {
+            cinfo->dest = (jpeg_destination_mgr *)(*cinfo->mem->alloc_small)((j_common_ptr)cinfo, JPOOL_PERMANENT, sizeof(ArtomatixJPEGDestinationMGR));
+            ((ArtomatixJPEGDestinationMGR *)cinfo->dest)->buffer = (void *)(*cinfo->mem->alloc_small)((j_common_ptr)cinfo, JPOOL_PERMANENT, JPEGConsts::BUFFER_SIZE);
+        }
+
+        ArtomatixJPEGDestinationMGR * src = (ArtomatixJPEGDestinationMGR *)cinfo->dest;
+        src->callbackFunctionData = callbackData;
+        src->pub.init_destination = JPEGCallbackFunctions::WriteFunctions::initDestination;
+        src->pub.empty_output_buffer = JPEGCallbackFunctions::WriteFunctions::emptyOutputBuffer;
+        src->pub.term_destination = JPEGCallbackFunctions::WriteFunctions::termDestination;
+        src->pub.next_output_byte = (JOCTET *) src->buffer;
+        src->pub.free_in_buffer = JPEGConsts::BUFFER_SIZE;
 
     }
 
@@ -173,7 +233,6 @@ namespace AImg
 
             virtual ~JPEGFile()
             {
-                free(((ArtomatixJPEGSourceMGR *)jpeg_read_struct.src)->data);
                 jpeg_destroy_decompress(&jpeg_read_struct);
             }
 
@@ -194,7 +253,7 @@ namespace AImg
 
                 if (setjmp(err_ptr->buf))
                 {
-                    AISetLastErrorDetails("[AImg::JPEGFile::decodeImage] jpeg_start_decompress failed!");
+                    AISetLastErrorDetails("[AImg::JPEGImageLoader::JPEGFile::decodeImage] jpeg_start_decompress failed!");
                     return AImgErrorCode::AIMG_LOAD_FAILED_EXTERNAL;
                 }
 
@@ -207,9 +266,10 @@ namespace AImg
 
                 if (setjmp(err_ptr->buf))
                 {
-                    AISetLastErrorDetails("[AImg::JPEGFile::decodeImage] jpeg_read_scanlines failed!");
+                    AISetLastErrorDetails("[AImg::JPEGImageLoader::decodeImage] jpeg_read_scanlines failed!");
                     return AImgErrorCode::AIMG_LOAD_FAILED_EXTERNAL;
                 }
+
                 while (jpeg_read_struct.output_scanline < jpeg_read_struct.output_height)
                 {
                     jpeg_read_scanlines(&jpeg_read_struct, buffer, 1);
@@ -241,9 +301,7 @@ namespace AImg
     AImgBase* JPEGImageLoader::openImage(ReadCallback readCallback, TellCallback tellCallback, SeekCallback seekCallback, void *callbackData)
     {
         JPEGFile* jpeg = new JPEGFile();
-
         CallbackData data;
-
         data.callbackData = callbackData;
         data.readCallback = readCallback;
         data.tellCallback = tellCallback;
@@ -254,18 +312,80 @@ namespace AImg
         jpeg->jpeg_read_struct.err->emit_message = JPEGCallbackFunctions::lessAnnoyingEmitMessage;
         jpeg->jpeg_read_struct.err->error_exit = JPEGCallbackFunctions::handleFatalError;
         jpeg_read_header(&jpeg->jpeg_read_struct, TRUE);
-
-
         return jpeg;
     }
 
     AImgFormat JPEGImageLoader::getWhatFormatWillBeWrittenForData(int32_t inputFormat)
     {
-        return AImgFormat::INVALID_FORMAT;
+        AIL_UNUSED_PARAM(inputFormat);
+        return AImgFormat::RGB8U;
     }
 
     int32_t JPEGImageLoader::writeImage(void *data, int32_t width, int32_t height, int32_t inputFormat, WriteCallback writeCallback, TellCallback tellCallback, SeekCallback seekCallback, void *callbackData)
     {
+
+        if (inputFormat != getWhatFormatWillBeWrittenForData(inputFormat))
+        {
+            std::vector<uint8_t> convertBuffer(width * height * 3);
+
+            int32_t convertError = AImgConvertFormat(data, &convertBuffer[0], width, height, inputFormat, getWhatFormatWillBeWrittenForData(inputFormat));
+
+            if (convertError != AImgErrorCode::AIMG_SUCCESS)
+                return convertError;
+            data = &convertBuffer[0];
+        }
+
+        jpeg_compress_struct cinfo;
+        ArtomatixErrorStruct jerr;
+        CallbackData dataStruct;
+        dataStruct.writeCallback = writeCallback;
+        dataStruct.tellCallback = tellCallback;
+        dataStruct.seekCallback = seekCallback;
+        dataStruct.callbackData = callbackData;
+
+        cinfo.err = jpeg_std_error(&jerr.pub);
+        cinfo.err->emit_message = JPEGCallbackFunctions::lessAnnoyingEmitMessage;
+        cinfo.err->error_exit = JPEGCallbackFunctions::handleFatalError;
+        jpeg_create_compress(&cinfo);
+
+        setArtomatixDestinationMGR(&cinfo, dataStruct);
+
+        cinfo.image_width = width;
+        cinfo.image_height = height;
+        cinfo.input_components = 3;
+        cinfo.in_color_space = JCS_RGB;
+
+        jpeg_set_defaults(&cinfo);
+
+        jpeg_set_quality(&cinfo, JPEGConsts::Quality, TRUE);
+
+        if (setjmp(jerr.buf))
+        {
+            AISetLastErrorDetails("[AImg::JPEGImageLoader::writeImage] jpeg_start_compress failed!");
+            return AImgErrorCode::AIMG_LOAD_FAILED_EXTERNAL;
+        }
+        jpeg_start_compress(&cinfo, TRUE);
+
+        int row_stride = width * cinfo.input_components;
+
+        JSAMPROW row_pointer[1];
+
+
+        if (setjmp(jerr.buf))
+        {
+            AISetLastErrorDetails("[AImg::JPEGImageLoader::writeImage] jpeg_write_scanlines failed!");
+            return AImgErrorCode::AIMG_LOAD_FAILED_EXTERNAL;
+        }
+
+        while(cinfo.next_scanline < cinfo.image_height)
+        {
+            row_pointer[0] = (uint8_t *)data + row_stride * cinfo.next_scanline;
+            jpeg_write_scanlines(&cinfo, row_pointer, 1);
+        }
+
+        jpeg_finish_compress(&cinfo);
+        jpeg_destroy_compress(&cinfo);
+
         return AImgErrorCode::AIMG_SUCCESS;
     }
 }
