@@ -106,6 +106,7 @@ namespace AImg
 
     bool JPEGImageLoader::canLoadImage(ReadCallback readCallback, TellCallback tellCallback, SeekCallback seekCallback, void *callbackData)
     {
+        AIL_UNUSED_PARAM(tellCallback);
         uint8_t possible_magic1[] = {0xFF, 0xD8, 0xFF, 0xDB};
         uint8_t possible_magic2[] = {0xFF, 0xD8, 0xFF, 0xE0};
         uint8_t possible_magic3[] = {0xFF, 0xD8, 0xFF, 0xE1};
@@ -219,12 +220,12 @@ namespace AImg
 
                 if (forceImageFormat != AImgFormat::INVALID_FORMAT)
                 {
-                    int32_t numChannels, bytesPerChannel, floatOrInt, width, height;
+                    int32_t numChannels, bytesPerChannel, floatOrInt;
                     AIGetFormatDetails(forceImageFormat, &numChannels, &bytesPerChannel, &floatOrInt);
 
-                    std::vector<uint8_t> convertBuffer(width * height * numChannels * bytesPerChannel);
+                    std::vector<uint8_t> convertBuffer(jpeg_read_struct.image_width * jpeg_read_struct.image_height * numChannels * bytesPerChannel);
 
-                    int32_t convertError = AImgConvertFormat(destBuffer, &convertBuffer[0], width, height, AImgFormat::R8U, forceImageFormat);
+                    int32_t convertError = AImgConvertFormat(destBuffer, &convertBuffer[0], jpeg_read_struct.image_width, jpeg_read_struct.image_height, AImgFormat::R8U, forceImageFormat);
 
                     if (convertError != AImgErrorCode::AIMG_SUCCESS)
                         return convertError;
