@@ -61,6 +61,7 @@
     <EmbeddedResource Include="embedded_files\native_code" />
   </ItemGroup>
   <PropertyGroup>
-    <PreBuildEvent>echo 1</PreBuildEvent>
+    <PreBuildEvent Condition="'$(OS)' != 'Windows_NT'">"$(SolutionDir)/scripts/linux_pre_build.sh" "$(ProjectDir)" "$(ProjectConfigName)"</PreBuildEvent>
+    <PreBuildEvent Condition="'$(OS)' == 'Windows_NT'">"$(SolutionDir)/scripts/windows_pre_build.bat" "$(ProjectDir)" "$(ProjectConfigName)"</PreBuildEvent>
   </PropertyGroup>
 </Project>
