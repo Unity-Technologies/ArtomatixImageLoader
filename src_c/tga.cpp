@@ -1,3 +1,4 @@
+#ifdef HAVE_TGA
 #include "AIL.h"
 #include "tga.h"
 #include "AIL_internal.h"
@@ -69,3 +70,4 @@ namespace AImg
         return AImgErrorCode::AIMG_SUCCESS;
     }
 }
+#endif

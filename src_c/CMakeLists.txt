@@ -16,6 +16,8 @@ add_library(AIL SHARED
     png.cpp
     jpeg.h
     jpeg.cpp
+    tga.h
+    tga.cpp
     AIL.cpp
     AIL.h
     AIL_internal.h
@@ -44,6 +46,7 @@ set(PYTHON_ENABLED ON CACHE BOOL "enable python binding")
 set(EXR_ENABLED ON CACHE BOOL "enable loading EXR files")
 set(PNG_ENABLED ON CACHE BOOL "enable loading PNG files")
 set(JPEG_ENABLED ON CACHE BOOL "enable loading JPEG files")
+set(TGA_ENABLED ON CACHE BOOL "enable loading TGA files")
 
 set(CMAKE_MODULE_PATH ${CMAKE_MODULE_PATH} "${CMAKE_SOURCE_DIR}/cmake/")
 
@@ -81,6 +84,10 @@ if(JPEG_ENABLED)
     find_package(JPEG CONFIG REQUIRED)
 	target_link_libraries(AIL JPEG::jpeg)
     add_definitions(-DHAVE_JPEG)
+endif()
+
+if(TGA_ENABLED)
+    add_definitions(-DHAVE_TGA)
 endif()
 
 

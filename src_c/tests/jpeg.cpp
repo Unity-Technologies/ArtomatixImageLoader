@@ -1,6 +1,7 @@
 #include <gtest/gtest.h>
 #include "testCommon.h"
 #include "../AIL.h"
+#ifdef HAVE_JPEG
 #include <jpeglib.h>
 #include <math.h>
 
@@ -167,3 +168,5 @@ int main(int argc, char **argv)
 
     return retval;
 }
+
+#endif
