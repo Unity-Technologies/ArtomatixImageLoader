@@ -250,6 +250,8 @@ namespace AImg
                 jpeg_read_struct.err->emit_message = JPEGCallbackFunctions::lessAnnoyingEmitMessage;
                 jpeg_read_struct.err->error_exit = JPEGCallbackFunctions::handleFatalError;
                 jpeg_read_header(&jpeg_read_struct, TRUE);
+
+				return AImgErrorCode::AIMG_SUCCESS;
             }
 
             virtual int32_t getImageInfo(int32_t *width, int32_t *height, int32_t *numChannels, int32_t *bytesPerChannel, int32_t *floatOrInt, int32_t *decodedImgFormat)
