@@ -5,6 +5,7 @@
 #include <vector>
 #include <string.h>
 #include <setjmp.h>
+#define STBI_ONLY_TGA
 #define STB_IMAGE_IMPLEMENTATION
 #include "extern/stb_image.h"
 #define STB_IMAGE_WRITE_IMPLEMENTATION
@@ -17,7 +18,10 @@ namespace AImg
     {
         int readCallback(void * user, char * data, int size)
         {
-            return 0;
+            CallbackData * callbackFunctions = (CallbackData *)user;
+
+            return callbackFunctions->readCallback(callbackFunctions->callbackData, (uint8_t *)data, size);
+
         }
 
         void seekCallback(void * user, int num_bytes)
@@ -93,13 +97,22 @@ namespace AImg
             {
                 return AImgErrorCode::AIMG_SUCCESS;
             }
+
+            virtual int32_t openImage(ReadCallback readCallback, TellCallback tellCallback, SeekCallback seekCallback, void *callbackData)
+            {
+                return AImgErrorCode::AIMG_SUCCESS;
+            }
+
+            virtual int32_t writeImage(void *data, int32_t width, int32_t height, int32_t inputFormat, WriteCallback writeCallback, TellCallback tellCallback, SeekCallback seekCallback, void *callbackData)
+            {
+                return AImgErrorCode::AIMG_SUCCESS;
+            }
     };
 
-
-    AImgBase* TGAImageLoader::openImage(ReadCallback readCallback, TellCallback tellCallback, SeekCallback seekCallback, void *callbackData)
+    AImgBase * TGAImageLoader::getAImg()
     {
-        TGAFile* tga = new TGAFile();
-        return tga;
+        return new TGAFile();
+
     }
 
     AImgFormat TGAImageLoader::getWhatFormatWillBeWrittenForData(int32_t inputFormat)
@@ -108,9 +121,5 @@ namespace AImg
         return AImgFormat::INVALID_FORMAT;
     }
 
-    int32_t TGAImageLoader::writeImage(void *data, int32_t width, int32_t height, int32_t inputFormat, WriteCallback writeCallback, TellCallback tellCallback, SeekCallback seekCallback, void *callbackData)
-    {
-        return AImgErrorCode::AIMG_SUCCESS;
-    }
 }
 #endif
