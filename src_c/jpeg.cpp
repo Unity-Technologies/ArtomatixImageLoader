@@ -6,7 +6,7 @@
 #include <setjmp.h>
 #include <jpeglib.h>
 
-
+#ifdef HAVE_JPEG
 namespace AImg
 {
     typedef struct
@@ -389,3 +389,5 @@ namespace AImg
         return AImgErrorCode::AIMG_SUCCESS;
     }
 }
+
+#endif // HAVE_JPEG

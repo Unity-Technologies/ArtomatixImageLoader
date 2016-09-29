@@ -52,7 +52,9 @@ if(AIMG_TESTS_ENABLED)
 	if(PNG_ENABLED)
 		ail_add_test(png "AIL;PNG::png" Yes)
 	endif()
-    ail_add_test(jpeg "AIL;JPEG::jpeg" Yes)
+    if(JPEG_ENABLED)
+        ail_add_test(jpeg "AIL;JPEG::jpeg" Yes)
+    endif()
 
     
     add_custom_target(aitest ${all_tests})

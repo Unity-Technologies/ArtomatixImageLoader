@@ -97,7 +97,10 @@ EXPORT_FUNC void AIGetFormatDetails(int32_t format, int32_t* numChannels, int32_
 EXPORT_FUNC int32_t AImgConvertFormat(void* src, void* dest, int32_t width, int32_t height, int32_t inFormat, int32_t outFormat);
 
 EXPORT_FUNC int32_t AImgGetWhatFormatWillBeWrittenForData(int32_t fileFormat, int32_t inputFormat);
-EXPORT_FUNC int32_t AImgWriteImage(int32_t fileFormat, void* data, int32_t width, int32_t height, int32_t inputFormat, WriteCallback writeCallback,
+
+EXPORT_FUNC AImgHandle AImgGetAImg(int32_t fileFormat);
+
+EXPORT_FUNC int32_t AImgWriteImage(AImgHandle imgH, void* data, int32_t width, int32_t height, int32_t inputFormat, WriteCallback writeCallback,
 								   TellCallback tellCallback, SeekCallback seekCallback, void* callbackData);
 
 EXPORT_FUNC void AIGetSimpleMemoryBufferCallbacks(ReadCallback* readCallback, WriteCallback* writeCallback, TellCallback* tellCallback, SeekCallback* seekCallback, void** callbackData, void* buffer, int32_t size);

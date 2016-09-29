@@ -128,7 +128,10 @@ TEST(Exr, TesWriteExr)
 
     std::vector<char> fileData(4096); // fixed size buffer for a file write, not the best but it'll do for this test
     AIGetSimpleMemoryBufferCallbacks(&readCallback, &writeCallback, &tellCallback, &seekCallback, &callbackData, &fileData[0], fileData.size());
-    AImgWriteImage(AImgFileFormat::EXR_IMAGE_FORMAT, &imgData[0], width, height, AImgFormat::RGB32F, writeCallback, tellCallback, seekCallback, callbackData);
+
+    AImgHandle wImg = AImgGetAImg(AImgFileFormat::EXR_IMAGE_FORMAT);
+    AImgWriteImage(wImg, &imgData[0], width, height, AImgFormat::RGB32F, writeCallback, tellCallback, seekCallback, callbackData);
+    AImgClose(wImg);
 
     seekCallback(callbackData, 0);
 
