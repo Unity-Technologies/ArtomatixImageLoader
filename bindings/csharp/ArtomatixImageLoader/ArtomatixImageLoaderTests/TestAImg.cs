@@ -63,6 +63,36 @@ namespace ArtomatixImageLoaderTests
         }
 
         [Test]
+        public static void TestForceImageFormat()
+        {
+            float[] fData;
+            byte[] bData;
+
+            using (AImg img = new AImg(File.Open(getImagesDir() + "/png/8-bit.png", FileMode.Open)))
+            {
+                fData = new float[img.width * img.height * 3];
+                img.decodeImage(fData, AImgFormat.RGB32F);
+            }
+
+            using (AImg img = new AImg(File.Open(getImagesDir() + "/png/8-bit.png", FileMode.Open)))
+            {
+                bData = new byte[img.width * img.height * 3];
+                img.decodeImage(bData, AImgFormat.RGB8U);
+
+                for (int y = 0; y < img.height; y++)
+                {
+                    for(int x = 0; x < img.width; x++)
+                    {
+                        float groundTruth = ((float)bData[(x + y * img.width) * 3]) / 255.0f;
+                        float forced = fData[(x + y * img.width) * 3];
+
+                        Assert.AreEqual(groundTruth, forced);
+                    }
+                }
+            }
+        }
+
+        [Test]
         public static void TestGetWhatFormatWIllBeWritten()
         {
             AImgFormat res = AImg.getWhatFormatWillBeWrittenForData(AImgFileFormat.EXR_IMAGE_FORMAT, AImgFormat.RGBA32F);

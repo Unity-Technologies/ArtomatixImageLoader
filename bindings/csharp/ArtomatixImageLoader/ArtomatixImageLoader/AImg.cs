@@ -59,7 +59,7 @@ namespace ArtomatixImageLoader
         /// </summary>
         /// <param name="destBuffer">This buffer can be of any struct type, so for example for an RGBA8 image, you might use a byte array,
         /// or a custom struct with byte fields for the r, g, b, and a components. A custom struct would need the [StructLayout(LayoutKind.Sequential), Serializable] attribute.</param>
-        public void decodeImage<T>(T[] destBuffer) where T : struct
+        public void decodeImage<T>(T[] destBuffer, AImgFormat forceImageFormat = AImgFormat.INVALID_FORMAT) where T : struct
         {
             uint size = (uint)(Marshal.SizeOf(default(T)));
 
@@ -69,7 +69,7 @@ namespace ArtomatixImageLoader
             GCHandle pinnedArray = GCHandle.Alloc(destBuffer, GCHandleType.Pinned);
             IntPtr pointer = pinnedArray.AddrOfPinnedObject();
 
-            ImgLoader.AImgDecodeImage(nativeHandle, pointer, (Int32)AImgFileFormat.UNKNOWN_IMAGE_FORMAT);
+            ImgLoader.AImgDecodeImage(nativeHandle, pointer, (Int32)forceImageFormat);
 
             pinnedArray.Free();
         }
