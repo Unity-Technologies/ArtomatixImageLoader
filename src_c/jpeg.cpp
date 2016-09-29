@@ -236,6 +236,22 @@ namespace AImg
                 jpeg_destroy_decompress(&jpeg_read_struct);
             }
 
+
+            int32_t openImage(ReadCallback readCallback, TellCallback tellCallback, SeekCallback seekCallback, void *callbackData)
+            {
+                CallbackData data;
+                data.callbackData = callbackData;
+                data.readCallback = readCallback;
+                data.tellCallback = tellCallback;
+                data.seekCallback = seekCallback;
+
+                setArtomatixSourceMGR(&jpeg_read_struct, data);
+                jpeg_read_struct.err = jpeg_std_error(&err_mgr.pub);
+                jpeg_read_struct.err->emit_message = JPEGCallbackFunctions::lessAnnoyingEmitMessage;
+                jpeg_read_struct.err->error_exit = JPEGCallbackFunctions::handleFatalError;
+                jpeg_read_header(&jpeg_read_struct, TRUE);
+            }
+
             virtual int32_t getImageInfo(int32_t *width, int32_t *height, int32_t *numChannels, int32_t *bytesPerChannel, int32_t *floatOrInt, int32_t *decodedImgFormat)
             {
                 *width = jpeg_read_struct.image_width;
@@ -294,25 +310,75 @@ namespace AImg
 
                 return AImgErrorCode::AIMG_SUCCESS;
             }
+
+            int32_t writeImage(void *data, int32_t width, int32_t height, int32_t inputFormat, WriteCallback writeCallback, TellCallback tellCallback, SeekCallback seekCallback, void *callbackData)
+            {
+                std::vector<uint8_t> convertBuffer(0);
+                if (inputFormat != AImgFormat::RGB8U)
+                {
+                    convertBuffer.resize(width * height * 3);
+
+                    int32_t convertError = AImgConvertFormat(data, &convertBuffer[0], width, height, inputFormat, AImgFormat::RGB8U);
+
+                    if (convertError != AImgErrorCode::AIMG_SUCCESS)
+                        return convertError;
+                    data = &convertBuffer[0];
+                }
+
+                jpeg_compress_struct cinfo;
+                ArtomatixErrorStruct jerr;
+                CallbackData dataStruct;
+                dataStruct.writeCallback = writeCallback;
+                dataStruct.tellCallback = tellCallback;
+                dataStruct.seekCallback = seekCallback;
+                dataStruct.callbackData = callbackData;
+
+                cinfo.err = jpeg_std_error(&jerr.pub);
+                cinfo.err->emit_message = JPEGCallbackFunctions::lessAnnoyingEmitMessage;
+                cinfo.err->error_exit = JPEGCallbackFunctions::handleFatalError;
+                jpeg_create_compress(&cinfo);
+
+                setArtomatixDestinationMGR(&cinfo, dataStruct);
+
+                cinfo.image_width = width;
+                cinfo.image_height = height;
+                cinfo.input_components = 3;
+                cinfo.in_color_space = JCS_RGB;
+
+                jpeg_set_defaults(&cinfo);
+
+                jpeg_set_quality(&cinfo, JPEGConsts::Quality, TRUE);
+
+                if (setjmp(jerr.buf))
+                {
+                    AISetLastErrorDetails("[AImg::JPEGImageLoader::writeImage] jpeg_start_compress failed!");
+                    return AImgErrorCode::AIMG_LOAD_FAILED_EXTERNAL;
+                }
+                jpeg_start_compress(&cinfo, TRUE);
+
+                int row_stride = width * cinfo.input_components;
+
+                JSAMPROW row_pointer[1];
+
+
+                if (setjmp(jerr.buf))
+                {
+                    AISetLastErrorDetails("[AImg::JPEGImageLoader::writeImage] jpeg_write_scanlines failed!");
+                    return AImgErrorCode::AIMG_LOAD_FAILED_EXTERNAL;
+                }
+
+                while(cinfo.next_scanline < cinfo.image_height)
+                {
+                    row_pointer[0] = (uint8_t *)data + row_stride * cinfo.next_scanline;
+                    jpeg_write_scanlines(&cinfo, row_pointer, 1);
+                }
+
+                jpeg_finish_compress(&cinfo);
+                jpeg_destroy_compress(&cinfo);
+
+                return AImgErrorCode::AIMG_SUCCESS;
+            }
     };
-
-
-    AImgBase* JPEGImageLoader::openImage(ReadCallback readCallback, TellCallback tellCallback, SeekCallback seekCallback, void *callbackData)
-    {
-        JPEGFile* jpeg = new JPEGFile();
-        CallbackData data;
-        data.callbackData = callbackData;
-        data.readCallback = readCallback;
-        data.tellCallback = tellCallback;
-        data.seekCallback = seekCallback;
-
-        setArtomatixSourceMGR(&jpeg->jpeg_read_struct, data);
-        jpeg->jpeg_read_struct.err = jpeg_std_error(&jpeg->err_mgr.pub);
-        jpeg->jpeg_read_struct.err->emit_message = JPEGCallbackFunctions::lessAnnoyingEmitMessage;
-        jpeg->jpeg_read_struct.err->error_exit = JPEGCallbackFunctions::handleFatalError;
-        jpeg_read_header(&jpeg->jpeg_read_struct, TRUE);
-        return jpeg;
-    }
 
     AImgFormat JPEGImageLoader::getWhatFormatWillBeWrittenForData(int32_t inputFormat)
     {
@@ -320,73 +386,9 @@ namespace AImg
         return AImgFormat::RGB8U;
     }
 
-    int32_t JPEGImageLoader::writeImage(void *data, int32_t width, int32_t height, int32_t inputFormat, WriteCallback writeCallback, TellCallback tellCallback, SeekCallback seekCallback, void *callbackData)
+    AImgBase* JPEGImageLoader::getAImg()
     {
-
-        std::vector<uint8_t> convertBuffer(0);
-        if (inputFormat != getWhatFormatWillBeWrittenForData(inputFormat))
-        {
-            convertBuffer.resize(width * height * 3);
-
-            int32_t convertError = AImgConvertFormat(data, &convertBuffer[0], width, height, inputFormat, getWhatFormatWillBeWrittenForData(inputFormat));
-
-            if (convertError != AImgErrorCode::AIMG_SUCCESS)
-                return convertError;
-            data = &convertBuffer[0];
-        }
-
-        jpeg_compress_struct cinfo;
-        ArtomatixErrorStruct jerr;
-        CallbackData dataStruct;
-        dataStruct.writeCallback = writeCallback;
-        dataStruct.tellCallback = tellCallback;
-        dataStruct.seekCallback = seekCallback;
-        dataStruct.callbackData = callbackData;
-
-        cinfo.err = jpeg_std_error(&jerr.pub);
-        cinfo.err->emit_message = JPEGCallbackFunctions::lessAnnoyingEmitMessage;
-        cinfo.err->error_exit = JPEGCallbackFunctions::handleFatalError;
-        jpeg_create_compress(&cinfo);
-
-        setArtomatixDestinationMGR(&cinfo, dataStruct);
-
-        cinfo.image_width = width;
-        cinfo.image_height = height;
-        cinfo.input_components = 3;
-        cinfo.in_color_space = JCS_RGB;
-
-        jpeg_set_defaults(&cinfo);
-
-        jpeg_set_quality(&cinfo, JPEGConsts::Quality, TRUE);
-
-        if (setjmp(jerr.buf))
-        {
-            AISetLastErrorDetails("[AImg::JPEGImageLoader::writeImage] jpeg_start_compress failed!");
-            return AImgErrorCode::AIMG_LOAD_FAILED_EXTERNAL;
-        }
-        jpeg_start_compress(&cinfo, TRUE);
-
-        int row_stride = width * cinfo.input_components;
-
-        JSAMPROW row_pointer[1];
-
-
-        if (setjmp(jerr.buf))
-        {
-            AISetLastErrorDetails("[AImg::JPEGImageLoader::writeImage] jpeg_write_scanlines failed!");
-            return AImgErrorCode::AIMG_LOAD_FAILED_EXTERNAL;
-        }
-
-        while(cinfo.next_scanline < cinfo.image_height)
-        {
-            row_pointer[0] = (uint8_t *)data + row_stride * cinfo.next_scanline;
-            jpeg_write_scanlines(&cinfo, row_pointer, 1);
-        }
-
-        jpeg_finish_compress(&cinfo);
-        jpeg_destroy_compress(&cinfo);
-
-        return AImgErrorCode::AIMG_SUCCESS;
+        return new JPEGFile();
     }
 }
 
