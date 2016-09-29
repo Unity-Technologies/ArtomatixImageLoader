@@ -27,6 +27,11 @@ namespace ArtomatixImageLoader
         public AImgFileFormat detectedFileFormat { get; private set; }
         public AImgFormat decodedImgFormat { get; private set; }
 
+        public AImg(AImgFileFormat fmt)
+        {
+            nativeHandle = ImgLoader.AImgGetAImg((Int32)fmt);
+        }
+
         /// <summary>
         /// Opens an AImg from a stream.
         /// </summary>
@@ -44,7 +49,10 @@ namespace ArtomatixImageLoader
             seekCallback = ImgLoader.getSeekCallback(stream);
 
             Int32 detectedImageFormatTmp = 0;
-            ImgLoader.AImgOpen(readCallback, tellCallback, seekCallback, IntPtr.Zero, out nativeHandle, out detectedImageFormatTmp);
+            Int32 errCode = ImgLoader.AImgOpen(readCallback, tellCallback, seekCallback, IntPtr.Zero, out nativeHandle, out detectedImageFormatTmp);
+            AImgException.checkErrorCode(nativeHandle, errCode);
+
+
             detectedFileFormat = (AImgFileFormat)detectedImageFormatTmp;
 
             Int32 floatOrIntTmp = 0;
@@ -69,7 +77,8 @@ namespace ArtomatixImageLoader
             GCHandle pinnedArray = GCHandle.Alloc(destBuffer, GCHandleType.Pinned);
             IntPtr pointer = pinnedArray.AddrOfPinnedObject();
 
-            ImgLoader.AImgDecodeImage(nativeHandle, pointer, (Int32)AImgFileFormat.UNKNOWN_IMAGE_FORMAT);
+            Int32 errCode = ImgLoader.AImgDecodeImage(nativeHandle, pointer, (Int32)AImgFileFormat.UNKNOWN_IMAGE_FORMAT);
+            AImgException.checkErrorCode(nativeHandle, errCode);
 
             pinnedArray.Free();
         }
@@ -79,7 +88,7 @@ namespace ArtomatixImageLoader
             return (AImgFormat)ImgLoader.AImgGetWhatFormatWillBeWrittenForData((Int32)fileFormat, (Int32)format);
         }
 
-        public static void writeImage<T>(AImgFileFormat fileFormat, T[] data, int width, int height, AImgFormat format, Stream s) where T : struct
+        public void writeImage<T>(T[] data, int width, int height, AImgFormat format, Stream s) where T : struct
         {
             var writeCallback = ImgLoader.getWriteCallback(s);
             var tellCallback = ImgLoader.getTellCallback(s);
@@ -88,7 +97,8 @@ namespace ArtomatixImageLoader
             GCHandle pinnedArray = GCHandle.Alloc(data, GCHandleType.Pinned);
             IntPtr pointer = pinnedArray.AddrOfPinnedObject();
 
-            ImgLoader.AImgWriteImage((Int32)fileFormat, pointer, width, height, (Int32)format, writeCallback, tellCallback, seekCallback, IntPtr.Zero);
+            Int32 errCode = ImgLoader.AImgWriteImage(nativeHandle, pointer, width, height, (Int32)format, writeCallback, tellCallback, seekCallback, IntPtr.Zero);
+            AImgException.checkErrorCode(nativeHandle, errCode);
 
             pinnedArray.Free();
 
@@ -124,4 +134,3 @@ namespace ArtomatixImageLoader
         }
     }
 }
-

@@ -79,7 +79,8 @@ namespace ArtomatixImageLoaderTests
 
                 using (var writeStream = new MemoryStream())
                 {
-                    AImg.writeImage(AImgFileFormat.EXR_IMAGE_FORMAT, data, img.width, img.height, img.decodedImgFormat, writeStream);
+                    var wImg = new AImg(AImgFileFormat.EXR_IMAGE_FORMAT);
+                    wImg.writeImage(data, img.width, img.height, img.decodedImgFormat, writeStream);
                     writeStream.Seek(0, SeekOrigin.Begin);
 
                     using (AImg img2 = new AImg(writeStream))
