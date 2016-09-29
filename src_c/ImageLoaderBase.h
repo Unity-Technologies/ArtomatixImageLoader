@@ -18,6 +18,14 @@ namespace AImg
 
             virtual int32_t writeImage(void* data, int32_t width, int32_t height, int32_t inputFormat, WriteCallback writeCallback,
                                        TellCallback tellCallback, SeekCallback seekCallback, void* callbackData) = 0;
+
+            const char* getErrorDetails()
+            {
+                return mErrorDetails.c_str();
+            }
+
+        protected:
+            std::string mErrorDetails;
     };
 
     class ImageLoaderBase

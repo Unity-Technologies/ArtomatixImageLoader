@@ -83,7 +83,7 @@ TEST(JPEG, TestReadJPEGFile)
 
     if (error != AImgErrorCode::AIMG_SUCCESS)
     {
-        std::cout << AIGetLastErrorDetails() << std::endl;
+        std::cout << AImgGetErrorDetails(img) << std::endl;
     }
 
     auto knownData = decodeJPEGFile(getImagesDir() + "/jpeg/test.jpeg");

@@ -95,7 +95,7 @@ namespace AImg
             virtual ~PNGFile()
             {
                 if(data)
-                    data;
+                    delete data;
 
                 if(png_info_ptr)
                 {
@@ -180,7 +180,7 @@ namespace AImg
                 // Crazy old C exceptions without exceptions
                 if (setjmp(png_jmpbuf(png_read_ptr)))
                 {
-                    AISetLastErrorDetails("[PNGImageLoader::PNGFile::decodeImage] Failed to read file");
+                    mErrorDetails = "[PNGImageLoader::PNGFile::decodeImage] Failed to read file";
                     return AImgErrorCode::AIMG_LOAD_FAILED_INTERNAL;
                 }
 
@@ -291,7 +291,7 @@ namespace AImg
 
                 if (setjmp(png_jmpbuf(png_write_ptr)))
                 {
-                    AISetLastErrorDetails("[PNGImageLoader::writeImage] Failed to write PNG header");
+                    mErrorDetails = "[PNGImageLoader::writeImage] Failed to write PNG header";
                     return AImgErrorCode::AIMG_WRITE_FAILED_EXTERNAL;
                 }
 
@@ -309,7 +309,7 @@ namespace AImg
 
                 if (setjmp(png_jmpbuf(png_write_ptr)))
                 {
-                    AISetLastErrorDetails("[PNGImageLoader::writeImage] Failed to write file");
+                    mErrorDetails = "[PNGImageLoader::writeImage] Failed to write file";
                     return AImgErrorCode::AIMG_WRITE_FAILED_EXTERNAL;
                 }
 
@@ -317,7 +317,7 @@ namespace AImg
 
                 if (setjmp(png_jmpbuf(png_write_ptr)))
                 {
-                    AISetLastErrorDetails("[PNGImageLoader::writeImage] Failed to finalize write");
+                    mErrorDetails = "[PNGImageLoader::writeImage] Failed to finalize write";
                     return AImgErrorCode::AIMG_WRITE_FAILED_EXTERNAL;
                 }
 

@@ -81,8 +81,7 @@ enum AImgFloatOrIntType
     FITYPE_INT = 1
 };
 
-EXPORT_FUNC void AISetLastErrorDetails(const char* err);
-EXPORT_FUNC const char* AIGetLastErrorDetails();
+EXPORT_FUNC const char* AImgGetErrorDetails(AImgHandle img);
 
 // detectedFileFormat will be set to a member from AImgFileFormat if non-null, otherwise it is ignored.
 EXPORT_FUNC int32_t AImgOpen(ReadCallback readCallback, TellCallback tellCallback, SeekCallback seekCallback, void* callbackData, AImgHandle* imgPtr, int32_t* detectedFileFormat);

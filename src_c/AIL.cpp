@@ -15,20 +15,6 @@
 #endif
 
 std::map<int32_t, AImg::ImageLoaderBase*> loaders;
-std::string lastError;
-
-void AISetLastErrorDetails(const char* err)
-{
-    if(err == NULL)
-        err = "";
-
-    lastError = std::string(err);
-}
-
-const char* AIGetLastErrorDetails()
-{
-    return lastError.c_str();
-}
 
 
 int32_t AImgInitialise()
@@ -100,6 +86,12 @@ void AImgClose(AImgHandle imgH)
 {
     AImg::AImgBase* img = (AImg::AImgBase*)imgH;
     delete img;
+}
+
+EXPORT_FUNC const char* AImgGetErrorDetails(AImgHandle imgH)
+{
+    AImg::AImgBase* img = (AImg::AImgBase*)imgH;
+    return img->getErrorDetails();
 }
 
 int32_t AImgGetInfo(AImgHandle imgH, int32_t* width, int32_t* height, int32_t* numChannels, int32_t* bytesPerChannel, int32_t* floatOrInt, int32_t* decodedImgFormat)
