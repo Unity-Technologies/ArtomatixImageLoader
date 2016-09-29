@@ -9,6 +9,7 @@
 #include "exr.h"
 #include "png.h"
 #include "jpeg.h"
+#include "tga.h"
 
 #ifdef HAVE_EXR
     #include <half.h>
@@ -43,6 +44,10 @@ int32_t AImgInitialise()
 
     #ifdef HAVE_JPEG
         loaders[AImgFileFormat::JPEG_IMAGE_FORMAT] = new AImg::JPEGImageLoader();
+    #endif
+
+    #ifdef HAVE_TGA
+        loaders[AImgFileFormat::TGA_IMAGE_FORMAT] = new AImg::TGAImageLoader();
     #endif
 
     for(auto it = loaders.begin(); it != loaders.end(); ++it)
