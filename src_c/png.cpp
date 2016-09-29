@@ -9,15 +9,6 @@
 
 namespace AImg
 {
-    typedef struct CallbackData
-    {
-            ReadCallback readCallback;
-            TellCallback tellCallback;
-            SeekCallback seekCallback;
-            WriteCallback writeCallback;
-            void * callbackData;
-
-    } CallbackData;
 
     int32_t PNGImageLoader::initialise()
     {

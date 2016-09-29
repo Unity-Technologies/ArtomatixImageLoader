@@ -8,6 +8,7 @@
 
 #include "exr.h"
 #include "png.h"
+#include "jpeg.h"
 
 #ifdef HAVE_EXR
     #include <half.h>
@@ -38,6 +39,10 @@ int32_t AImgInitialise()
 
     #ifdef HAVE_PNG
         loaders[AImgFileFormat::PNG_IMAGE_FORMAT] = new AImg::PNGImageLoader();
+    #endif
+
+    #ifdef HAVE_JPEG
+        loaders[AImgFileFormat::JPEG_IMAGE_FORMAT] = new AImg::JPEGImageLoader();
     #endif
 
     for(auto it = loaders.begin(); it != loaders.end(); ++it)
