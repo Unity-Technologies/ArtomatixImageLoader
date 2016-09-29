@@ -4,6 +4,6 @@
    Memcheck:Leak
    match-leak-kinds: reachable
    ...
-   fun:_ZN7Imf_2_216staticInitializeEv
+   fun:_ZN3Imf16staticInitializeEv
    ...
 }

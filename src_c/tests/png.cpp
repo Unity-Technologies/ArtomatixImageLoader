@@ -86,7 +86,7 @@ bool validateReadPNGFile(const std::string& path)
     int32_t error = AImgDecodeImage(img, &imgData[0], AImgFormat::INVALID_FORMAT);
     if (error != AImgErrorCode::AIMG_SUCCESS)
     {
-        std::cout << AIGetLastErrorDetails() << std::endl;
+        std::cout << AImgGetErrorDetails(img) << std::endl;
     }
 
     auto knownData = decodePNGFile(getImagesDir() + path);
@@ -145,7 +145,10 @@ bool validateWritePNGFile(const std::string& path)
 
     std::vector<char> fileData(width * height * numChannels * bytesPerChannel * 5);
     AIGetSimpleMemoryBufferCallbacks(&readCallback, &writeCallback, &tellCallback, &seekCallback, &callbackData, &fileData[0], fileData.size());
-    AImgWriteImage(AImgFileFormat::PNG_IMAGE_FORMAT, &imgData[0], width, height, fmt, writeCallback, tellCallback, seekCallback, callbackData);
+
+    AImgHandle wImg = AImgGetAImg(AImgFileFormat::PNG_IMAGE_FORMAT);
+    AImgWriteImage(wImg, &imgData[0], width, height, fmt, writeCallback, tellCallback, seekCallback, callbackData);
+    AImgClose(wImg);
 
     seekCallback(callbackData, 0);
 
@@ -237,8 +240,11 @@ TEST(PNG, TestForceImageFormat)
     int32_t error = AImgDecodeImage(img, &imgData[0], AImgFormat::RGB32F);
     if (error != AImgErrorCode::AIMG_SUCCESS)
     {
-        std::cout << AIGetLastErrorDetails() << std::endl;
+        std::cout << AImgGetErrorDetails(img) << std::endl;
     }
+
+    AImgClose(img);
+    AIDestroySimpleMemoryBufferCallbacks(readCallback, writeCallback, tellCallback, seekCallback, callbackData);
 
     auto knownData = decodePNGFile(getImagesDir() + "/png/8-bit.png");
 

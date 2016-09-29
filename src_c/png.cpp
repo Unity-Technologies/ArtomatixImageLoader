@@ -57,12 +57,30 @@ namespace AImg
         AIL_UNUSED_PARAM(png_ptr);
     }
 
+
+    AImgFormat getWhatFormatWillBeWrittenForData(int32_t inputFormat)
+    {
+        int32_t numChannels, bytesPerChannel, floatOrInt;
+        AIGetFormatDetails(inputFormat, &numChannels, &bytesPerChannel, &floatOrInt);
+
+        if(floatOrInt == AImgFloatOrIntType::FITYPE_FLOAT)
+            return (AImgFormat) (AImgFormat::R16U + bytesPerChannel - 1); // convert to 16U version with same channelNum
+
+        if(inputFormat >= AImgFormat::R8U && inputFormat <= AImgFormat::RGBA8U)
+            return (AImgFormat)inputFormat;
+
+        if(inputFormat >= AImgFormat::R16U && inputFormat <= AImgFormat::RGBA16U)
+            return (AImgFormat)inputFormat;
+
+        return AImgFormat::INVALID_FORMAT;
+    }
+
     class PNGFile : public AImgBase
     {
         public:
-            CallbackData * data;
-            png_info * png_info_ptr;
-            png_struct * png_read_ptr;
+            CallbackData * data = nullptr;
+            png_info * png_info_ptr = nullptr;
+            png_struct * png_read_ptr = nullptr;
             uint32_t width;
             uint32_t height;
             uint8_t colour_type;
@@ -76,9 +94,36 @@ namespace AImg
 
             virtual ~PNGFile()
             {
-                delete data;
-                png_destroy_read_struct(&png_read_ptr, &png_info_ptr, (png_infopp)NULL);
-                png_destroy_info_struct(png_read_ptr, &png_info_ptr);
+                if(data)
+                    delete data;
+
+                if(png_info_ptr)
+                {
+                    png_destroy_read_struct(&png_read_ptr, &png_info_ptr, (png_infopp)NULL);
+                    png_destroy_info_struct(png_read_ptr, &png_info_ptr);
+                }
+            }
+
+            int32_t openImage(ReadCallback readCallback, TellCallback tellCallback, SeekCallback seekCallback, void *callbackData)
+            {
+                data->readCallback = readCallback;
+                data->tellCallback = tellCallback;
+                data->seekCallback = seekCallback;
+                data->callbackData = callbackData;
+
+                png_read_ptr = png_create_read_struct(PNG_LIBPNG_VER_STRING, NULL, NULL, NULL);
+                png_info_ptr = png_create_info_struct(png_read_ptr);
+
+                png_set_read_fn(png_read_ptr, (void *)(data), png_custom_read_data);
+                png_read_info(png_read_ptr, png_info_ptr);
+
+                width = png_get_image_width(png_read_ptr, png_info_ptr);
+                height = png_get_image_height(png_read_ptr, png_info_ptr);
+                bit_depth = png_get_bit_depth(png_read_ptr, png_info_ptr);
+                numChannels = png_get_channels(png_read_ptr, png_info_ptr);
+                colour_type = png_get_color_type(png_read_ptr, png_info_ptr);
+
+                return AImgErrorCode::AIMG_SUCCESS;
             }
 
             virtual int32_t getImageInfo(int32_t *width, int32_t *height, int32_t *numChannels, int32_t *bytesPerChannel, int32_t *floatOrInt, int32_t *decodedImgFormat)
@@ -135,7 +180,7 @@ namespace AImg
                 // Crazy old C exceptions without exceptions
                 if (setjmp(png_jmpbuf(png_read_ptr)))
                 {
-                    AISetLastErrorDetails("[PNGImageLoader::PNGFile::decodeImage] Failed to read file");
+                    mErrorDetails = "[PNGImageLoader::PNGFile::decodeImage] Failed to read file";
                     return AImgErrorCode::AIMG_LOAD_FAILED_INTERNAL;
                 }
 
@@ -171,160 +216,130 @@ namespace AImg
 
                 return AImgErrorCode::AIMG_SUCCESS;
             }
+
+            int32_t writeImage(void *data, int32_t width, int32_t height, int32_t inputFormat, WriteCallback writeCallback, TellCallback tellCallback, SeekCallback seekCallback, void *callbackData)
+            {
+                AIL_UNUSED_PARAM(tellCallback);
+                AIL_UNUSED_PARAM(seekCallback);
+
+                png_struct * png_write_ptr = png_create_write_struct(PNG_LIBPNG_VER_STRING, NULL, NULL, NULL);
+                png_info * png_info_ptr = png_create_info_struct(png_write_ptr);
+
+                CallbackData * callbackDataStruct = new CallbackData();
+
+                callbackDataStruct->writeCallback = writeCallback;
+                callbackDataStruct->callbackData = callbackData;
+
+                png_set_write_fn(png_write_ptr, (void *)callbackDataStruct, png_custom_write_data, flush_data_noop_func);
+
+                int32_t writeFormat = getWhatFormatWillBeWrittenForData(inputFormat);
+
+                std::vector<uint8_t> convertBuffer(0);
+
+                if (writeFormat != inputFormat)
+                {
+                    int32_t numChannels, bytesPerChannel, floatOrInt;
+                    AIGetFormatDetails(writeFormat, &numChannels, &bytesPerChannel, &floatOrInt) ;
+                    convertBuffer.resize(width * height * numChannels * bytesPerChannel);
+
+                    int32_t convertError = AImgConvertFormat(data, &convertBuffer[0], width, height, inputFormat, writeFormat);
+
+                    if (convertError != AImgErrorCode::AIMG_SUCCESS)
+                        return convertError;
+                    data = &convertBuffer[0];
+                }
+
+                png_byte colour_type;
+                png_byte bit_depth;
+
+                switch (writeFormat)
+                {
+                    case R8U:
+                        colour_type = PNG_COLOR_TYPE_GRAY;
+                        bit_depth = 8;
+                        break;
+                    case RG8U:
+                        colour_type = PNG_COLOR_TYPE_RGB;
+                        bit_depth = 8;
+                        break;
+                    case RGB8U:
+                        colour_type = PNG_COLOR_TYPE_RGB;
+                        bit_depth = 8;
+                        break;
+                    case RGBA8U:
+                        colour_type = PNG_COLOR_TYPE_RGB_ALPHA;
+                        bit_depth = 8;
+                        break;
+
+                    case R16U:
+                        colour_type = PNG_COLOR_TYPE_GRAY;
+                        bit_depth = 16;
+                        break;
+                    case RG16U:
+                        colour_type = PNG_COLOR_TYPE_RGB;
+                        bit_depth = 16;
+                        break;
+                    case RGB16U:
+                        colour_type = PNG_COLOR_TYPE_RGB;
+                        bit_depth = 16;
+                        break;
+                    case RGBA16U:
+                        colour_type = PNG_COLOR_TYPE_RGB_ALPHA;
+                        bit_depth = 16;
+                        break;
+                }
+
+                if (setjmp(png_jmpbuf(png_write_ptr)))
+                {
+                    mErrorDetails = "[PNGImageLoader::writeImage] Failed to write PNG header";
+                    return AImgErrorCode::AIMG_WRITE_FAILED_EXTERNAL;
+                }
+
+                int32_t numChannels, bytesPerChannel, floatOrInt;
+                AIGetFormatDetails(inputFormat, &numChannels, &bytesPerChannel, &floatOrInt);
+
+                void ** ptrs = (void **)malloc(sizeof(size_t) * height);
+
+                for (int32_t y=0; y < height; y++)
+                    ptrs[y] = (void *)((size_t)data + y*width * numChannels * bytesPerChannel);
+
+                png_set_IHDR(png_write_ptr, png_info_ptr, width, height, bit_depth, colour_type, PNG_INTERLACE_NONE, PNG_COMPRESSION_TYPE_DEFAULT, PNG_FILTER_TYPE_DEFAULT);
+
+                png_write_info(png_write_ptr, png_info_ptr);
+
+                if (setjmp(png_jmpbuf(png_write_ptr)))
+                {
+                    mErrorDetails = "[PNGImageLoader::writeImage] Failed to write file";
+                    return AImgErrorCode::AIMG_WRITE_FAILED_EXTERNAL;
+                }
+
+                png_write_image(png_write_ptr, (png_bytepp)ptrs);
+
+                if (setjmp(png_jmpbuf(png_write_ptr)))
+                {
+                    mErrorDetails = "[PNGImageLoader::writeImage] Failed to finalize write";
+                    return AImgErrorCode::AIMG_WRITE_FAILED_EXTERNAL;
+                }
+
+                png_write_end(png_write_ptr, png_info_ptr);
+
+                free(ptrs);
+                png_destroy_write_struct(&png_write_ptr, &png_info_ptr);
+                png_destroy_info_struct(png_write_ptr, &png_info_ptr);
+                delete callbackDataStruct;
+                return AImgErrorCode::AIMG_SUCCESS;
+            }
     };
 
 
-    AImgBase* PNGImageLoader::openImage(ReadCallback readCallback, TellCallback tellCallback, SeekCallback seekCallback, void *callbackData)
-    {
-        PNGFile* png = new PNGFile();
-        png->data->readCallback = readCallback;
-        png->data->tellCallback = tellCallback;
-        png->data->seekCallback = seekCallback;
-        png->data->callbackData = callbackData;
-
-        png->png_read_ptr = png_create_read_struct(PNG_LIBPNG_VER_STRING, NULL, NULL, NULL);
-        png->png_info_ptr = png_create_info_struct(png->png_read_ptr);
-
-        png_set_read_fn(png->png_read_ptr, (void *)(png->data), png_custom_read_data);
-        png_read_info(png->png_read_ptr, png->png_info_ptr);
-
-        png->width = png_get_image_width(png->png_read_ptr, png->png_info_ptr);
-        png->height = png_get_image_height(png->png_read_ptr, png->png_info_ptr);
-        png->bit_depth = png_get_bit_depth(png->png_read_ptr, png->png_info_ptr);
-        png->numChannels = png_get_channels(png->png_read_ptr, png->png_info_ptr);
-        png->colour_type = png_get_color_type(png->png_read_ptr, png->png_info_ptr);
-
-        return png;
-    }
-
     AImgFormat PNGImageLoader::getWhatFormatWillBeWrittenForData(int32_t inputFormat)
     {
-        int32_t numChannels, bytesPerChannel, floatOrInt;
-        AIGetFormatDetails(inputFormat, &numChannels, &bytesPerChannel, &floatOrInt);
-
-        if(floatOrInt == AImgFloatOrIntType::FITYPE_FLOAT)
-            return (AImgFormat) (AImgFormat::R16U + bytesPerChannel - 1); // convert to 16U version with same channelNum
-
-        if(inputFormat >= AImgFormat::R8U && inputFormat <= AImgFormat::RGBA8U)
-            return (AImgFormat)inputFormat;
-
-        if(inputFormat >= AImgFormat::R16U && inputFormat <= AImgFormat::RGBA16U)
-            return (AImgFormat)inputFormat;
-
-        return AImgFormat::INVALID_FORMAT;
+        return getWhatFormatWillBeWrittenForData(inputFormat);
     }
 
-    int32_t PNGImageLoader::writeImage(void *data, int32_t width, int32_t height, int32_t inputFormat, WriteCallback writeCallback, TellCallback tellCallback, SeekCallback seekCallback, void *callbackData)
+    AImgBase* PNGImageLoader::getAImg()
     {
-        AIL_UNUSED_PARAM(tellCallback);
-        AIL_UNUSED_PARAM(seekCallback);
-
-        png_struct * png_write_ptr = png_create_write_struct(PNG_LIBPNG_VER_STRING, NULL, NULL, NULL);
-        png_info * png_info_ptr = png_create_info_struct(png_write_ptr);
-
-        CallbackData * callbackDataStruct = new CallbackData();
-
-        callbackDataStruct->writeCallback = writeCallback;
-        callbackDataStruct->callbackData = callbackData;
-
-        png_set_write_fn(png_write_ptr, (void *)callbackDataStruct, png_custom_write_data, flush_data_noop_func);
-
-        int32_t writeFormat = getWhatFormatWillBeWrittenForData(inputFormat);
-
-        std::vector<uint8_t> convertBuffer(0);
-
-        if (writeFormat != inputFormat)
-        {
-            int32_t numChannels, bytesPerChannel, floatOrInt;
-            AIGetFormatDetails(writeFormat, &numChannels, &bytesPerChannel, &floatOrInt) ;
-            convertBuffer.resize(width * height * numChannels * bytesPerChannel);
-
-            int32_t convertError = AImgConvertFormat(data, &convertBuffer[0], width, height, inputFormat, writeFormat);
-
-            if (convertError != AImgErrorCode::AIMG_SUCCESS)
-                return convertError;
-            data = &convertBuffer[0];
-        }
-
-        png_byte colour_type;
-        png_byte bit_depth;
-
-        switch (writeFormat)
-        {
-            case R8U:
-                colour_type = PNG_COLOR_TYPE_GRAY;
-                bit_depth = 8;
-                break;
-            case RG8U:
-                colour_type = PNG_COLOR_TYPE_RGB;
-                bit_depth = 8;
-                break;
-            case RGB8U:
-                colour_type = PNG_COLOR_TYPE_RGB;
-                bit_depth = 8;
-                break;
-            case RGBA8U:
-                colour_type = PNG_COLOR_TYPE_RGB_ALPHA;
-                bit_depth = 8;
-                break;
-
-            case R16U:
-                colour_type = PNG_COLOR_TYPE_GRAY;
-                bit_depth = 16;
-                break;
-            case RG16U:
-                colour_type = PNG_COLOR_TYPE_RGB;
-                bit_depth = 16;
-                break;
-            case RGB16U:
-                colour_type = PNG_COLOR_TYPE_RGB;
-                bit_depth = 16;
-                break;
-            case RGBA16U:
-                colour_type = PNG_COLOR_TYPE_RGB_ALPHA;
-                bit_depth = 16;
-                break;
-        }
-
-        if (setjmp(png_jmpbuf(png_write_ptr)))
-        {
-            AISetLastErrorDetails("[PNGImageLoader::writeImage] Failed to write PNG header");
-            return AImgErrorCode::AIMG_WRITE_FAILED_EXTERNAL;
-        }
-
-        int32_t numChannels, bytesPerChannel, floatOrInt;
-        AIGetFormatDetails(inputFormat, &numChannels, &bytesPerChannel, &floatOrInt);
-
-        void ** ptrs = (void **)malloc(sizeof(size_t) * height);
-
-        for (int32_t y=0; y < height; y++)
-            ptrs[y] = (void *)((size_t)data + y*width * numChannels * bytesPerChannel);
-
-        png_set_IHDR(png_write_ptr, png_info_ptr, width, height, bit_depth, colour_type, PNG_INTERLACE_NONE, PNG_COMPRESSION_TYPE_DEFAULT, PNG_FILTER_TYPE_DEFAULT);
-
-        png_write_info(png_write_ptr, png_info_ptr);
-
-        if (setjmp(png_jmpbuf(png_write_ptr)))
-        {
-            AISetLastErrorDetails("[PNGImageLoader::writeImage] Failed to write file");
-            return AImgErrorCode::AIMG_WRITE_FAILED_EXTERNAL;
-        }
-
-        png_write_image(png_write_ptr, (png_bytepp)ptrs);
-
-        if (setjmp(png_jmpbuf(png_write_ptr)))
-        {
-            AISetLastErrorDetails("[PNGImageLoader::writeImage] Failed to finalize write");
-            return AImgErrorCode::AIMG_WRITE_FAILED_EXTERNAL;
-        }
-
-        png_write_end(png_write_ptr, png_info_ptr);
-
-        free(ptrs);
-        png_destroy_write_struct(&png_write_ptr, &png_info_ptr);
-        png_destroy_info_struct(png_write_ptr, &png_info_ptr);
-        delete callbackDataStruct;
-        return AImgErrorCode::AIMG_SUCCESS;
+        return new PNGFile();
     }
 }
 

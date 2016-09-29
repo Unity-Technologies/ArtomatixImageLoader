@@ -84,7 +84,7 @@ TEST(JPEG, TestReadJPEGFile)
 
     if (error != AImgErrorCode::AIMG_SUCCESS)
     {
-        std::cout << AIGetLastErrorDetails() << std::endl;
+        std::cout << AImgGetErrorDetails(img) << std::endl;
     }
 
     auto knownData = decodeJPEGFile(getImagesDir() + "/jpeg/test.jpeg");
@@ -137,7 +137,9 @@ TEST(JPEG, TestWriteJPEG)
 
     AIGetSimpleMemoryBufferCallbacks(&readCallback, &writeCallback, &tellCallback, &seekCallback, &callbackData, &fileData[0], fileData.size());
 
-    AImgWriteImage(AImgFileFormat::JPEG_IMAGE_FORMAT, &imgData[0], width, height, fmt, writeCallback, tellCallback, seekCallback, callbackData);
+    AImgHandle wImg = AImgGetAImg(AImgFileFormat::JPEG_IMAGE_FORMAT);
+    AImgWriteImage(wImg, &imgData[0], width, height, fmt, writeCallback, tellCallback, seekCallback, callbackData);
+    AImgClose(wImg);
 
     seekCallback(callbackData, 0);
 

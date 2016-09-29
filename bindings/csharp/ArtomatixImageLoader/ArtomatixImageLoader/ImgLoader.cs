@@ -42,14 +42,18 @@ namespace ArtomatixImageLoader
         }
 
 
-        [DllImport("libAIL.so", EntryPoint="GetLastErrorDetails")]
-        static extern IntPtr _GetLastErrorDetails();
+        [DllImport("libAIL.so", EntryPoint="AImgGetErrorDetails")]
+        static extern IntPtr _AImgGetErrorDetails(IntPtr img);
 
-        public static string GetLastErrorDetails()
+        public static string AImgGetLastErrorDetails(IntPtr img)
         {
-            IntPtr cstr = _GetLastErrorDetails();
+            IntPtr cstr = _AImgGetErrorDetails(img);
             return Marshal.PtrToStringAnsi(cstr);
         }
+
+        [DllImport("libAIL.so")]
+        public static extern IntPtr AImgGetAImg(Int32 fileFormat);
+
 
         [DllImport("libAIL.so")]
         public static extern Int32 AImgOpen(
@@ -80,7 +84,7 @@ namespace ArtomatixImageLoader
         public static extern Int32 AImgGetWhatFormatWillBeWrittenForData(Int32 fileFormat, Int32 inputFormat);
 
         [DllImport("libAIL.so")]
-        public static extern Int32 AImgWriteImage(Int32 fileFormat, IntPtr data, Int32 width, Int32 height, Int32 inputFormat, 
+        public static extern Int32 AImgWriteImage(IntPtr img, IntPtr data, Int32 width, Int32 height, Int32 inputFormat, 
             [MarshalAs(UnmanagedType.FunctionPtr)] WriteCallback writeCallback,
             [MarshalAs(UnmanagedType.FunctionPtr)] TellCallback tellCallback,
             [MarshalAs(UnmanagedType.FunctionPtr)] SeekCallback seekCallback, 

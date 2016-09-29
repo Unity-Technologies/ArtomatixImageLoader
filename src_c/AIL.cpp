@@ -16,20 +16,6 @@
 #endif
 
 std::map<int32_t, AImg::ImageLoaderBase*> loaders;
-std::string lastError;
-
-void AISetLastErrorDetails(const char* err)
-{
-    if(err == NULL)
-        err = "";
-
-    lastError = std::string(err);
-}
-
-const char* AIGetLastErrorDetails()
-{
-    return lastError.c_str();
-}
 
 
 int32_t AImgInitialise()
@@ -77,7 +63,6 @@ namespace AImg
 int32_t AImgOpen(ReadCallback readCallback, TellCallback tellCallback, SeekCallback seekCallback, void* callbackData, AImgHandle* imgH, int32_t* detectedFileFormat)
 {
     *imgH = (AImgHandle*)NULL;
-    AImg::AImgBase** imgPtr = (AImg::AImgBase**)imgH;
 
     int32_t fileFormat = UNKNOWN_IMAGE_FORMAT;
     int32_t retval = AIMG_UNSUPPORTED_FILETYPE;
@@ -87,13 +72,11 @@ int32_t AImgOpen(ReadCallback readCallback, TellCallback tellCallback, SeekCallb
         if(it->second->canLoadImage(readCallback, tellCallback, seekCallback, callbackData))
         {
             fileFormat = it->second->getAImgFileFormatValue();
-            *imgH = it->second->openImage(readCallback, tellCallback, seekCallback, callbackData);
 
-            if(*imgPtr != NULL)
-                retval = AImgErrorCode::AIMG_SUCCESS;
-            else
-                retval = AImgErrorCode::AIMG_LOAD_FAILED_EXTERNAL;
+            AImg::AImgBase* img = it->second->getAImg();
+            *imgH = img;
 
+            retval = img->openImage(readCallback, tellCallback, seekCallback, callbackData);
             break;
         }
     }
@@ -110,6 +93,12 @@ void AImgClose(AImgHandle imgH)
     delete img;
 }
 
+EXPORT_FUNC const char* AImgGetErrorDetails(AImgHandle imgH)
+{
+    AImg::AImgBase* img = (AImg::AImgBase*)imgH;
+    return img->getErrorDetails();
+}
+
 int32_t AImgGetInfo(AImgHandle imgH, int32_t* width, int32_t* height, int32_t* numChannels, int32_t* bytesPerChannel, int32_t* floatOrInt, int32_t* decodedImgFormat)
 {
     AImg::AImgBase* img = (AImg::AImgBase*)imgH;
@@ -121,6 +110,19 @@ int32_t AImgDecodeImage(AImgHandle imgH, void* destBuffer, int32_t forceImageFor
     AImg::AImgBase* img = (AImg::AImgBase*)imgH;
     return img->decodeImage(destBuffer, forceImageFormat);
 }
+
+AImgHandle AImgGetAImg(int32_t fileFormat)
+{
+    return loaders[fileFormat]->getAImg();
+}
+
+int32_t AImgWriteImage(AImgHandle imgH, void* data, int32_t width, int32_t height, int32_t inputFormat, WriteCallback writeCallback,
+                   TellCallback tellCallback, SeekCallback seekCallback, void* callbackData)
+{
+    AImg::AImgBase* img = (AImg::AImgBase*)imgH;
+    return img->writeImage(data, width, height, inputFormat, writeCallback, tellCallback, seekCallback, callbackData);
+}
+
 
 void convertToRGBA32F(void* src, std::vector<float>& dest, size_t i, int32_t inFormat)
 {
@@ -675,12 +677,6 @@ int32_t AImgConvertFormat(void* src, void* dest, int32_t width, int32_t height, 
 int32_t AImgGetWhatFormatWillBeWrittenForData(int32_t fileFormat, int32_t inputFormat)
 {
     return loaders[fileFormat]->getWhatFormatWillBeWrittenForData(inputFormat);
-}
-
-int32_t AImgWriteImage(int32_t fileFormat, void* data, int32_t width, int32_t height, int32_t inputFormat, WriteCallback writeCallback,
-                   TellCallback tellCallback, SeekCallback seekCallback, void* callbackData)
-{
-    return loaders[fileFormat]->writeImage(data, width, height, inputFormat, writeCallback, tellCallback, seekCallback, callbackData);
 }
 
 struct SimpleMemoryCallbackData

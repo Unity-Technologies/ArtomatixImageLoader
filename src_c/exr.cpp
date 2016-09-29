@@ -100,7 +100,6 @@ namespace AImg
         }
         catch (const std::exception &e)
         {
-            AISetLastErrorDetails(e.what());
             return AImgErrorCode::AIMG_LOAD_FAILED_INTERNAL;
         }
     }
@@ -131,14 +130,16 @@ namespace AImg
     class ExrFile : public AImgBase
     {
         public:
-            CallbackIStream* data;
-            Imf::InputFile* file;
+            CallbackIStream* data = nullptr;
+            Imf::InputFile* file = nullptr;
             Imath::Box2i dw;
 
             virtual ~ExrFile()
             {
-                delete data;
-                delete file;
+                if(data)
+                    delete data;
+                if(file)
+                    delete file;
             }
 
             int32_t getDecodeFormat()
@@ -214,7 +215,7 @@ namespace AImg
                     }
                     else
                     {
-                        AISetLastErrorDetails("Invalid channel type in exr file");
+                        mErrorDetails = "Invalid channel type in exr file";
                         return AImgErrorCode::AIMG_LOAD_FAILED_INTERNAL;
                     }
                 }
@@ -289,30 +290,104 @@ namespace AImg
                 }
                 catch (const std::exception &e)
                 {
-                    AISetLastErrorDetails(e.what());
+                    mErrorDetails = e.what();
                     return AImgErrorCode::AIMG_LOAD_FAILED_INTERNAL;
+                }
+            }
+
+            virtual int32_t openImage(ReadCallback  readCallback, TellCallback tellCallback, SeekCallback seekCallback, void* callbackData)
+            {
+                try
+                {
+                    data = new CallbackIStream(readCallback, tellCallback, seekCallback, callbackData);
+                    file = new Imf::InputFile(*data);
+                    dw = file->header().dataWindow();
+
+                    return AImgErrorCode::AIMG_SUCCESS;
+                }
+                catch (const std::exception &e)
+                {
+                    mErrorDetails = e.what();
+                    return AImgErrorCode::AIMG_LOAD_FAILED_EXTERNAL;
+                }
+            }
+
+            int32_t writeImage(void* data, int32_t width, int32_t height, int32_t inputFormat, WriteCallback writeCallback,
+                               TellCallback tellCallback, SeekCallback seekCallback, void* callbackData)
+            {
+                try
+                {
+                    std::vector<uint8_t> reformattedDataTmp(0);
+
+                    void* inputBuf = data;
+                    AImgFormat inputBufFormat = (AImgFormat)inputFormat;
+
+                    // need 32F data, so convert if necessary
+                    if(inputFormat < AImgFormat::R32F || inputFormat > AImgFormat::RGBA32F)
+                    {
+                        // set inputBufFormat to the format with the same number of channels as inputFormat, but is 32F
+                        int32_t bytesPerChannelTmp, numChannelsTmp, floatOrIntTmp;
+                        AIGetFormatDetails(inputFormat, &numChannelsTmp, &bytesPerChannelTmp, &floatOrIntTmp);
+                        inputBufFormat = (AImgFormat)(AImgFormat::R32F + numChannelsTmp - 1);
+
+                        // resize reformattedDataTmp to fit the converted image data
+                        AIGetFormatDetails(inputBufFormat, &numChannelsTmp, &bytesPerChannelTmp, &floatOrIntTmp);
+                        reformattedDataTmp.resize(numChannelsTmp * bytesPerChannelTmp * width * height);
+
+                        AImgConvertFormat(data, &reformattedDataTmp[0], width, height, inputFormat, inputBufFormat);
+                        inputBuf = &reformattedDataTmp[0];
+                    }
+
+                    int32_t bytesPerChannel, numChannels, floatOrInt;
+                    AIGetFormatDetails(inputBufFormat, &numChannels, &bytesPerChannel, &floatOrInt);
+
+
+                    const char* channelNames[] = { "R", "G", "B", "A" };
+
+                    Imf::Header header(width, height);
+
+                    for(int32_t i = 0; i < numChannels; i++)
+                    {
+                        header.channels().insert(channelNames[i], Imf::Channel(Imf::FLOAT));
+                    }
+
+                    Imf::FrameBuffer frameBuffer;
+
+                    for(int32_t i = 0; i < numChannels; i++)
+                    {
+                        frameBuffer.insert(
+                            channelNames[i],
+                            Imf::Slice(
+                                Imf::FLOAT,
+                                &((char*)inputBuf)[bytesPerChannel * i],
+                                bytesPerChannel * numChannels,
+                                bytesPerChannel * width * numChannels,
+                                1, 1,
+                                0.0
+                            )
+                        );
+                    }
+
+                    CallbackOStream ostream(writeCallback, tellCallback, seekCallback, callbackData);
+                    Imf::OutputFile file(ostream, header);
+                    file.setFrameBuffer(frameBuffer);
+                    file.writePixels(height);
+
+                    return AImgErrorCode::AIMG_SUCCESS;
+                }
+                catch (const std::exception &e)
+                {
+                    mErrorDetails = e.what();
+                    return AImgErrorCode::AIMG_WRITE_FAILED_EXTERNAL;
                 }
             }
 
     };
 
 
-    AImgBase* ExrImageLoader::openImage(ReadCallback readCallback, TellCallback tellCallback, SeekCallback seekCallback, void* callbackData)
+    AImgBase* ExrImageLoader::getAImg()
     {
-        try
-        {
-            ExrFile* exr = new ExrFile();
-            exr->data = new CallbackIStream(readCallback, tellCallback, seekCallback, callbackData);
-            exr->file = new Imf::InputFile(*exr->data);
-            exr->dw = exr->file->header().dataWindow();
-
-            return exr;
-        }
-        catch (const std::exception &e)
-        {
-            AISetLastErrorDetails(e.what());
-            return NULL;
-        }
+        return new ExrFile();
     }
 
     AImgFormat ExrImageLoader::getWhatFormatWillBeWrittenForData(int32_t inputFormat)
@@ -343,76 +418,6 @@ namespace AImg
         }
 
         return AImgFormat::INVALID_FORMAT;
-    }
-
-    int32_t ExrImageLoader::writeImage(void* data, int32_t width, int32_t height, int32_t inputFormat, WriteCallback writeCallback,
-                                       TellCallback tellCallback, SeekCallback seekCallback, void* callbackData)
-    {
-        try
-        {
-            std::vector<uint8_t> reformattedDataTmp(0);
-
-            void* inputBuf = data;
-            AImgFormat inputBufFormat = (AImgFormat)inputFormat;
-
-            // need 32F data, so convert if necessary
-            if(inputFormat < AImgFormat::R32F || inputFormat > AImgFormat::RGBA32F)
-            {
-                // set inputBufFormat to the format with the same number of channels as inputFormat, but is 32F
-                int32_t bytesPerChannelTmp, numChannelsTmp, floatOrIntTmp;
-                AIGetFormatDetails(inputFormat, &numChannelsTmp, &bytesPerChannelTmp, &floatOrIntTmp);
-                inputBufFormat = (AImgFormat)(AImgFormat::R32F + numChannelsTmp - 1);
-
-                // resize reformattedDataTmp to fit the converted image data
-                AIGetFormatDetails(inputBufFormat, &numChannelsTmp, &bytesPerChannelTmp, &floatOrIntTmp);
-                reformattedDataTmp.resize(numChannelsTmp * bytesPerChannelTmp * width * height);
-
-                AImgConvertFormat(data, &reformattedDataTmp[0], width, height, inputFormat, inputBufFormat);
-                inputBuf = &reformattedDataTmp[0];
-            }
-
-            int32_t bytesPerChannel, numChannels, floatOrInt;
-            AIGetFormatDetails(inputBufFormat, &numChannels, &bytesPerChannel, &floatOrInt);
-
-
-            const char* channelNames[] = { "R", "G", "B", "A" };
-
-            Imf::Header header(width, height);
-
-            for(int32_t i = 0; i < numChannels; i++)
-            {
-                header.channels().insert(channelNames[i], Imf::Channel(Imf::FLOAT));
-            }
-
-            Imf::FrameBuffer frameBuffer;
-
-            for(int32_t i = 0; i < numChannels; i++)
-            {
-                frameBuffer.insert(
-                    channelNames[i],
-                    Imf::Slice(
-                        Imf::FLOAT,
-                        &((char*)inputBuf)[bytesPerChannel * i],
-                        bytesPerChannel * numChannels,
-                        bytesPerChannel * width * numChannels,
-                        1, 1,
-                        0.0
-                    )
-                );
-            }
-
-            CallbackOStream ostream(writeCallback, tellCallback, seekCallback, callbackData);
-            Imf::OutputFile file(ostream, header);
-            file.setFrameBuffer(frameBuffer);
-            file.writePixels(height);
-
-            return AImgErrorCode::AIMG_SUCCESS;
-        }
-        catch (const std::exception &e)
-        {
-            AISetLastErrorDetails(e.what());
-            return AImgErrorCode::AIMG_WRITE_FAILED_EXTERNAL;
-        }
     }
 }
 

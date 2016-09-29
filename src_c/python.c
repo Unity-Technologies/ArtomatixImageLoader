@@ -209,7 +209,9 @@ static PyObject* pyail_write(PyObject* self, PyObject* args)
     if((callbackData = pyail_getCallbackData(fileLikeObj)) == NULL)
         return NULL;
 
-    AImgWriteImage(fileFormat, PyArray_DATA(sourceArrayObj), width, height, inputFormat, pyail_WriteCallback, pyail_TellCallback, pyail_SeekCallback, callbackData);
+    AImgHandle wImg = AImgGetAImg(fileFormat);
+    AImgWriteImage(wImg, PyArray_DATA(sourceArrayObj), width, height, inputFormat, pyail_WriteCallback, pyail_TellCallback, pyail_SeekCallback, callbackData);
+    AImgClose(wImg);
 
     Py_RETURN_NONE;
 }

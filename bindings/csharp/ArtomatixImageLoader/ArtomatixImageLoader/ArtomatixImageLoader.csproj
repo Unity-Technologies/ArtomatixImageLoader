@@ -55,6 +55,7 @@
     <Compile Include="Enums.cs" />
     <Compile Include="AImg.cs" />
     <Compile Include="ImgLoader.cs" />
+    <Compile Include="Exceptions.cs" />
   </ItemGroup>
   <Import Project="$(MSBuildBinPath)\Microsoft.CSharp.targets" />
   <ItemGroup>
