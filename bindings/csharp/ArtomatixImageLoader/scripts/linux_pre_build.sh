@@ -16,9 +16,7 @@ fi
 
 cd "$BUILD_DIR"
 
-if [ ! -f CMakeCache.txt ]; then
-    cmake .. -DCMAKE_BUILD_TYPE=$CONFIG
-fi
+cmake .. -DCMAKE_BUILD_TYPE=$CONFIG
 
 make
 
