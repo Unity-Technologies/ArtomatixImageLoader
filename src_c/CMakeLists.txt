@@ -15,6 +15,8 @@ add_library(AIL SHARED
     exr.h
     png.h
     png.cpp
+    jpeg.h
+    jpeg.cpp
     AIL.cpp
     AIL.h
     AIL_internal.h
@@ -29,6 +31,7 @@ endif()
 set(PYTHON_ENABLED ON CACHE BOOL "enable python binding")
 set(EXR_ENABLED ON CACHE BOOL "enable loading EXR files")
 set(PNG_ENABLED ON CACHE BOOL "enable loading PNG files")
+set(JPEG_ENABLED ON CACHE BOOL "enable loading JPEG files")
 
 set(CMAKE_MODULE_PATH ${CMAKE_MODULE_PATH} "${CMAKE_SOURCE_DIR}/cmake/")
 
@@ -52,13 +55,20 @@ if(EXR_ENABLED)
     hunter_add_package(OpenEXR)
 	find_package(OpenEXR REQUIRED)
 	target_link_libraries(AIL ${OPENEXR_LIBRARIES})
+    include_directories(${OPENEXR_INCLUDE_DIRS})
 	add_definitions(-DHAVE_EXR)
 endif()
 if(PNG_ENABLED)
     hunter_add_package(PNG)
-	find_package(PNG REQUIRED)
-	target_link_libraries(AIL ${PNG_LIBRARIES})
+	find_package(PNG CONFIG REQUIRED)
+	target_link_libraries(AIL PNG::png)
 	add_definitions(-DHAVE_PNG)
+endif()
+if(JPEG_ENABLED)
+    hunter_add_package(Jpeg)
+    find_package(JPEG CONFIG REQUIRED)
+	target_link_libraries(AIL JPEG::jpeg)
+    add_definitions(-DHAVE_JPEG)
 endif()
 
 target_compile_definitions(AIL PRIVATE -DIS_AIL_COMPILE)

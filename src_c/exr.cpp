@@ -1,3 +1,5 @@
+#ifdef HAVE_EXR
+
 #include <ImfInputFile.h>
 #include <ImfOutputFile.h>
 #include <ImfChannelList.h>
@@ -413,3 +415,5 @@ namespace AImg
         }
     }
 }
+
+#endif // HAVE_EXR

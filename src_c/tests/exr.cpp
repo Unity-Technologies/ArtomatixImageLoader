@@ -3,6 +3,7 @@
 
 #include "../AIL.h"
 
+#ifdef HAVE_EXR
 
 TEST(Exr, TestDetectExr)
 {
@@ -177,7 +178,7 @@ TEST(Exr, TestConvertDataFormat)
         ASSERT_EQ(startingData[i], convertedBack[i]);
 }
 
-
+#endif
 
 int main(int argc, char **argv) 
 {
