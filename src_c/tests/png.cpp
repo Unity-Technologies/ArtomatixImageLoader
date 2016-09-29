@@ -207,6 +207,48 @@ TEST(PNG, TesWrite16BitPNG8)
     ASSERT_TRUE(validateWritePNGFile("/png/16-bit.png"));
 }
 
+TEST(PNG, TestForceImageFormat)
+{
+    auto data = readFile<uint8_t>(getImagesDir() + "/png/8-bit.png");
+
+    ReadCallback readCallback = NULL;
+    WriteCallback writeCallback = NULL;
+    TellCallback tellCallback = NULL;
+    SeekCallback seekCallback = NULL;
+    void* callbackData = NULL;
+
+    AIGetSimpleMemoryBufferCallbacks(&readCallback, &writeCallback, &tellCallback, &seekCallback, &callbackData, &data[0], data.size());
+
+    AImgHandle img = NULL;
+    AImgOpen(readCallback, tellCallback, seekCallback, callbackData, &img, NULL);
+
+
+    int32_t width;
+    int32_t height;
+    int32_t numChannels;
+    int32_t bytesPerChannel;
+    int32_t floatOrInt;
+    int32_t imgFmt;
+    AImgGetInfo(img, &width, &height, &numChannels, &bytesPerChannel, &floatOrInt, &imgFmt);
+
+
+    std::vector<float> imgData(width*height*3, 78);
+
+    int32_t error = AImgDecodeImage(img, &imgData[0], AImgFormat::RGB32F);
+    if (error != AImgErrorCode::AIMG_SUCCESS)
+    {
+        std::cout << AIGetLastErrorDetails() << std::endl;
+    }
+
+    auto knownData = decodePNGFile(getImagesDir() + "/png/8-bit.png");
+
+
+    for(int32_t i = 0; i < imgData.size(); i++)
+    {
+        ASSERT_EQ(((float)knownData[i]) / 255.0f, imgData[i]);
+    }
+}
+
 #endif // HAVE_PNG
 
 int main(int argc, char **argv)

@@ -129,39 +129,46 @@ namespace AImg
 
             }
 
-            virtual int32_t decodeImage(void *destBuffer, int32_t forceImageFormat)
+            virtual int32_t decodeImage(void *realDestBuffer, int32_t forceImageFormat)
             {
                 // This sets a restore point for libpng if reading fails internally
                 // Crazy old C exceptions without exceptions
-
                 if (setjmp(png_jmpbuf(png_read_ptr)))
                 {
                     AISetLastErrorDetails("[PNGImageLoader::PNGFile::decodeImage] Failed to read file");
                     return AImgErrorCode::AIMG_LOAD_FAILED_INTERNAL;
                 }
 
-                void **ptrs = (void **)malloc(height * sizeof(size_t));
+                void* destBuffer = realDestBuffer;
+
+                int32_t decodeFormat = getDecodeFormat();
+
+
+                std::vector<uint8_t> convertTmpBuffer(0);
+                if (forceImageFormat != AImgFormat::INVALID_FORMAT && forceImageFormat != decodeFormat)
+                {
+                    int32_t numChannels, bytesPerChannel, floatOrInt;
+                    AIGetFormatDetails(decodeFormat, &numChannels, &bytesPerChannel, &floatOrInt);
+
+                    convertTmpBuffer.resize(width * height * bytesPerChannel * numChannels);
+                    destBuffer = &convertTmpBuffer[0];
+                }
+
+                std::vector<void*> ptrs(height);
 
                 for (uint32_t y = 0; y < height; y++)
                     ptrs[y] = (void *)((size_t)destBuffer + (y*width * (bit_depth/8) * numChannels));
 
 
-                png_read_image(png_read_ptr, (png_bytepp)ptrs);
+                png_read_image(png_read_ptr, (png_bytepp)&ptrs[0]);
 
-                if (forceImageFormat != AImgFormat::INVALID_FORMAT)
+                if (forceImageFormat != AImgFormat::INVALID_FORMAT && forceImageFormat != decodeFormat)
                 {
-                    int32_t numChannels, bytesPerChannel, floatOrInt;
-                    AIGetFormatDetails(forceImageFormat, &numChannels, &bytesPerChannel, &floatOrInt);
-
-                    std::vector<uint8_t> convertBuffer(width * height * numChannels * bytesPerChannel);
-
-                    int32_t convertError = AImgConvertFormat(destBuffer, &convertBuffer[0], width, height, getDecodeFormat(), forceImageFormat);
-
-                    if (convertError != AImgErrorCode::AIMG_SUCCESS)
-                        return convertError;
-
+                    int32_t err = AImgConvertFormat(destBuffer, realDestBuffer, width, height, decodeFormat, forceImageFormat);
+                    if(err != AImgErrorCode::AIMG_SUCCESS)
+                        return err;
                 }
-                free(ptrs);
+
                 return AImgErrorCode::AIMG_SUCCESS;
             }
     };
