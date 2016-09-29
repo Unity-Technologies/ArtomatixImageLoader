@@ -9,7 +9,6 @@ HunterGate(
 
 PROJECT (AIL)
 
-
 add_library(AIL SHARED
 	exr.cpp
     exr.h
@@ -27,6 +26,19 @@ set(AIL_COMPILE_FLAGS "")
 if(UNIX)
     set(AIL_COMPILE_FLAGS "-Wall -pedantic -Wextra -g -std=c++11 -Wno-unknown-pragmas")
 endif()
+target_compile_definitions(AIL PRIVATE -DIS_AIL_COMPILE)
+
+set_target_properties(AIL PROPERTIES COMPILE_FLAGS "${AIL_COMPILE_FLAGS}")
+
+install (TARGETS AIL
+         ARCHIVE DESTINATION lib
+         LIBRARY DESTINATION lib
+         RUNTIME DESTINATION lib)
+
+
+###########
+# Options #
+###########
 
 set(PYTHON_ENABLED ON CACHE BOOL "enable python binding")
 set(EXR_ENABLED ON CACHE BOOL "enable loading EXR files")
@@ -49,8 +61,6 @@ if(PYTHON_ENABLED)
 	include_directories(${PYTHON_INCLUDE_DIR} ${PYTHON_NUMPY_INCLUDE_DIR})
 endif()
 
-set_target_properties(AIL PROPERTIES COMPILE_FLAGS "${AIL_COMPILE_FLAGS}")
-
 if(EXR_ENABLED)
     hunter_add_package(OpenEXR)
 	find_package(OpenEXR REQUIRED)
@@ -58,12 +68,14 @@ if(EXR_ENABLED)
     include_directories(${OPENEXR_INCLUDE_DIRS})
 	add_definitions(-DHAVE_EXR)
 endif()
+
 if(PNG_ENABLED)
     hunter_add_package(PNG)
 	find_package(PNG CONFIG REQUIRED)
 	target_link_libraries(AIL PNG::png)
 	add_definitions(-DHAVE_PNG)
 endif()
+
 if(JPEG_ENABLED)
     hunter_add_package(Jpeg)
     find_package(JPEG CONFIG REQUIRED)
@@ -71,16 +83,8 @@ if(JPEG_ENABLED)
     add_definitions(-DHAVE_JPEG)
 endif()
 
-target_compile_definitions(AIL PRIVATE -DIS_AIL_COMPILE)
 
-include_directories(
-	${OPENEXR_INCLUDE_DIRS}
-	${PNG_INCLUDE_DIRS}
-)
-
-install (TARGETS AIL
-         ARCHIVE DESTINATION lib
-         LIBRARY DESTINATION lib
-         RUNTIME DESTINATION lib)
-
+#########
+# Tests #
+#########
 add_subdirectory(tests)
