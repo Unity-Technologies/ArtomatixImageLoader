@@ -9,14 +9,9 @@
 #include "exr.h"
 #include "png.h"
 
-#define HAVE_EXR // TODO: generate this in the cmake project files
-
 #ifdef HAVE_EXR
     #include <half.h>
 #endif
-
-#define HAVE_PNG
-
 
 std::map<int32_t, AImg::ImageLoaderBase*> loaders;
 std::string lastError;

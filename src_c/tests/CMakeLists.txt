@@ -48,7 +48,10 @@ if(AIMG_TESTS_ENABLED)
 
     # actual tests go here
     ail_add_test(exr AIL Yes)
-    ail_add_test(png "AIL;${PNG_LIBRARIES}" Yes)
+	
+	if(PNG_ENABLED)
+		ail_add_test(png "AIL;${PNG_LIBRARIES}" Yes)
+	endif()
 
     
     add_custom_target(aitest ${all_tests})

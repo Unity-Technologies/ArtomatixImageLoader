@@ -9,7 +9,12 @@
 inline std::string getImagesDir()
 {
     std::string thisFile = __FILE__;
-    size_t pos = thisFile.find_last_of('/');
+
+	char dirSep = '/';
+	#ifdef WIN32
+		dirSep = '\\';
+	#endif
+    size_t pos = thisFile.find_last_of(dirSep);
     size_t filenameLength = thisFile.length() - pos;
 
     std::string thisFolder = thisFile.substr(0, thisFile.size() - filenameLength);
@@ -23,8 +28,6 @@ std::vector<T> readFile(const std::string& path)
     FILE* f = fopen(path.c_str(), "rb");
     if (f == NULL)
         std::cout << "Could not open file: " << path << std::endl;
-
-
 
     fseek(f, 0, SEEK_END);
     size_t size = ftell(f);

@@ -1,5 +1,7 @@
 #include <gtest/gtest.h>
+#include "../AIL.h"
 
+#ifdef HAVE_PNG
 #include <stdio.h>
 #include <vector>
 #include <string>
@@ -7,7 +9,6 @@
 #include <setjmp.h>
 #include <stdint.h>
 #include "testCommon.h"
-#include "../AIL.h"
 
 std::vector<uint8_t> decodePNGFile(const std::string& path)
 {
@@ -205,6 +206,8 @@ TEST(PNG, TesWrite16BitPNG8)
 {
     ASSERT_TRUE(validateWritePNGFile("/png/16-bit.png"));
 }
+
+#endif // HAVE_PNG
 
 int main(int argc, char **argv)
 {

@@ -1,3 +1,5 @@
+#ifdef HAVE_PNG
+
 #include "AIL.h"
 #include "png.h"
 #include "AIL_internal.h"
@@ -327,3 +329,5 @@ namespace AImg
         return AImgErrorCode::AIMG_SUCCESS;
     }
 }
+
+#endif // HAVE_PNG
