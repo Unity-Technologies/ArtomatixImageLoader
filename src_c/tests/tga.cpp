@@ -9,6 +9,17 @@
 #include <stdint.h>
 #include "testCommon.h"
 
+TEST(tga, TestDetectTGA)
+{
+    ASSERT_TRUE(detectImage("/tga/test.tga", TGA_IMAGE_FORMAT));
+}
+
+TEST(tga, TestDetectBadTGA)
+{
+    ASSERT_FALSE(detectImage("/jpeg/test.jpeg", TGA_IMAGE_FORMAT));
+}
+
+
 int main(int argc, char **argv)
 {
     AImgInitialise();

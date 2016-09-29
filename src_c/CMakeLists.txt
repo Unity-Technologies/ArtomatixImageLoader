@@ -22,6 +22,8 @@ add_library(AIL SHARED
     AIL.h
     AIL_internal.h
     ImageLoaderBase.h
+    extern/stb_image.h
+    extern/stb_image_write.h
 )
 
 set(AIL_COMPILE_FLAGS "")
