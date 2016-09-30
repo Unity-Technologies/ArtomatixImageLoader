@@ -2,6 +2,7 @@ import ail_py_native as native
 import enums
 import collections
 import numpy as np
+import AImgExceptions
 
 
 RawFileInfo = collections.namedtuple("RawFileInfo", "numChannels bytesPerChannel floatOrInt")
@@ -20,16 +21,19 @@ class AImg(object):
 
         self._callbackData = native.getCallbackDataFromFileLikeObject(self._stream)
         
-        self._imgCapsule, detectedFileFormat = native.open(self._callbackData)
+        errCode, self._imgCapsule, detectedFileFormat = native.open(self._callbackData)
+        AImgExceptions.checkErrorCode(self._imgCapsule, errCode)
+
         self.detectedFileFormat = enums.AImgFileFormats[detectedFileFormat]
 
-        self.width, self.height, rawNumChannels, rawBytesPerChannel, rawFloatOrInt, decodedImgFormat = native.getInfo(self._imgCapsule)
+        errCode, self.width, self.height, rawNumChannels, rawBytesPerChannel, rawFloatOrInt, decodedImgFormat = native.getInfo(self._imgCapsule)
+        AImgExceptions.checkErrorCode(self._imgCapsule, errCode)
         self.rawFileInfo = RawFileInfo(rawNumChannels, rawBytesPerChannel, rawFloatOrInt)
         self.decodedImgFormat = enums.AImgFormats[decodedImgFormat]
         
         self._decodeDone = False
 
-    def decode(self, destBuffer=None):
+    def decode(self, destBuffer=None, forceImageFormat=enums.AImgFormats["INVALID_FORMAT"]):
         if self._decodeDone:
             raise IOError("instance has already been decoded")
 
@@ -49,7 +53,8 @@ class AImg(object):
         if not (destBuffer.flags.c_contiguous and destBuffer.flags.writeable and destBuffer.flags.aligned):
             raise ValueError("destBuffer does not meet flags requirements (c_contiguous & writeable & aligned)")
 
-        native.decode(self._imgCapsule, destBuffer, -1)
+        errCode = native.decode(self._imgCapsule, destBuffer, forceImageFormat.val)
+        AImgExceptions.checkErrorCode(self._imgCapsule, errCode)
 
         if self._close_after_decode:
             self._stream.close()
@@ -71,4 +76,5 @@ def write(io_or_path, data, fileFormat):
     fmt = enums.getFormatFromNumpyArray(data)
     height, width = data.shape[0:2]
 
-    native.write(fileFormat.val, data, stream, width, height, fmt.val)
+    errCode, imgCapsule = native.write(fileFormat.val, data, stream, width, height, fmt.val)
+    AImgExceptions.checkErrorCode(imgCapsule, errCode)
