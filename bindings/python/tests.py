@@ -1,6 +1,5 @@
 import unittest
 import AImg
-import enums
 import os
 import io
 import numpy as np
@@ -12,10 +11,10 @@ class TestAImg(unittest.TestCase):
     def test_read_attrs(self):
         img = AImg.AImg(imagesDir + "/exr/grad_32.exr")
 
-        self.assertEqual(img.detectedFileFormat, enums.AImgFileFormats["EXR_IMAGE_FORMAT"])
+        self.assertEqual(img.detectedFileFormat, AImg.AImgFileFormats["EXR_IMAGE_FORMAT"])
         self.assertEqual(img.width, 64)
         self.assertEqual(img.height, 32)
-        self.assertEqual(img.decodedImgFormat, enums.AImgFormats["RGB32F"])
+        self.assertEqual(img.decodedImgFormat, AImg.AImgFormats["RGB32F"])
 
     def test_read_exr(self):
         img = AImg.AImg(imagesDir + "/exr/grad_32.exr")
@@ -33,7 +32,7 @@ class TestAImg(unittest.TestCase):
         
         outFile = io.BytesIO()
 
-        AImg.write(outFile, decoded, enums.AImgFileFormats["EXR_IMAGE_FORMAT"])
+        AImg.write(outFile, decoded, AImg.AImgFileFormats["EXR_IMAGE_FORMAT"])
 
         outFile.seek(0)
         img2 = AImg.AImg(outFile)

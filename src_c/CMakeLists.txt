@@ -9,7 +9,19 @@ HunterGate(
 
 PROJECT (AIL)
 
-add_library(AIL SHARED
+###########
+# Options #
+###########
+
+set(TESTS_ENABLED ON CACHE BOOL "enable tests")
+set(PYTHON_ENABLED OFF CACHE BOOL "enable python binding")
+set(EXR_ENABLED ON CACHE BOOL "enable loading EXR files")
+set(PNG_ENABLED ON CACHE BOOL "enable loading PNG files")
+set(JPEG_ENABLED ON CACHE BOOL "enable loading JPEG files")
+set(BUILD_SHARE_TYPE SHARED CACHE STRING "set build type, valid values: SHARED|STATIC")
+
+set(CMAKE_POSITION_INDEPENDENT_CODE YES)
+add_library(AIL ${BUILD_SHARE_TYPE}
 	exr.cpp
     exr.h
     png.h
@@ -34,16 +46,6 @@ install (TARGETS AIL
          ARCHIVE DESTINATION lib
          LIBRARY DESTINATION lib
          RUNTIME DESTINATION lib)
-
-
-###########
-# Options #
-###########
-
-set(PYTHON_ENABLED ON CACHE BOOL "enable python binding")
-set(EXR_ENABLED ON CACHE BOOL "enable loading EXR files")
-set(PNG_ENABLED ON CACHE BOOL "enable loading PNG files")
-set(JPEG_ENABLED ON CACHE BOOL "enable loading JPEG files")
 
 set(CMAKE_MODULE_PATH ${CMAKE_MODULE_PATH} "${CMAKE_SOURCE_DIR}/cmake/")
 
@@ -87,4 +89,6 @@ endif()
 #########
 # Tests #
 #########
-add_subdirectory(tests)
+if(TESTS_ENABLED)
+    add_subdirectory(tests)
+endif()
