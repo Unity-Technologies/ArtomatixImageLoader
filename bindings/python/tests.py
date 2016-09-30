@@ -44,6 +44,10 @@ class TestAImg(unittest.TestCase):
                 for c in range(decoded.shape[2]):
                     self.assertEqual(decoded2[y][x][c], decoded[y][x][c])
 
+    def test_open_bad_file(self):
+        with self.assertRaises(AImg.AImgUnsupportedFiletypeException) as context:
+            img = AImg.AImg(__file__)
+
 
 if __name__ == "__main__":
     unittest.main()

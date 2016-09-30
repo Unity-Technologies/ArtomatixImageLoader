@@ -181,6 +181,25 @@ TEST(Exr, TestConvertDataFormat)
         ASSERT_EQ(startingData[i], convertedBack[i]);
 }
 
+TEST(Exr, TestOpenBadImage)
+{
+    auto data = readFile<uint8_t>("/etc/passwd");
+
+    ReadCallback readCallback = NULL;
+    WriteCallback writeCallback = NULL;
+    TellCallback tellCallback = NULL;
+    SeekCallback seekCallback = NULL;
+    void* callbackData = NULL;
+
+    AIGetSimpleMemoryBufferCallbacks(&readCallback, &writeCallback, &tellCallback, &seekCallback, &callbackData, &data[0], data.size());
+
+    AImgHandle img = (AImgHandle)20;
+    int32_t err = AImgOpen(readCallback, tellCallback, seekCallback, callbackData, &img, NULL);
+
+    ASSERT_EQ(err, AImgErrorCode::AIMG_UNSUPPORTED_FILETYPE);
+    ASSERT_EQ((size_t)img, (size_t)NULL);
+}
+
 #endif
 
 int main(int argc, char **argv) 

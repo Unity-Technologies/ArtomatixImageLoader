@@ -133,7 +133,9 @@ static PyObject* pyail_getCallbackDataFromFileLikeObject(PyObject* self, PyObjec
 void pyail_imgCapsuleDestructor(PyObject* imgCapsule)
 {
     AImgHandle img = PyCapsule_GetPointer(imgCapsule, NULL);
-    AImgClose(img);
+
+    if(img != NULL)
+        AImgClose(img);
 }
 
 static PyObject* pyail_open(PyObject* self, PyObject* args)
@@ -150,8 +152,19 @@ static PyObject* pyail_open(PyObject* self, PyObject* args)
     int32_t detectedFileFormat;
     int err = AImgOpen(pyail_ReadCallback, pyail_TellCallback, pyail_SeekCallback, callbackData, &img, &detectedFileFormat);
 
-    // return a tuple (errCode, imgCapsule, detectedFileFormat)
-    PyObject* imgCapsule = PyCapsule_New(img, NULL, pyail_imgCapsuleDestructor);
+    PyObject* imgCapsule;
+    
+    if(img != NULL)
+    {
+        imgCapsule = PyCapsule_New(img, NULL, pyail_imgCapsuleDestructor);
+    }
+    else
+    {
+        imgCapsule = Py_None;
+        Py_INCREF(Py_None);
+    }
+    
+    // return a tuple (errCode, imgCapsule|None, detectedFileFormat)
     PyObject* retval = Py_BuildValue("(iOi)", err, imgCapsule, detectedFileFormat);
     Py_DECREF(imgCapsule);
     
