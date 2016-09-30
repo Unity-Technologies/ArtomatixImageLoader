@@ -148,13 +148,13 @@ static PyObject* pyail_open(PyObject* self, PyObject* args)
 
     AImgHandle img;
     int32_t detectedFileFormat;
-    AImgOpen(pyail_ReadCallback, pyail_TellCallback, pyail_SeekCallback, callbackData, &img, &detectedFileFormat);
+    int err = AImgOpen(pyail_ReadCallback, pyail_TellCallback, pyail_SeekCallback, callbackData, &img, &detectedFileFormat);
 
-    // return a tuple (imgCapsule, detectedFileFormat)
+    // return a tuple (errCode, imgCapsule, detectedFileFormat)
     PyObject* imgCapsule = PyCapsule_New(img, NULL, pyail_imgCapsuleDestructor);
-    PyObject* retval = Py_BuildValue("(Oi)", imgCapsule, detectedFileFormat);
+    PyObject* retval = Py_BuildValue("(iOi)", err, imgCapsule, detectedFileFormat);
     Py_DECREF(imgCapsule);
-
+    
     return retval;
 }
 
@@ -169,9 +169,9 @@ static PyObject* pyail_getInfo(PyObject* self, PyObject* args)
         return NULL;
 
     int32_t width, height, numChannels, bytesPerChannel, floatOrInt, decodedImgFormat;
-    AImgGetInfo(img, &width, &height, &numChannels, &bytesPerChannel, &floatOrInt, &decodedImgFormat);
+    int err = AImgGetInfo(img, &width, &height, &numChannels, &bytesPerChannel, &floatOrInt, &decodedImgFormat);
 
-    return Py_BuildValue("(iiiiii)", width, height, numChannels, bytesPerChannel, floatOrInt, decodedImgFormat);
+    return Py_BuildValue("(iiiiiii)", err, width, height, numChannels, bytesPerChannel, floatOrInt, decodedImgFormat);
 }
 
 static PyObject* pyail_decode(PyObject* self, PyObject* args)
@@ -191,7 +191,6 @@ static PyObject* pyail_decode(PyObject* self, PyObject* args)
 
     int err = AImgDecodeImage(img, dest, forceImageFormat);
 
-
     return Py_BuildValue("i", err);
 }
 
@@ -210,10 +209,28 @@ static PyObject* pyail_write(PyObject* self, PyObject* args)
         return NULL;
 
     AImgHandle wImg = AImgGetAImg(fileFormat);
-    AImgWriteImage(wImg, PyArray_DATA(sourceArrayObj), width, height, inputFormat, pyail_WriteCallback, pyail_TellCallback, pyail_SeekCallback, callbackData);
-    AImgClose(wImg);
+    int err = AImgWriteImage(wImg, PyArray_DATA(sourceArrayObj), width, height, inputFormat, pyail_WriteCallback, pyail_TellCallback, pyail_SeekCallback, callbackData);
 
-    Py_RETURN_NONE;
+    PyObject* imgCapsule = PyCapsule_New(wImg, NULL, pyail_imgCapsuleDestructor);
+    PyObject* retval = Py_BuildValue("(iO)", err, imgCapsule);
+    Py_DECREF(imgCapsule);
+
+    return retval;
+}
+
+static PyObject* pyail_getErrorDetails(PyObject* self, PyObject* args)
+{
+    PyObject* capsule;
+    if (!PyArg_ParseTuple(args, "O", &capsule))
+        return NULL;
+
+    AImgHandle* img;
+    if((img = PyCapsule_GetPointer(capsule, NULL)) == NULL)
+        return NULL;
+    
+    const char* errDetails = AImgGetErrorDetails(img);
+
+    return Py_BuildValue("s", errDetails);
 }
 
 static PyMethodDef module_methods[] =
@@ -223,6 +240,7 @@ static PyMethodDef module_methods[] =
     {"getInfo", pyail_getInfo, METH_VARARGS, NULL},
     {"decode", pyail_decode, METH_VARARGS, NULL},
     {"write", pyail_write, METH_VARARGS, NULL},
+    {"getErrorDetails", pyail_getErrorDetails, METH_VARARGS, NULL},
 
     {NULL, NULL, 0, NULL}
 };
