@@ -47,16 +47,21 @@ if(AIMG_TESTS_ENABLED)
     endfunction(ail_add_test)
 
     # actual tests go here
-    ail_add_test(exr AIL Yes)
+    if(EXR_ENABLED)
+        ail_add_test(exr AIL Yes)
+    endif()
 	
 	if(PNG_ENABLED)
 		ail_add_test(png "AIL;PNG::png" Yes)
 	endif()
+    
     if(JPEG_ENABLED)
         ail_add_test(jpeg "AIL;JPEG::jpeg" Yes)
     endif()
+    if(TGA_ENABLED)
+        ail_add_test(tga "AIL" Yes)
+    endif()
 
-    
     add_custom_target(aitest ${all_tests})
     set_target_properties(aitest PROPERTIES EXCLUDE_FROM_ALL 1 EXCLUDE_FROM_DEFAULT_BUILD 1)
 endif()

@@ -71,7 +71,8 @@ enum AImgFileFormat
     UNKNOWN_IMAGE_FORMAT = -1,
     EXR_IMAGE_FORMAT = 1,
     PNG_IMAGE_FORMAT = 2,
-    JPEG_IMAGE_FORMAT = 3
+    JPEG_IMAGE_FORMAT = 3,
+    TGA_IMAGE_FORMAT = 4
 };
 
 enum AImgFloatOrIntType
