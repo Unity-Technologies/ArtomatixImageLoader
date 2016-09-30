@@ -215,7 +215,7 @@ namespace AImg
                     }
                     else
                     {
-                        mErrorDetails = "Invalid channel type in exr file";
+                        mErrorDetails = "[AImg::EXRImageLoader::EXRFile::] Invalid channel type in exr file";
                         return AImgErrorCode::AIMG_LOAD_FAILED_INTERNAL;
                     }
                 }
@@ -290,7 +290,7 @@ namespace AImg
                 }
                 catch (const std::exception &e)
                 {
-                    mErrorDetails = e.what();
+                    mErrorDetails = std::string("[AImg::EXRImageLoader::EXRFile::] ") + e.what();
                     return AImgErrorCode::AIMG_LOAD_FAILED_INTERNAL;
                 }
             }
@@ -307,7 +307,7 @@ namespace AImg
                 }
                 catch (const std::exception &e)
                 {
-                    mErrorDetails = e.what();
+                    mErrorDetails = std::string("[AImg::EXRImageLoader::EXRFile::] ") + e.what();
                     return AImgErrorCode::AIMG_LOAD_FAILED_EXTERNAL;
                 }
             }
@@ -377,7 +377,7 @@ namespace AImg
                 }
                 catch (const std::exception &e)
                 {
-                    mErrorDetails = e.what();
+                    mErrorDetails = std::string("[AImg::EXRImageLoader::EXRFile::] ") + e.what();
                     return AImgErrorCode::AIMG_WRITE_FAILED_EXTERNAL;
                 }
             }

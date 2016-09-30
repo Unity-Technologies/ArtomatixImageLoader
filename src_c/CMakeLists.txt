@@ -18,6 +18,7 @@ set(PYTHON_ENABLED OFF CACHE BOOL "enable python binding")
 set(EXR_ENABLED ON CACHE BOOL "enable loading EXR files")
 set(PNG_ENABLED ON CACHE BOOL "enable loading PNG files")
 set(JPEG_ENABLED ON CACHE BOOL "enable loading JPEG files")
+set(TGA_ENABLED ON CACHE BOOL "enable loading TGA files")
 set(BUILD_SHARE_TYPE SHARED CACHE STRING "set build type, valid values: SHARED|STATIC")
 
 set(CMAKE_POSITION_INDEPENDENT_CODE YES)
@@ -28,10 +29,14 @@ add_library(AIL ${BUILD_SHARE_TYPE}
     png.cpp
     jpeg.h
     jpeg.cpp
+    tga.h
+    tga.cpp
     AIL.cpp
     AIL.h
     AIL_internal.h
     ImageLoaderBase.h
+    extern/stb_image.h
+    extern/stb_image_write.h
 )
 
 set(AIL_COMPILE_FLAGS "")
@@ -83,6 +88,10 @@ if(JPEG_ENABLED)
     find_package(JPEG CONFIG REQUIRED)
 	target_link_libraries(AIL JPEG::jpeg)
     add_definitions(-DHAVE_JPEG)
+endif()
+
+if(TGA_ENABLED)
+    add_definitions(-DHAVE_TGA)
 endif()
 
 

@@ -285,7 +285,7 @@ namespace AImg
 
                 if (setjmp(err_ptr->buf))
                 {
-                    mErrorDetails = "[AImg::JPEGImageLoader::decodeImage] jpeg_read_scanlines failed!";
+                    mErrorDetails = "[AImg::JPEGImageLoader::JPEGFile::decodeImage] jpeg_read_scanlines failed!";
                     return AImgErrorCode::AIMG_LOAD_FAILED_EXTERNAL;
                 }
 
@@ -353,7 +353,7 @@ namespace AImg
 
                 if (setjmp(jerr.buf))
                 {
-                    mErrorDetails = "[AImg::JPEGImageLoader::writeImage] jpeg_start_compress failed!";
+                    mErrorDetails = "[AImg::JPEGImageLoader::JPEGFile::writeImage] jpeg_start_compress failed!";
                     return AImgErrorCode::AIMG_LOAD_FAILED_EXTERNAL;
                 }
                 jpeg_start_compress(&cinfo, TRUE);
@@ -365,7 +365,7 @@ namespace AImg
 
                 if (setjmp(jerr.buf))
                 {
-                    mErrorDetails = "[AImg::JPEGImageLoader::writeImage] jpeg_write_scanlines failed!";
+                    mErrorDetails = "[AImg::JPEGImageLoader::JPEGFile::writeImage] jpeg_write_scanlines failed!";
                     return AImgErrorCode::AIMG_LOAD_FAILED_EXTERNAL;
                 }
 

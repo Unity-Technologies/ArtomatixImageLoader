@@ -249,10 +249,9 @@ TEST(PNG, TestForceImageFormat)
     auto knownData = decodePNGFile(getImagesDir() + "/png/8-bit.png");
 
 
-    for(int32_t i = 0; i < imgData.size(); i++)
-    {
+    for(uint32_t i = 0; i < imgData.size(); i++)
         ASSERT_EQ(((float)knownData[i]) / 255.0f, imgData[i]);
-    }
+
 }
 
 #endif // HAVE_PNG

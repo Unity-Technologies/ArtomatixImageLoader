@@ -1,62 +1,58 @@
 #include <gtest/gtest.h>
-#include "testCommon.h"
 #include "../AIL.h"
-#ifdef HAVE_JPEG
-#include <jpeglib.h>
-#include <math.h>
 
-std::vector<uint8_t> decodeJPEGFile(const std::string & path)
+#ifdef HAVE_TGA
+#include <stdio.h>
+#include <vector>
+#include <string>
+#include <setjmp.h>
+#include <stdint.h>
+#include "testCommon.h"
+
+#define STBI_ONLY_TGA
+#define STB_IMAGE_IMPLEMENTATION
+#include "../extern/stb_image.h"
+#define STB_IMAGE_WRITE_IMPLEMENTATION
+#include "../extern/stb_image_write.h"
+
+std::vector<uint8_t> decodeTGAFile(const std::string & path)
 {
+    int width, height, comp;
     FILE * file = fopen(path.c_str(), "rb");
-    if (file == NULL)
-        std::cout << "Could not open file: " + path << std::endl;
 
-    jpeg_decompress_struct cinfo;
-    jpeg_error_mgr jerr;
-    cinfo.err = jpeg_std_error(&jerr);
-    int row_stride;
+    uint8_t * loadedData = stbi_load_from_file(file, &width, &height, &comp, 0);
+    std::vector<uint8_t> data(width * height * comp);
 
-    jpeg_create_decompress(&cinfo);
-    jpeg_stdio_src(&cinfo, file);
-
-    jpeg_read_header(&cinfo, TRUE);
-    jpeg_start_decompress(&cinfo);
-    row_stride = cinfo.output_components * cinfo.output_width;
-
-    std::vector<uint8_t> Vbuffer(row_stride*cinfo.output_height);
-
-    uint8_t * rowBuffer =  &Vbuffer[0];
-    JSAMPARRAY buffer = (JSAMPARRAY)malloc(sizeof(JSAMPROW));
-    buffer[0] = (JSAMPROW) malloc(row_stride * sizeof(JSAMPLE));
-    while (cinfo.output_scanline < cinfo.output_height)
-    {
-        jpeg_read_scanlines(&cinfo, buffer, 1);
-        memcpy(rowBuffer, buffer[0], row_stride);
-        rowBuffer += row_stride;
-    }
-
-    jpeg_destroy_decompress(&cinfo);
-    free(buffer[0]);
-    free(buffer);
+    memcpy(&data[0], loadedData, width*height*comp);
+    stbi_image_free(loadedData);
     fclose(file);
 
-    return Vbuffer;
+    return data;
 }
 
-
-TEST(JPEG, TestDetectJPEG)
+TEST(TGA, TestDetectTGA)
 {
-    ASSERT_TRUE(detectImage("/jpeg/test.jpeg", JPEG_IMAGE_FORMAT));
+    ASSERT_TRUE(detectImage("/tga/test.tga", TGA_IMAGE_FORMAT));
 }
 
-TEST(JPEG, TestReadJPEGAttrs)
+TEST(TGA, TestDetectBadTGA)
 {
-    ASSERT_TRUE(validateImageHeaders("/jpeg/test.jpeg", 640, 400, 3, 1, AImgFloatOrIntType::FITYPE_INT, AImgFormat::RGB8U));
+    ASSERT_FALSE(detectImage("/jpeg/test.jpeg", TGA_IMAGE_FORMAT));
 }
 
-TEST(JPEG, TestReadJPEGFile)
+TEST(TGA, TestReadGoodTGAAttrs)
 {
-    auto data = readFile<uint8_t>(getImagesDir() + "/jpeg/test.jpeg");
+    ASSERT_TRUE(validateImageHeaders("/tga/test.tga", 640, 400, 3, 1, AImgFloatOrIntType::FITYPE_INT, AImgFormat::RGB8U));
+}
+
+TEST(TGA, TestReadBadTGAAttrs)
+{
+    ASSERT_FALSE(validateImageHeaders("/tga/test.tga", 640, 400, 3, 1, AImgFloatOrIntType::FITYPE_FLOAT, AImgFormat::RGBA16F));
+}
+
+TEST(TGA, TestReadTGAFile)
+{
+    auto data = readFile<uint8_t>(getImagesDir() + "/tga/test.tga");
 
     ReadCallback readCallback = NULL;
     WriteCallback writeCallback = NULL;
@@ -87,7 +83,7 @@ TEST(JPEG, TestReadJPEGFile)
         std::cout << AImgGetErrorDetails(img) << std::endl;
     }
 
-    auto knownData = decodeJPEGFile(getImagesDir() + "/jpeg/test.jpeg");
+    auto knownData = decodeTGAFile(getImagesDir() + "/tga/test.tga");
 
     for(int32_t y = 0; y < height; y++)
     {
@@ -102,9 +98,9 @@ TEST(JPEG, TestReadJPEGFile)
 }
 
 
-TEST(JPEG, TestWriteJPEG)
+TEST(TGA, TestWriteTGAFile)
 {
-    auto data = readFile<uint8_t>(getImagesDir() + "/jpeg/test.jpeg");
+    auto data = readFile<uint8_t>(getImagesDir() + "/tga/test.tga");
 
     ReadCallback readCallback = NULL;
     WriteCallback writeCallback = NULL;
@@ -134,10 +130,9 @@ TEST(JPEG, TestWriteJPEG)
     AIDestroySimpleMemoryBufferCallbacks(readCallback, writeCallback, tellCallback, seekCallback, callbackData);
 
     std::vector<char> fileData(width * height * numChannels * bytesPerChannel * 5);
-
     AIGetSimpleMemoryBufferCallbacks(&readCallback, &writeCallback, &tellCallback, &seekCallback, &callbackData, &fileData[0], fileData.size());
 
-    AImgHandle wImg = AImgGetAImg(AImgFileFormat::JPEG_IMAGE_FORMAT);
+    AImgHandle wImg = AImgGetAImg(AImgFileFormat::TGA_IMAGE_FORMAT);
     AImgWriteImage(wImg, &imgData[0], width, height, fmt, writeCallback, tellCallback, seekCallback, callbackData);
     AImgClose(wImg);
 
@@ -151,13 +146,53 @@ TEST(JPEG, TestWriteJPEG)
     AIDestroySimpleMemoryBufferCallbacks(readCallback, writeCallback, tellCallback, seekCallback, callbackData);
 
     for(uint32_t i = 0; i < imgData2.size(); i++)
-    {
-        uint8_t diff = abs(imgData[i] - imgData2[i]);
-
-        double percent = diff / 255.0;
-        ASSERT_LT(percent, 0.04);
-    }
+       ASSERT_EQ(imgData[i], imgData2[i]);
 }
+
+TEST(TGA, TestForceImageFormat)
+{
+    auto data = readFile<uint8_t>(getImagesDir() + "/tga/test.tga");
+
+    ReadCallback readCallback = NULL;
+    WriteCallback writeCallback = NULL;
+    TellCallback tellCallback = NULL;
+    SeekCallback seekCallback = NULL;
+    void* callbackData = NULL;
+
+    AIGetSimpleMemoryBufferCallbacks(&readCallback, &writeCallback, &tellCallback, &seekCallback, &callbackData, &data[0], data.size());
+
+    AImgHandle img = NULL;
+    AImgOpen(readCallback, tellCallback, seekCallback, callbackData, &img, NULL);
+
+
+    int32_t width;
+    int32_t height;
+    int32_t numChannels;
+    int32_t bytesPerChannel;
+    int32_t floatOrInt;
+    int32_t imgFmt;
+    AImgGetInfo(img, &width, &height, &numChannels, &bytesPerChannel, &floatOrInt, &imgFmt);
+
+
+    std::vector<float> imgData(width*height*3, 78);
+
+    int32_t error = AImgDecodeImage(img, &imgData[0], AImgFormat::RGB32F);
+    if (error != AImgErrorCode::AIMG_SUCCESS)
+    {
+        std::cout << AImgGetErrorDetails(img) << std::endl;
+    }
+
+    AImgClose(img);
+    AIDestroySimpleMemoryBufferCallbacks(readCallback, writeCallback, tellCallback, seekCallback, callbackData);
+
+    auto knownData = decodeTGAFile(getImagesDir() + "/tga/test.tga");
+
+
+    for(uint32_t i = 0; i < imgData.size(); i++)
+        ASSERT_EQ(((float)knownData[i]) / 255.0f, imgData[i]);
+
+}
+
 
 int main(int argc, char **argv)
 {
@@ -170,5 +205,4 @@ int main(int argc, char **argv)
 
     return retval;
 }
-
 #endif

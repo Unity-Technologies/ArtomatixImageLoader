@@ -58,7 +58,7 @@ namespace AImg
     }
 
 
-    AImgFormat getWhatFormatWillBeWrittenForData(int32_t inputFormat)
+    AImgFormat getWhatFormatWillBeWrittenForDataPNG(int32_t inputFormat)
     {
         int32_t numChannels, bytesPerChannel, floatOrInt;
         AIGetFormatDetails(inputFormat, &numChannels, &bytesPerChannel, &floatOrInt);
@@ -232,7 +232,7 @@ namespace AImg
 
                 png_set_write_fn(png_write_ptr, (void *)callbackDataStruct, png_custom_write_data, flush_data_noop_func);
 
-                int32_t writeFormat = getWhatFormatWillBeWrittenForData(inputFormat);
+                int32_t writeFormat = getWhatFormatWillBeWrittenForDataPNG(inputFormat);
 
                 std::vector<uint8_t> convertBuffer(0);
 
@@ -291,7 +291,7 @@ namespace AImg
 
                 if (setjmp(png_jmpbuf(png_write_ptr)))
                 {
-                    mErrorDetails = "[PNGImageLoader::writeImage] Failed to write PNG header";
+                    mErrorDetails = "[AImg::PNGImageLoader::PNGFile::writeImage] Failed to write PNG header";
                     return AImgErrorCode::AIMG_WRITE_FAILED_EXTERNAL;
                 }
 
@@ -309,7 +309,7 @@ namespace AImg
 
                 if (setjmp(png_jmpbuf(png_write_ptr)))
                 {
-                    mErrorDetails = "[PNGImageLoader::writeImage] Failed to write file";
+                    mErrorDetails = "[AImg::PNGImageLoader::PNGFile::writeImage] Failed to write file";
                     return AImgErrorCode::AIMG_WRITE_FAILED_EXTERNAL;
                 }
 
@@ -317,7 +317,7 @@ namespace AImg
 
                 if (setjmp(png_jmpbuf(png_write_ptr)))
                 {
-                    mErrorDetails = "[PNGImageLoader::writeImage] Failed to finalize write";
+                    mErrorDetails = "[AImg::PNGImageLoader::PNGFile::writeImage] Failed to finalize write";
                     return AImgErrorCode::AIMG_WRITE_FAILED_EXTERNAL;
                 }
 
@@ -334,7 +334,7 @@ namespace AImg
 
     AImgFormat PNGImageLoader::getWhatFormatWillBeWrittenForData(int32_t inputFormat)
     {
-        return getWhatFormatWillBeWrittenForData(inputFormat);
+        return getWhatFormatWillBeWrittenForDataPNG(inputFormat);
     }
 
     AImgBase* PNGImageLoader::getAImg()
