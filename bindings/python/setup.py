@@ -3,7 +3,7 @@ from distutils.command.build_ext import build_ext
 import shutil
 import os
 
-thisFolder = dir_path = os.path.dirname(os.path.realpath(__file__))
+thisFolder = os.path.dirname(os.path.realpath(__file__))
 
 # The .so is actually compiled with cmake, but we have to put a sources arg in here anyway.
 # my_build_ext below hijacks the build command to build with cmake and then just copy the 
@@ -24,7 +24,7 @@ class my_build_ext(build_ext):
 
     def build_native_with_cmake(self):
 
-        buildFolder = thisFolder + "../../../src_c/build_python"
+        buildFolder = thisFolder + "/../../src_c/build_python"
 
         if not os.path.exists(buildFolder):
             os.makedirs(buildFolder)
