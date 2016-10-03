@@ -3,8 +3,8 @@ import numpy as np
 
 class AILEnum(object):
     def __init__(self, entryType, dIn):
-        self.d1 = {k: entryType(k, v) for k, v in dIn.iteritems()}
-        self.d2 = {v: entryType(k, v) for k, v in dIn.iteritems()}
+        self.d1 = {k:    entryType(k, *v) for k, v in dIn.iteritems()}
+        self.d2 = {v[0]: entryType(k, *v) for k, v in dIn.iteritems()}
         
     def __getitem__(self, index):
         try:
@@ -19,40 +19,43 @@ class AILEnum(object):
 
 AImgFormat = collections.namedtuple("AImgFormat", "name val")
 AImgFormats = AILEnum(AImgFormat, {
-    "INVALID_FORMAT" : -1,
+    "INVALID_FORMAT" : [-1],
 
-    "R8U"     : 0,
-    "RG8U"    : 1,
-    "RGB8U"   : 2,
-    "RGBA8U"  : 3,
+    "R8U"     : [0],
+    "RG8U"    : [1],
+    "RGB8U"   : [2],
+    "RGBA8U"  : [3],
     
-    "R16U"    : 4,
-    "RG16U"   : 5,
-    "RGB16U"  : 6,
-    "RGBA16U" : 7,
+    "R16U"    : [4],
+    "RG16U"   : [5],
+    "RGB16U"  : [6],
+    "RGBA16U" : [7],
 
-    "R16F"    : 8,
-    "RG16F"   : 9,
-    "RGB16F"  : 10,
-    "RGBA16F" : 11,
+    "R16F"    : [8],
+    "RG16F"   : [9],
+    "RGB16F"  : [10],
+    "RGBA16F" : [11],
 
-    "R32F"    : 12,
-    "RG32F"   : 13,
-    "RGB32F"  : 14,
-    "RGBA32F" : 15
+    "R32F"    : [12],
+    "RG32F"   : [13],
+    "RGB32F"  : [14],
+    "RGBA32F" : [15]
 })
 
-AImgFileFormat = collections.namedtuple("AImgFileFormat", "name val")
+AImgFileFormat = collections.namedtuple("AImgFileFormat", "name val ext")
 AImgFileFormats = AILEnum(AImgFileFormat, {
-    "UNKNOWN_IMAGE_FORMAT" : -1,
-    "EXR_IMAGE_FORMAT" : 1
+    "UNKNOWN_IMAGE_FORMAT" : [-1, ""],
+    "EXR_IMAGE_FORMAT"  : [1, "exr"],
+    "PNG_IMAGE_FORMAT"  : [2, "png"],
+    "JPEG_IMAGE_FORMAT" : [3, "jpeg"],
+    "TGA_IMAGE_FORMAT"  : [4, "tga"]
 })
 
 AImgFloatOrIntType = collections.namedtuple("AImgFloatOrIntType", "name val")
 AImgFloatOrIntTypes = AILEnum(AImgFloatOrIntType, {
-    "FITYPE_UNKNOWN" : -1,
-    "FITYPE_FLOAT" : 0,
-    "FITYPE_INT" : 1
+    "FITYPE_UNKNOWN" : [-1],
+    "FITYPE_FLOAT" : [0],
+    "FITYPE_INT" : [1]
 })
 
 
