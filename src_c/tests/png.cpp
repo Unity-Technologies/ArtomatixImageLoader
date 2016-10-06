@@ -254,6 +254,67 @@ TEST(PNG, TestForceImageFormat)
 
 }
 
+TEST(Png, TestForceAwayAlpha)
+{
+    auto data = readFile<uint8_t>(getImagesDir() + "/png/alpha.png");
+
+    ReadCallback readCallback = NULL;
+    WriteCallback writeCallback = NULL;
+    TellCallback tellCallback = NULL;
+    SeekCallback seekCallback = NULL;
+    void* callbackData = NULL;
+
+    AIGetSimpleMemoryBufferCallbacks(&readCallback, &writeCallback, &tellCallback, &seekCallback, &callbackData, &data[0], data.size());
+
+    AImgHandle img = NULL;
+    AImgOpen(readCallback, tellCallback, seekCallback, callbackData, &img, NULL);
+
+
+    int32_t width;
+    int32_t height;
+    int32_t numChannels;
+    int32_t bytesPerChannel;
+    int32_t floatOrInt;
+    int32_t imgFmt;
+    AImgGetInfo(img, &width, &height, &numChannels, &bytesPerChannel, &floatOrInt, &imgFmt);
+
+
+    std::vector<uint8_t> imgData(width*height*3, 78);
+
+    int32_t error = AImgDecodeImage(img, &imgData[0], AImgFormat::RGB8U); // image is actually RGBA8U, so force off the alpha channel
+    if (error != AImgErrorCode::AIMG_SUCCESS)
+    {
+        std::cout << AImgGetErrorDetails(img) << std::endl;
+    }
+
+    AImgClose(img);
+    AIDestroySimpleMemoryBufferCallbacks(readCallback, writeCallback, tellCallback, seekCallback, callbackData);
+
+    auto knownData = decodePNGFile(getImagesDir() + "/png/alpha.png");
+
+    for(int32_t y = 0; y < height; y++)
+    {
+        for(int32_t x = 0; x < width; x++)
+        {
+            uint8_t realR = knownData[(x + y*width)*4 + 0]; 
+            uint8_t realG = knownData[(x + y*width)*4 + 1]; 
+            uint8_t realB = knownData[(x + y*width)*4 + 2]; 
+            uint8_t realA = knownData[(x + y*width)*4 + 3]; 
+            
+            uint8_t readR = imgData[(x + y*width)*3 + 0]; 
+            uint8_t readG = imgData[(x + y*width)*3 + 1]; 
+            uint8_t readB = imgData[(x + y*width)*3 + 2]; 
+
+            if(realA != 0)
+            {
+                ASSERT_EQ(realR, readR);
+                ASSERT_EQ(realG, readG);
+                ASSERT_EQ(realB, readB);
+            }
+        }
+    }
+}
+
 #endif // HAVE_PNG
 
 int main(int argc, char **argv)

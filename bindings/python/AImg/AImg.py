@@ -39,7 +39,11 @@ class AImg(object):
 
         self._decodeDone = True
 
-        formatInfo = enums.getFormatInfo(self.decodedImgFormat)
+        decodeFormat = self.decodedImgFormat
+        if forceImageFormat != enums.AImgFormats["INVALID_FORMAT"]:
+            decodeFormat = forceImageFormat
+
+        formatInfo = enums.getFormatInfo(decodeFormat)
 
         if destBuffer == None:
             destBuffer = np.zeros(shape=(self.height, self.width, formatInfo.numChannels), dtype = formatInfo.npType, order="C")

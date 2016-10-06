@@ -48,6 +48,24 @@ class TestAImg(unittest.TestCase):
         with self.assertRaises(AImg.AImgUnsupportedFiletypeException) as context:
             img = AImg.AImg(__file__)
 
+    def test_force_away_alpha(self):
+        img = AImg.AImg(imagesDir + "/png/alpha.png")
+        dataNoA = img.decode(forceImageFormat=AImg.AImgFormats["RGB8U"]) # real format is RGBA8U
+        del img
+
+        img = AImg.AImg(imagesDir + "/png/alpha.png")
+        data = img.decode()
+
+        width = img.width
+        height = img.height
+        del img
+
+        for y in range(height):
+            for x in range(width):
+                if data[y][x][3] != 0:
+                    self.assertEqual(data[y][x][0], dataNoA[y][x][0])
+                    self.assertEqual(data[y][x][1], dataNoA[y][x][1])
+                    self.assertEqual(data[y][x][2], dataNoA[y][x][2])
 
 if __name__ == "__main__":
     unittest.main()
