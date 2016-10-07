@@ -7,6 +7,10 @@ class AILEnum(object):
         self.d2 = {v[0]: entryType(k, *v) for k, v in dIn.iteritems()}
         
     def __getitem__(self, index):
+        # prevent key errors where people used unicode strings by accident
+        if type(index) == unicode:
+            index = str(index)
+
         try:
             if type(index) == str:
                 return self.d1[index]
