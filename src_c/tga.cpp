@@ -239,7 +239,7 @@ namespace AImg
                 callbackFunctions.callbackData = callbackData;
 
                 int err = stbi_write_tga_to_func(&STBICallbacks::writeFunc, &callbackFunctions, width, height, numChannels, data);
-                if (err == 0)
+                if (err != 0)
                 {
                     return AImgErrorCode::AIMG_SUCCESS;
                 }

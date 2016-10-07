@@ -44,6 +44,26 @@ class TestAImg(unittest.TestCase):
                 for c in range(decoded.shape[2]):
                     self.assertEqual(decoded2[y][x][c], decoded[y][x][c])
 
+    def test_write_tga(self):
+        img = AImg.AImg(imagesDir + "/png/alpha.png")
+        decoded = img.decode()
+        
+        outFile = io.BytesIO()
+
+        AImg.write(outFile, decoded, AImg.AImgFileFormats["TGA_IMAGE_FORMAT"])
+
+        outFile.seek(0)
+        img2 = AImg.AImg(outFile)
+
+        decoded2 = img2.decode()
+
+        for y in range(img2.height):
+            for x in range(img2.width):
+                for c in range(decoded.shape[2]):
+                    self.assertEqual(decoded2[y][x][c], decoded[y][x][c])
+
+
+
     def test_open_bad_file(self):
         with self.assertRaises(AImg.AImgUnsupportedFiletypeException) as context:
             img = AImg.AImg(__file__)

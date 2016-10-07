@@ -133,7 +133,8 @@ TEST(TGA, TestWriteTGAFile)
     AIGetSimpleMemoryBufferCallbacks(&readCallback, &writeCallback, &tellCallback, &seekCallback, &callbackData, &fileData[0], fileData.size());
 
     AImgHandle wImg = AImgGetAImg(AImgFileFormat::TGA_IMAGE_FORMAT);
-    AImgWriteImage(wImg, &imgData[0], width, height, fmt, writeCallback, tellCallback, seekCallback, callbackData);
+    auto err = AImgWriteImage(wImg, &imgData[0], width, height, fmt, writeCallback, tellCallback, seekCallback, callbackData);
+    ASSERT_EQ(err, AImgErrorCode::AIMG_SUCCESS);
     AImgClose(wImg);
 
     seekCallback(callbackData, 0);
