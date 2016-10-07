@@ -70,6 +70,9 @@ class AImg(object):
 
 
 def write(io_or_path, data, fileFormat):
+    if not (data.flags.c_contiguous and data.flags.aligned):
+            raise ValueError("data does not meet flags requirements (c_contiguous & aligned)")
+
     if type(io_or_path) == str:
         stream = open(io_or_path, "wb")
     else:
