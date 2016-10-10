@@ -296,7 +296,7 @@ namespace AImg
                 }
 
                 int32_t numChannels, bytesPerChannel, floatOrInt;
-                AIGetFormatDetails(inputFormat, &numChannels, &bytesPerChannel, &floatOrInt);
+                AIGetFormatDetails(writeFormat, &numChannels, &bytesPerChannel, &floatOrInt);
 
                 void ** ptrs = (void **)malloc(sizeof(size_t) * height);
 

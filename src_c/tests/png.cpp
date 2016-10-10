@@ -315,6 +315,60 @@ TEST(Png, TestForceAwayAlpha)
     }
 }
 
+TEST(Png, TestWriteFrom32Bit)
+{
+    int32_t width = 64;
+    int32_t height = 32;
+    int32_t numChannels = 4;
+
+    std::vector<float> fData(width*height*numChannels, 0.0f);
+
+    for(int y = 0; y < height; y++)
+    {
+        for(int x = 0; x < width; x++)
+        {
+            fData[((x + y*width)*numChannels)+0] = 1.0f;
+            fData[((x + y*width)*numChannels)+1] = 1.0f;
+            fData[((x + y*width)*numChannels)+2] = 0.0f;
+            fData[((x + y*width)*numChannels)+3] = 1.0f;
+
+        }
+    }
+
+    std::vector<uint8_t> fileData(width*height*numChannels*50); // should be big enough
+
+    ReadCallback readCallback = NULL;
+    WriteCallback writeCallback = NULL;
+    TellCallback tellCallback = NULL;
+    SeekCallback seekCallback = NULL;
+    void* callbackData = NULL;
+    AIGetSimpleMemoryBufferCallbacks(&readCallback, &writeCallback, &tellCallback, &seekCallback, &callbackData, &fileData[0], fileData.size());
+
+    AImgHandle wImg = AImgGetAImg(AImgFileFormat::PNG_IMAGE_FORMAT);
+    int32_t err = AImgWriteImage(wImg, &fData[0], width, height, AImgFormat::RGBA32F, writeCallback, tellCallback, seekCallback, callbackData);
+    AImgClose(wImg);
+
+    seekCallback(callbackData, 0);
+
+
+    AImgHandle img = NULL;
+    AImgOpen(readCallback, tellCallback, seekCallback, callbackData, &img, NULL);
+
+    std::vector<uint16_t> data16(width*height*numChannels, 0);
+
+    AImgDecodeImage(img, &data16[0], AImgFormat::INVALID_FORMAT);
+
+    for(uint32_t i = 0; i < data16.size(); i++)
+    {
+        ASSERT_EQ(data16[i], ((uint32_t)fData[i])* std::numeric_limits<uint16_t>::max());
+    }
+
+    AImgClose(img);
+    AIDestroySimpleMemoryBufferCallbacks(readCallback, writeCallback, tellCallback, seekCallback, callbackData);
+}
+
+
+
 #endif // HAVE_PNG
 
 int main(int argc, char **argv)
