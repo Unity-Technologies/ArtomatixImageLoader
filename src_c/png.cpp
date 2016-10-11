@@ -176,6 +176,12 @@ namespace AImg
 
             virtual int32_t decodeImage(void *realDestBuffer, int32_t forceImageFormat)
             {
+
+                #if AIL_BYTEORDER == AIL_LIL_ENDIAN
+                if (bit_depth > 8)
+                   png_set_swap(png_read_ptr);
+                #endif
+
                 // This sets a restore point for libpng if reading fails internally
                 // Crazy old C exceptions without exceptions
                 if (setjmp(png_jmpbuf(png_read_ptr)))
@@ -306,6 +312,12 @@ namespace AImg
                 png_set_IHDR(png_write_ptr, png_info_ptr, width, height, bit_depth, colour_type, PNG_INTERLACE_NONE, PNG_COMPRESSION_TYPE_DEFAULT, PNG_FILTER_TYPE_DEFAULT);
 
                 png_write_info(png_write_ptr, png_info_ptr);
+
+
+                #if AIL_BYTEORDER == AIL_LIL_ENDIAN
+                if (bit_depth > 8)
+                   png_set_swap(png_write_ptr);
+                #endif
 
                 if (setjmp(png_jmpbuf(png_write_ptr)))
                 {

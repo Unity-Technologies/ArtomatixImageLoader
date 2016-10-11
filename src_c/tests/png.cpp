@@ -40,6 +40,11 @@ std::vector<uint8_t> decodePNGFile(const std::string& path)
     int32_t bit_depth = png_get_bit_depth(png_read_ptr, png_info_ptr);
     int32_t numChannels = png_get_channels(png_read_ptr, png_info_ptr);
 
+    #if AIL_BYTEORDER == AIL_LIL_ENDIAN
+    if (bit_depth > 8)
+       png_set_swap(png_read_ptr);
+    #endif
+
     void ** row_pointers = (void **)malloc(sizeof(png_bytep) * height);
 
     std::vector<uint8_t> buffer(width * height * numChannels * bit_depth/8);
