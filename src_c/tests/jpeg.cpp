@@ -54,6 +54,11 @@ TEST(JPEG, TestReadJPEGAttrs)
     ASSERT_TRUE(validateImageHeaders("/jpeg/test.jpeg", 640, 400, 3, 1, AImgFloatOrIntType::FITYPE_INT, AImgFormat::RGB8U));
 }
 
+TEST(JPEG, TestCompareForceImageFormat1)
+{
+    ASSERT_TRUE(compareForceImageFormat("/jpeg/test.jpeg"));
+}
+
 TEST(JPEG, TestReadJPEGFile)
 {
     auto data = readFile<uint8_t>(getImagesDir() + "/jpeg/test.jpeg");

@@ -265,8 +265,20 @@ namespace AImg
                 return AImgErrorCode::AIMG_SUCCESS;
             }
 
-            virtual int32_t decodeImage(void *destBuffer, int32_t forceImageFormat)
+            virtual int32_t decodeImage(void *realDestBuffer, int32_t forceImageFormat)
             {
+                void* destBuffer = realDestBuffer;
+
+                std::vector<uint8_t> convertTmpBuffer(0);
+                if(forceImageFormat != AImgFormat::INVALID_FORMAT && forceImageFormat != AImgFormat::RGB8U)
+                {
+                    int32_t numChannels, bytesPerChannel, floatOrInt;
+                    AIGetFormatDetails(AImgFormat::RGB8U, &numChannels, &bytesPerChannel, &floatOrInt);
+
+                    convertTmpBuffer.resize(jpeg_read_struct.image_width * jpeg_read_struct.image_height * bytesPerChannel * numChannels);
+                    destBuffer = &convertTmpBuffer[0];
+                }
+
                 ArtomatixErrorStruct * err_ptr = (ArtomatixErrorStruct *) jpeg_read_struct.err;
 
                 if (setjmp(err_ptr->buf))
@@ -297,17 +309,11 @@ namespace AImg
 
                 jpeg_finish_decompress(&jpeg_read_struct);
 
-                if (forceImageFormat != AImgFormat::INVALID_FORMAT)
+                if (forceImageFormat != AImgFormat::INVALID_FORMAT && forceImageFormat != AImgFormat::RGB8U)
                 {
-                    int32_t numChannels, bytesPerChannel, floatOrInt;
-                    AIGetFormatDetails(forceImageFormat, &numChannels, &bytesPerChannel, &floatOrInt);
-
-                    std::vector<uint8_t> convertBuffer(jpeg_read_struct.image_width * jpeg_read_struct.image_height * numChannels * bytesPerChannel);
-
-                    int32_t convertError = AImgConvertFormat(destBuffer, &convertBuffer[0], jpeg_read_struct.image_width, jpeg_read_struct.image_height, AImgFormat::R8U, forceImageFormat);
-
-                    if (convertError != AImgErrorCode::AIMG_SUCCESS)
-                        return convertError;
+                    int32_t err = AImgConvertFormat(destBuffer, realDestBuffer, jpeg_read_struct.image_width, jpeg_read_struct.image_height, AImgFormat::RGB8U, forceImageFormat);
+                    if(err != AImgErrorCode::AIMG_SUCCESS)
+                        return err;
                 }
 
                 return AImgErrorCode::AIMG_SUCCESS;
