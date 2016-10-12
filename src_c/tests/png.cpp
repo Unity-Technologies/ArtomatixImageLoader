@@ -215,6 +215,21 @@ TEST(PNG, TesWrite16BitPNG8)
     ASSERT_TRUE(validateWritePNGFile("/png/16-bit.png"));
 }
 
+TEST(PNG, TestCompareForceImageFormat1)
+{
+    ASSERT_TRUE(compareForceImageFormat("/png/8-bit.png"));
+}
+
+TEST(PNG, TestCompareForceImageFormat2)
+{
+    ASSERT_TRUE(compareForceImageFormat("/png/16-bit.png"));
+}
+
+TEST(PNG, TestCompareForceImageFormat3)
+{
+    ASSERT_TRUE(compareForceImageFormat("/png/alpha.png"));
+}
+
 TEST(PNG, TestForceImageFormat)
 {
     auto data = readFile<uint8_t>(getImagesDir() + "/png/8-bit.png");

@@ -1,4 +1,5 @@
 #include "testCommon.h"
+#include <cmath>
 
 bool detectImage(const std::string& path, int32_t format)
 {
@@ -49,4 +50,87 @@ bool validateImageHeaders(const std::string & path, int32_t expectedWidth, int32
     AIDestroySimpleMemoryBufferCallbacks(readCallback, writeCallback, tellCallback, seekCallback, callbackData);
 
     return (width == expectedWidth && height == expectedHeight && numChannels == expectedNumChannels && bytesPerChannel == expectedBytesPerChannel && floatOrInt == expectedFloatOrInt && decodedImgFormat == expectedFormat);
+}
+
+bool compareForceImageFormat(const std::string& path)
+{
+    auto data = readFile<uint8_t>(getImagesDir() + path);
+
+    ReadCallback readCallback = NULL;
+    WriteCallback writeCallback = NULL;
+    TellCallback tellCallback = NULL;
+    SeekCallback seekCallback = NULL;
+    void* callbackData = NULL;
+
+    AIGetSimpleMemoryBufferCallbacks(&readCallback, &writeCallback, &tellCallback, &seekCallback, &callbackData, &data[0], data.size());
+
+    int32_t err = AIMG_SUCCESS;
+
+    AImgHandle img = NULL;
+    err = AImgOpen(readCallback, tellCallback, seekCallback, callbackData, &img, NULL);
+    if(err != AIMG_SUCCESS)
+        return false;
+
+    int32_t width = 0;
+    int32_t height = 0;
+    int32_t numChannels = 0;
+    int32_t bytesPerChannel = 0;
+    int32_t floatOrInt = 0;
+    int32_t decodedImgFormat = 0;
+
+    err = AImgGetInfo(img, &width, &height, &numChannels, &bytesPerChannel, &floatOrInt, &decodedImgFormat);
+    if(err != AIMG_SUCCESS)
+        return false;
+
+    std::vector<uint16_t> data16(width*height*4);
+
+    err = AImgDecodeImage(img, &data16[0], AImgFormat::RGBA16U);
+    if(err != AIMG_SUCCESS)
+        return false;
+
+    AImgClose(img);
+    img = NULL;
+
+    seekCallback(callbackData, 0);
+
+    err = AImgOpen(readCallback, tellCallback, seekCallback, callbackData, &img, NULL);
+    if(err != AIMG_SUCCESS)
+        return false;
+
+    std::vector<float> data32(width*height*4);
+
+    err = AImgDecodeImage(img, &data32[0], AImgFormat::RGBA32F);
+    if(err != AIMG_SUCCESS)
+        return false;
+
+    AImgClose(img);
+    img = NULL;
+
+    for(int32_t y = 0; y < height; y++)
+    {
+        for(int32_t x = 0; x < width; x++)
+        {
+            float r16 = ((float)data16[(x + y*width)*4 + 0]) / 65535.0f;
+            float g16 = ((float)data16[(x + y*width)*4 + 1]) / 65535.0f;
+            float b16 = ((float)data16[(x + y*width)*4 + 2]) / 65535.0f;
+            float a16 = ((float)data16[(x + y*width)*4 + 3]) / 65535.0f;
+
+            float r32 = data32[(x + y*width)*4 + 0];
+            float g32 = data32[(x + y*width)*4 + 1];
+            float b32 = data32[(x + y*width)*4 + 2];
+            float a32 = data32[(x + y*width)*4 + 3];
+
+            float diffR = std::abs(r32-r16);
+            float diffG = std::abs(g32-g16);
+            float diffB = std::abs(b32-b16);
+            float diffA = std::abs(a32-a16);
+
+            float threshold = 0.001f;
+
+            if(diffR > threshold || diffG > threshold || diffB > threshold || diffA > threshold)
+                return false;
+        }
+    }
+
+    return true;
 }
