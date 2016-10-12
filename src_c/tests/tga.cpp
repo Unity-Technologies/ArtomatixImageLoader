@@ -50,6 +50,11 @@ TEST(TGA, TestReadBadTGAAttrs)
     ASSERT_FALSE(validateImageHeaders("/tga/test.tga", 640, 400, 3, 1, AImgFloatOrIntType::FITYPE_FLOAT, AImgFormat::RGBA16F));
 }
 
+TEST(TGA, TestCompareForceImageFormat1)
+{
+    ASSERT_TRUE(compareForceImageFormat("/tga/test.tga"));
+}
+
 TEST(TGA, TestReadTGAFile)
 {
     auto data = readFile<uint8_t>(getImagesDir() + "/tga/test.tga");
