@@ -15,6 +15,15 @@ TEST(Exr, TestReadExrAttrs)
     ASSERT_TRUE(validateImageHeaders("/exr/grad_32.exr", 64, 32, 3, 4, AImgFloatOrIntType::FITYPE_FLOAT, AImgFormat::RGB32F));
 }
 
+TEST(Exr, TestCompareForceImageFormat1)
+{
+    ASSERT_TRUE(compareForceImageFormat("/exr/grad_32.exr"));
+}
+
+TEST(Exr, TestCompareForceImageFormat2)
+{
+    ASSERT_TRUE(compareForceImageFormat("/exr/neal_half.exr"));
+}
 
 // THIS HAS NOTHING TO DO WITH EXRS
 
