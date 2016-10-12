@@ -15,6 +15,15 @@ TEST(Exr, TestReadExrAttrs)
     ASSERT_TRUE(validateImageHeaders("/exr/grad_32.exr", 64, 32, 3, 4, AImgFloatOrIntType::FITYPE_FLOAT, AImgFormat::RGB32F));
 }
 
+TEST(Exr, TestCompareForceImageFormat1)
+{
+    ASSERT_TRUE(compareForceImageFormat("/exr/grad_32.exr"));
+}
+
+TEST(Exr, TestCompareForceImageFormat2)
+{
+    ASSERT_TRUE(compareForceImageFormat("/exr/neal_half.exr"));
+}
 
 // THIS HAS NOTHING TO DO WITH EXRS
 
@@ -183,7 +192,14 @@ TEST(Exr, TestConvertDataFormat)
 
 TEST(Exr, TestOpenBadImage)
 {
-    auto data = readFile<uint8_t>("/etc/passwd");
+    std::string data = "Lorem ipsum dolor sit amet, consectetur adipiscing elit, sed do eiusmod tempor"
+                       "incididunt ut labore et dolore magna aliqua. Ut enim ad minim veniam, quis"
+                       "nostrud exercitation ullamco laboris nisi ut aliquip ex ea commodo consequat."
+                       "Duis aute irure dolor in reprehenderit in voluptate velit esse cillum dolore eu"
+                       "fugiat nulla pariatur. Excepteur sint occaecat cupidatat non proident, sunt in"
+                       "culpa qui officia deserunt mollit anim id est laborum.";
+
+
 
     ReadCallback readCallback = NULL;
     WriteCallback writeCallback = NULL;
@@ -193,7 +209,7 @@ TEST(Exr, TestOpenBadImage)
 
     AIGetSimpleMemoryBufferCallbacks(&readCallback, &writeCallback, &tellCallback, &seekCallback, &callbackData, &data[0], data.size());
 
-    AImgHandle img = (AImgHandle)20;
+    AImgHandle img = NULL;
     int32_t err = AImgOpen(readCallback, tellCallback, seekCallback, callbackData, &img, NULL);
 
     ASSERT_EQ(err, AImgErrorCode::AIMG_UNSUPPORTED_FILETYPE);

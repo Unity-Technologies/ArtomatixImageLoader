@@ -43,7 +43,7 @@ std::vector<T> readFile(const std::string& path)
 
 bool detectImage(const std::string& path, int32_t format);
 bool validateImageHeaders(const std::string & path, int32_t expectedWidth, int32_t expectedHeight, int32_t expectedNumChannels, int32_t expectedBytesPerChannel, int32_t expectedFloatOrInt, int32_t expectedFormat);
-
+bool compareForceImageFormat(const std::string& path);
 
 
 #endif

@@ -223,11 +223,27 @@ namespace AImg
                 return AImgErrorCode::AIMG_SUCCESS;
             }
 
-            virtual int32_t decodeImage(void* destBuffer, int32_t forceImageFormat)
+            virtual int32_t decodeImage(void* realDestBuffer, int32_t forceImageFormat)
             {
                 try
                 {
                     int32_t width = dw.max.x - dw.min.x + 1;
+                    int32_t height = dw.max.y - dw.min.y + 1;
+
+
+                    int32_t decodeFormat = getDecodeFormat();
+
+                    void* destBuffer = realDestBuffer;
+
+                    std::vector<uint8_t> convertTmpBuffer(0);
+                    if (forceImageFormat != AImgFormat::INVALID_FORMAT && forceImageFormat != decodeFormat)
+                    {
+                        int32_t numChannels, bytesPerChannel, floatOrInt;
+                        AIGetFormatDetails(decodeFormat, &numChannels, &bytesPerChannel, &floatOrInt);
+
+                        convertTmpBuffer.resize(width * height * bytesPerChannel * numChannels);
+                        destBuffer = &convertTmpBuffer[0];
+                    }
 
                     std::vector<std::string> allChannelNames;
                     bool isRgba = true;
@@ -285,6 +301,13 @@ namespace AImg
 
                     file->setFrameBuffer(frameBuffer);
                     file->readPixels(dw.min.y, dw.max.y);
+
+                    if (forceImageFormat != AImgFormat::INVALID_FORMAT && forceImageFormat != decodeFormat)
+                    {
+                        int32_t err = AImgConvertFormat(destBuffer, realDestBuffer, width, height, decodeFormat, forceImageFormat);
+                        if(err != AImgErrorCode::AIMG_SUCCESS)
+                            return err;
+                    }
 
                     return AImgErrorCode::AIMG_SUCCESS;
                 }
