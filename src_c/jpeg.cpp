@@ -170,46 +170,15 @@ namespace AImg
     bool JPEGImageLoader::canLoadImage(ReadCallback readCallback, TellCallback tellCallback, SeekCallback seekCallback, void *callbackData)
     {
         AIL_UNUSED_PARAM(tellCallback);
-        uint8_t possible_magic1[] = {0xFF, 0xD8, 0xFF, 0xDB};
-        uint8_t possible_magic2[] = {0xFF, 0xD8, 0xFF, 0xE0};
-        uint8_t possible_magic3[] = {0xFF, 0xD8, 0xFF, 0xE1};
-        uint8_t possible_magic2_end[] = {0x4A, 0x46, 0x49, 0x46, 0x00, 0x01};
-        uint8_t possible_magic3_end[] = {0x45, 0x78, 0x69, 0x66, 0x00, 0x00};
-
-        bool goodHeader = false;
+        uint8_t magic[] = {0xFF, 0xD8, 0xFF};
 
         int startingPosition = tellCallback(callbackData);
         std::vector<uint8_t> header(4);        
         readCallback(callbackData, &header[0], 4);
 
-        goodHeader = ((int32_t)memcmp(&header[0], possible_magic1, 4)) == 0;
-
-        std::vector<uint8_t> header_end(6);        
-        seekCallback(callbackData, startingPosition + 6);
-        readCallback(callbackData, &header_end[0], 6);
         seekCallback(callbackData, startingPosition);
 
-
-        if (goodHeader)
-            return goodHeader;
-
-        else if(((int32_t)memcmp(&header[0], possible_magic2, 4)) == 0)
-        {
-            if(((int32_t)memcmp(&header_end[0], possible_magic2_end, 6)) == 0)
-                return true;
-            else
-                return false;
-        }
-
-        else if(((int32_t)memcmp(&header[0], possible_magic3, 4)) == 0)
-        {
-            if(((int32_t)memcmp(&header_end[0], possible_magic3_end, 6)) == 0)
-                return true;
-            else
-                return false;
-        }
-
-        return false;
+        return ((int32_t)memcmp(&header[0], magic, 3)) == 0;
     }
 
     std::string JPEGImageLoader::getFileExtension()
