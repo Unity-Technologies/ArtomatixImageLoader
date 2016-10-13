@@ -43,6 +43,64 @@ std::vector<uint8_t> decodeJPEGFile(const std::string & path)
     return Vbuffer;
 }
 
+bool testReadJpegFile(const std::string& path)
+{
+    auto data = readFile<uint8_t>(getImagesDir() + path);
+
+    ReadCallback readCallback = NULL;
+    WriteCallback writeCallback = NULL;
+    TellCallback tellCallback = NULL;
+    SeekCallback seekCallback = NULL;
+    void* callbackData = NULL;
+
+    AIGetSimpleMemoryBufferCallbacks(&readCallback, &writeCallback, &tellCallback, &seekCallback, &callbackData, &data[0], data.size());
+
+    AImgHandle img = NULL;
+    int32_t error = AImgOpen(readCallback, tellCallback, seekCallback, callbackData, &img, NULL);
+
+    if (error != AImgErrorCode::AIMG_SUCCESS)
+    {
+        std::cout << AImgGetErrorDetails(img) << std::endl;
+        return false;
+    }
+
+
+    int32_t width;
+    int32_t height;
+    int32_t numChannels;
+    int32_t bytesPerChannel;
+    int32_t floatOrInt;
+    int32_t imgFmt;
+
+    AImgGetInfo(img, &width, &height, &numChannels, &bytesPerChannel, &floatOrInt, &imgFmt);
+
+    std::vector<uint8_t> imgData(width*height*numChannels*bytesPerChannel, 78);
+
+    error = AImgDecodeImage(img, &imgData[0], AImgFormat::INVALID_FORMAT);
+
+    if (error != AImgErrorCode::AIMG_SUCCESS)
+    {
+        std::cout << AImgGetErrorDetails(img) << std::endl;
+        return false;
+    }
+
+    auto knownData = decodeJPEGFile(getImagesDir() + path);
+
+    for(int32_t y = 0; y < height; y++)
+    {
+        for(int32_t x = 0; x < width; x++)
+        {
+            if(knownData[x + width*y] != imgData[(x + width*y)])
+                return false;
+        }
+    }
+
+    AIDestroySimpleMemoryBufferCallbacks(readCallback, writeCallback, tellCallback, seekCallback, callbackData);
+    AImgClose(img);
+
+    return true;
+}
+
 
 TEST(JPEG, TestDetectJPEG)
 {
@@ -59,51 +117,19 @@ TEST(JPEG, TestCompareForceImageFormat1)
     ASSERT_TRUE(compareForceImageFormat("/jpeg/test.jpeg"));
 }
 
-TEST(JPEG, TestReadJPEGFile)
+TEST(JPEG, TestReadJPEGFile1)
 {
-    auto data = readFile<uint8_t>(getImagesDir() + "/jpeg/test.jpeg");
+    ASSERT_TRUE(testReadJpegFile("/jpeg/test.jpeg"));
+}
 
-    ReadCallback readCallback = NULL;
-    WriteCallback writeCallback = NULL;
-    TellCallback tellCallback = NULL;
-    SeekCallback seekCallback = NULL;
-    void* callbackData = NULL;
+TEST(JPEG, TestReadJPEGFile2)
+{
+    ASSERT_TRUE(testReadJpegFile("/jpeg/karl.jpeg"));
+}
 
-    AIGetSimpleMemoryBufferCallbacks(&readCallback, &writeCallback, &tellCallback, &seekCallback, &callbackData, &data[0], data.size());
-
-    AImgHandle img = NULL;
-    AImgOpen(readCallback, tellCallback, seekCallback, callbackData, &img, NULL);
-
-    int32_t width;
-    int32_t height;
-    int32_t numChannels;
-    int32_t bytesPerChannel;
-    int32_t floatOrInt;
-    int32_t imgFmt;
-
-    AImgGetInfo(img, &width, &height, &numChannels, &bytesPerChannel, &floatOrInt, &imgFmt);
-
-    std::vector<uint8_t> imgData(width*height*numChannels*bytesPerChannel, 78);
-
-    int32_t error = AImgDecodeImage(img, &imgData[0], AImgFormat::INVALID_FORMAT);
-
-    if (error != AImgErrorCode::AIMG_SUCCESS)
-    {
-        std::cout << AImgGetErrorDetails(img) << std::endl;
-    }
-
-    auto knownData = decodeJPEGFile(getImagesDir() + "/jpeg/test.jpeg");
-
-    for(int32_t y = 0; y < height; y++)
-    {
-        for(int32_t x = 0; x < width; x++)
-        {
-            ASSERT_EQ(knownData[x + width*y], imgData[(x + width*y)]);
-        }
-    }
-
-    AIDestroySimpleMemoryBufferCallbacks(readCallback, writeCallback, tellCallback, seekCallback, callbackData);
-    AImgClose(img);
+TEST(JPEG, TestReadJPEGFile3)
+{
+    ASSERT_TRUE(testReadJpegFile("/jpeg/karl_comment.jpeg"));
 }
 
 
