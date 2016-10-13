@@ -85,6 +85,9 @@ namespace AImg
                         num_bytes -= src->pub.bytes_in_buffer;
                         (*src->pub.fill_input_buffer)(cinfo);
                     }
+
+                    src->pub.next_input_byte += (size_t) num_bytes;
+                    src->pub.bytes_in_buffer -= (size_t) num_bytes;
                 }
             }
 
