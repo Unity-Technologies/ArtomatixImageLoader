@@ -247,6 +247,20 @@ namespace AImg
 
                 setArtomatixSourceMGR(&jpeg_read_struct, data);
                 jpeg_read_struct.err = jpeg_std_error(&err_mgr.pub);
+
+                ArtomatixErrorStruct jerr;
+                jpeg_read_struct.err = jpeg_std_error(&jerr.pub);
+                //jpeg_read_struct.err->emit_message = JPEGCallbackFunctions::lessAnnoyingEmitMessage;
+                jpeg_read_struct.err->error_exit = JPEGCallbackFunctions::handleFatalError;
+
+                ArtomatixErrorStruct * err_ptr = (ArtomatixErrorStruct *) jpeg_read_struct.err;
+                if (setjmp(err_ptr->buf))
+                {
+                    mErrorDetails = "[AImg::JPEGImageLoader::JPEGFile::openImage] jpeg_read_header failed!";
+
+                    return AImgErrorCode::AIMG_LOAD_FAILED_EXTERNAL;
+                }
+
                 jpeg_read_struct.err->emit_message = JPEGCallbackFunctions::lessAnnoyingEmitMessage;
                 jpeg_read_struct.err->error_exit = JPEGCallbackFunctions::handleFatalError;
                 jpeg_read_header(&jpeg_read_struct, TRUE);
@@ -279,7 +293,12 @@ namespace AImg
                     destBuffer = &convertTmpBuffer[0];
                 }
 
-                ArtomatixErrorStruct * err_ptr = (ArtomatixErrorStruct *) jpeg_read_struct.err;
+                ArtomatixErrorStruct jerr;
+                jpeg_read_struct.err = jpeg_std_error(&jerr.pub);
+                jpeg_read_struct.err->emit_message = JPEGCallbackFunctions::lessAnnoyingEmitMessage;
+                jpeg_read_struct.err->error_exit = JPEGCallbackFunctions::handleFatalError;
+
+                 ArtomatixErrorStruct * err_ptr = (ArtomatixErrorStruct *) jpeg_read_struct.err;
 
                 if (setjmp(err_ptr->buf))
                 {
@@ -333,14 +352,14 @@ namespace AImg
                     data = &convertBuffer[0];
                 }
 
-                jpeg_compress_struct cinfo;
-                ArtomatixErrorStruct jerr;
                 CallbackData dataStruct;
                 dataStruct.writeCallback = writeCallback;
                 dataStruct.tellCallback = tellCallback;
                 dataStruct.seekCallback = seekCallback;
                 dataStruct.callbackData = callbackData;
 
+                ArtomatixErrorStruct jerr;
+                jpeg_compress_struct cinfo;
                 cinfo.err = jpeg_std_error(&jerr.pub);
                 cinfo.err->emit_message = JPEGCallbackFunctions::lessAnnoyingEmitMessage;
                 cinfo.err->error_exit = JPEGCallbackFunctions::handleFatalError;
