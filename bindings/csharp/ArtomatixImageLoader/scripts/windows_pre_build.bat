@@ -13,12 +13,14 @@ if %REALARCH%==x64 (
 	)
 )
 
+set "DLL_SUFFIX="
+if %CONFIG%==Debug set "DLL_SUFFIX=d"
 
 echo "--------------------------" %PROJDIR% %CONFIG% %REALARCH%
 
 set "TOP_DIR=%PROJDIR%\..\..\..\.."
 set "BUILD_DIR=%TOP_DIR%\src_c\build_%CONFIG%_%REALARCH%"
-set "C_DLL=%BUILD_DIR%\inst\lib\AIL.dll"
+set "C_DLL=%BUILD_DIR%\inst\lib\AIL%DLL_SUFFIX%.dll"
 
 echo %BUILD_DIR%
 
