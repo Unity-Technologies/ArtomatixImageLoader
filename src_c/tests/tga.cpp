@@ -35,6 +35,11 @@ TEST(TGA, TestDetectTGA)
     ASSERT_TRUE(detectImage("/tga/test.tga", TGA_IMAGE_FORMAT));
 }
 
+TEST(TGA, TestDetectTGAIndexed)
+{
+    ASSERT_TRUE(detectImage("/tga/indexed.tga", TGA_IMAGE_FORMAT));
+}
+
 TEST(TGA, TestDetectBadTGA)
 {
     ASSERT_FALSE(detectImage("/jpeg/test.jpeg", TGA_IMAGE_FORMAT));
@@ -53,6 +58,11 @@ TEST(TGA, TestReadBadTGAAttrs)
 TEST(TGA, TestCompareForceImageFormat1)
 {
     ASSERT_TRUE(compareForceImageFormat("/tga/test.tga"));
+}
+
+TEST(TGA, TestCompareForceImageFormat2)
+{
+    ASSERT_TRUE(compareForceImageFormat("/tga/indexed.tga"));
 }
 
 TEST(TGA, TestReadTGAFile)

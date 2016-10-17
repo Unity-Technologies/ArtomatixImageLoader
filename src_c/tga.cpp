@@ -69,7 +69,7 @@ namespace AImg
 
         bool hasCorrectColourMapType = (header[1] == 0 || header[1] == 1);
         bool hasCorrectImageType = (header[2] == 0 || header[2] == 1 || header[2] == 2 || header[2] == 3 || header[2] == 9 || header[2] == 10 || header[2] == 11);
-        uint16_t paletteLength = *(uint16_t *) (header + 3);
+        uint16_t paletteLength = *(uint16_t *) (header + 5);
         uint16_t width = *(uint16_t *)(header + 12);
         uint16_t height = *(uint16_t *)(header + 14);
 
