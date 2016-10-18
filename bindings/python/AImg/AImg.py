@@ -26,7 +26,7 @@ class AImg(object):
 
         self.detectedFileFormat = enums.AImgFileFormats[detectedFileFormat]
 
-        errCode, self.width, self.height, rawNumChannels, rawBytesPerChannel, rawFloatOrInt, decodedImgFormat = native.getInfo(self._imgCapsule)
+        errCode, self.width, self.height, rawNumChannels, rawBytesPerChannel, rawFloatOrInt, decodedImgFormat = native.getInfo(self._imgCapsule, self._callbackData)
         AImgExceptions.checkErrorCode(self._imgCapsule, errCode)
         self.rawFileInfo = RawFileInfo(rawNumChannels, rawBytesPerChannel, rawFloatOrInt)
         self.decodedImgFormat = enums.AImgFormats[decodedImgFormat]
@@ -57,7 +57,7 @@ class AImg(object):
         if not (destBuffer.flags.c_contiguous and destBuffer.flags.writeable and destBuffer.flags.aligned):
             raise ValueError("destBuffer does not meet flags requirements (c_contiguous & writeable & aligned)")
 
-        errCode = native.decode(self._imgCapsule, destBuffer, forceImageFormat.val)
+        errCode = native.decode(self._imgCapsule, destBuffer, forceImageFormat.val, self._callbackData)
         AImgExceptions.checkErrorCode(self._imgCapsule, errCode)
 
         if self._close_after_decode:

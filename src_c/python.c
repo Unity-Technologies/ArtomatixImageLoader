@@ -13,6 +13,7 @@ typedef struct
     PyObject* writeMethod;
     PyObject* tellMethod;
     PyObject* seekMethod;
+    PyThreadState *threadState;
 } PyAIL_callback_data;
 
 PyAIL_callback_data* pyail_getCallbackData(PyObject* fileLikeObj)
@@ -58,6 +59,7 @@ void pyail_destroyCallbackData(PyAIL_callback_data* callbackData)
 int32_t CALLCONV pyail_ReadCallback(void* callbackDataV, uint8_t* dest, int32_t count)
 {
     PyAIL_callback_data* callbackData = callbackDataV;
+    PyEval_RestoreThread(callbackData->threadState);
 
     PyObject* read_args = Py_BuildValue("(i)", count);
     PyObject* data = PyObject_Call(callbackData->readMethod, read_args, NULL);
@@ -71,22 +73,28 @@ int32_t CALLCONV pyail_ReadCallback(void* callbackDataV, uint8_t* dest, int32_t 
 
     Py_DECREF(data);
 
+    callbackData->threadState = PyEval_SaveThread();
+
     return dataReadLen;
 }
 
 void CALLCONV pyail_WriteCallback(void* callbackDataV, const uint8_t* src, int32_t count)
 {
     PyAIL_callback_data* callbackData = callbackDataV;
+    PyEval_RestoreThread(callbackData->threadState);
 
     PyObject* writeArgs = Py_BuildValue("(s#)", src, count);
     PyObject_Call(callbackData->writeMethod, writeArgs, NULL);
 
     Py_DECREF(writeArgs);
+
+    callbackData->threadState = PyEval_SaveThread();
 }
 
 int32_t CALLCONV pyail_TellCallback(void* callbackDataV)
 {
     PyAIL_callback_data* callbackData = callbackDataV;
+    PyEval_RestoreThread(callbackData->threadState);
 
     PyObject* tellArgs = Py_BuildValue("()");
     PyObject* pyTellVal = PyObject_Call(callbackData->tellMethod, tellArgs, NULL);
@@ -94,16 +102,21 @@ int32_t CALLCONV pyail_TellCallback(void* callbackDataV)
     Py_DECREF(pyTellVal);
     Py_DECREF(tellArgs);
 
+    callbackData->threadState = PyEval_SaveThread();
+
     return tellVal;
 }
 
 void CALLCONV pyail_SeekCallback (void* callbackDataV, int32_t pos)
 {
     PyAIL_callback_data* callbackData = callbackDataV;
+    PyEval_RestoreThread(callbackData->threadState);
 
     PyObject* seekArgs = Py_BuildValue("(i)", pos);
     PyObject_Call(callbackData->seekMethod, seekArgs, NULL);
     Py_DECREF(seekArgs);
+
+    callbackData->threadState = PyEval_SaveThread();
 }
 
 void pyail_callbackDataDestructor(PyObject* callbackDataCapsule)
@@ -150,7 +163,10 @@ static PyObject* pyail_open(PyObject* self, PyObject* args)
 
     AImgHandle img;
     int32_t detectedFileFormat;
+
+    callbackData->threadState = PyEval_SaveThread();
     int err = AImgOpen(pyail_ReadCallback, pyail_TellCallback, pyail_SeekCallback, callbackData, &img, &detectedFileFormat);
+    PyEval_RestoreThread(callbackData->threadState);
 
     PyObject* imgCapsule;
     
@@ -173,36 +189,51 @@ static PyObject* pyail_open(PyObject* self, PyObject* args)
 
 static PyObject* pyail_getInfo(PyObject* self, PyObject* args)
 {
+    PyObject* callbackDataCapsule;
     PyObject* capsule;
-    if (!PyArg_ParseTuple(args, "O", &capsule))
+    if (!PyArg_ParseTuple(args, "OO", &capsule, &callbackDataCapsule))
         return NULL;
 
     AImgHandle* img;
     if((img = PyCapsule_GetPointer(capsule, NULL)) == NULL)
         return NULL;
 
+    PyAIL_callback_data* callbackData;
+    if((callbackData = PyCapsule_GetPointer(callbackDataCapsule, NULL)) == NULL)
+        return NULL;
+
     int32_t width, height, numChannels, bytesPerChannel, floatOrInt, decodedImgFormat;
+
+    callbackData->threadState = PyEval_SaveThread();
     int err = AImgGetInfo(img, &width, &height, &numChannels, &bytesPerChannel, &floatOrInt, &decodedImgFormat);
+    PyEval_RestoreThread(callbackData->threadState);
 
     return Py_BuildValue("(iiiiiii)", err, width, height, numChannels, bytesPerChannel, floatOrInt, decodedImgFormat);
 }
 
 static PyObject* pyail_decode(PyObject* self, PyObject* args)
 {
+    PyObject* callbackDataCapsule;
     PyObject* imgCapsule;
     PyArrayObject* destObj;
 
     int forceImageFormat;
-    if (!PyArg_ParseTuple(args, "OOi", &imgCapsule, &destObj, &forceImageFormat))
+    if (!PyArg_ParseTuple(args, "OOiO", &imgCapsule, &destObj, &forceImageFormat, &callbackDataCapsule))
         return NULL;
 
     AImgHandle* img;
     if((img = PyCapsule_GetPointer(imgCapsule, NULL)) == NULL)
         return NULL;
 
+    PyAIL_callback_data* callbackData;
+    if((callbackData = PyCapsule_GetPointer(callbackDataCapsule, NULL)) == NULL)
+        return NULL;
+
     void* dest = PyArray_DATA(destObj);
 
+    callbackData->threadState = PyEval_SaveThread();
     int err = AImgDecodeImage(img, dest, forceImageFormat);
+    PyEval_RestoreThread(callbackData->threadState);
 
     return Py_BuildValue("i", err);
 }
@@ -222,7 +253,10 @@ static PyObject* pyail_write(PyObject* self, PyObject* args)
         return NULL;
 
     AImgHandle wImg = AImgGetAImg(fileFormat);
+
+    callbackData->threadState = PyEval_SaveThread();
     int err = AImgWriteImage(wImg, PyArray_DATA(sourceArrayObj), width, height, inputFormat, pyail_WriteCallback, pyail_TellCallback, pyail_SeekCallback, callbackData);
+    PyEval_RestoreThread(callbackData->threadState);
 
     PyObject* imgCapsule = PyCapsule_New(wImg, NULL, pyail_imgCapsuleDestructor);
     PyObject* retval = Py_BuildValue("(iO)", err, imgCapsule);
