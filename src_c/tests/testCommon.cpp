@@ -15,10 +15,15 @@ bool detectImage(const std::string& path, int32_t format)
 
     AImgHandle img = NULL;
     int32_t fileFormat = UNKNOWN_IMAGE_FORMAT;
-    AImgOpen(readCallback, tellCallback, seekCallback, callbackData, &img, &fileFormat);
+    int32_t err = AImgOpen(readCallback, tellCallback, seekCallback, callbackData, &img, &fileFormat);
 
-    AImgClose(img);
+    if(img != NULL)
+        AImgClose(img);
+
     AIDestroySimpleMemoryBufferCallbacks(readCallback, writeCallback, tellCallback, seekCallback, callbackData);
+
+    if(err != AImgErrorCode::AIMG_SUCCESS)
+        return false;
 
     return fileFormat == format;
 }

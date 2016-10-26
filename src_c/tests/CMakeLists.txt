@@ -58,8 +58,13 @@ if(AIMG_TESTS_ENABLED)
     if(JPEG_ENABLED)
         ail_add_test(jpeg "AIL;JPEG::jpeg" Yes)
     endif()
+
     if(TGA_ENABLED)
         ail_add_test(tga "AIL" Yes)
+    endif()
+
+    if(TIFF_ENABLED)
+        ail_add_test(tiff "AIL", Yes)
     endif()
 
     add_custom_target(aitest ${all_tests})
