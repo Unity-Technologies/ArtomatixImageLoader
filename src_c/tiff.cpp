@@ -244,11 +244,9 @@ namespace AImg
 
                 std::vector<char> stripBuffer(stripsize);
 
-                int outputBytesPerChannel;
-                if (bytesPerChannel > 1)
-                    outputBytesPerChannel = 4;
-                else
-                    outputBytesPerChannel = 1;
+                int32_t _;
+                int32_t decodeFormatBytesPerChannel;
+                AIGetFormatDetails(decodeFormat, &_, &decodeFormatBytesPerChannel, &_);
 
                 if (planarConfig == PLANARCONFIG_CONTIG)
                 {
@@ -257,7 +255,7 @@ namespace AImg
                     size_t row = 0;
                     for (tstrip_t strip = 0; strip < TIFFNumberOfStrips(tiff); strip++)
                     {
-                        if(TIFFReadEncodedStrip(tiff, strip, &stripBuffer[0], -1) < 0)
+                        if(TIFFReadEncodedStrip(tiff, strip, &stripBuffer[0], -1) == ((tmsize_t)-1)) // this function returns -1 on failure. As an unsigned int. yaaaaaaaaaaay
                         {
                             mErrorDetails = "[AImg::TIFFImageLoader::TiffFile::openImage] Tiff read failure, TIFFReadEncodedStrip failed";
                             return AImgErrorCode::AIMG_LOAD_FAILED_EXTERNAL;
@@ -282,6 +280,7 @@ namespace AImg
                                     }
                                     else if (bytesPerChannel == 3)
                                     {
+                                        // this will always be 24-bit float, as we return an error in openImage if BITSPERSAMPLE == 3 and SAMPLEFORMAT is not IEEEFP
                                         *((float*)bufferPtr) = convertFloat24((unsigned char*)stripPtr);
                                         stripPtr += 3;
                                         bufferPtr += 4;
@@ -318,9 +317,72 @@ namespace AImg
                         }
                     }
                 }
-                else if (planarConfig == PLANARCONFIG_SEPARATE) // TODO: implement
+
+                // This is just a copy of the above block, fixed up to work for channels being stored sequentially not interleaved.
+                // for clarity, interleaved for a 2x1 image would be: R1,G1,B1,R2,G2,B2, where as SEPARATE would be R1,R2,G1,G2,B1,B2
+                // We don't actually support decoding separated channel buffers like that, so we manually interleave the channels to fix it up.
+                else if (planarConfig == PLANARCONFIG_SEPARATE)
                 {
-                    return AImgErrorCode::AIMG_LOAD_FAILED_INTERNAL;
+                    int32_t channelIndex = -1;
+                    unsigned char* bufferPtr = NULL;
+
+                    while (true)
+                    {
+                        size_t row = 0;
+                        for (tstrip_t strip = 0; strip < TIFFNumberOfStrips(tiff); strip++)
+                        {
+                            if(TIFFReadEncodedStrip(tiff, strip, &stripBuffer[0], -1) == ((tmsize_t)-1))
+                            {
+                                mErrorDetails = "[AImg::TIFFImageLoader::TiffFile::openImage] Tiff read failure, TIFFReadEncodedStrip failed";
+                                return AImgErrorCode::AIMG_LOAD_FAILED_EXTERNAL;
+                            }
+
+                            char* stripPtr = (char*)&stripBuffer[0];
+
+                            for (size_t rowStrip = 0; rowStrip < rowsPerStrip; rowStrip++)
+                            {
+                                if (row % height == 0)
+                                {
+                                    channelIndex++;
+                                    if (channelIndex >= channels)
+                                        goto done;
+
+                                    bufferPtr = destBuffer + channelIndex*decodeFormatBytesPerChannel;
+                                }
+
+                                for (size_t x = 0; x < width; x++)
+                                {
+                                    if (bytesPerChannel == 4)
+                                    {
+                                        *((float*)bufferPtr) = *(float*)stripPtr;
+                                        stripPtr += 4;
+                                        bufferPtr += 4 * channels;
+                                    }
+                                    else if (bytesPerChannel == 3)
+                                    {
+                                        *((float*)bufferPtr) = convertFloat24((unsigned char*)stripPtr);
+                                        stripPtr += 3;
+                                        bufferPtr += 4 * channels;
+                                    }
+                                    else if (bytesPerChannel == 2)
+                                    {
+                                        *((uint16_t*)bufferPtr) = *((uint16*)stripPtr);
+
+                                        stripPtr += 2;
+                                        bufferPtr += 2 * channels;
+                                    }
+                                    else if (bytesPerChannel == 1)
+                                    {
+                                        *bufferPtr = *stripPtr;
+                                        stripPtr += 1;
+                                        bufferPtr += 1 * channels;
+                                    }
+                                }
+                                row++;
+                            }
+                        }
+                    }
+                    done:;
                 }
 
                 if (forceImageFormat != AImgFormat::INVALID_FORMAT && forceImageFormat != decodeFormat)

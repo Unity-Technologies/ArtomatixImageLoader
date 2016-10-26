@@ -132,7 +132,7 @@ TEST(TIFF, TestReadGoodTIFFAttrs)
     ASSERT_TRUE(validateImageHeaders("/tiff/8_bit_int.tif", 64, 32, 3, 1, AImgFloatOrIntType::FITYPE_INT, AImgFormat::RGB8U));
 }
 
-TEST(TIFF, TestReadBasic)
+TEST(TIFF, TestRead8BitInt)
 {
     ASSERT_TRUE(compareTiffToPng("8_bit_int.tif"));
 }
@@ -155,6 +155,32 @@ TEST(TIFF, TestRead24BitFloat)
 TEST(TIFF, TestRead32BitFloat)
 {
     ASSERT_TRUE(compareTiffToPng("32_bit_float.tif", true));
+}
+
+TEST(TIFF, TestRead8BitIntSeparate)
+{
+    ASSERT_TRUE(compareTiffToPng("8_bit_int_separate_chans.tif"));
+}
+
+TEST(TIFF, TestRead16BitIntSeparate)
+{
+    ASSERT_TRUE(compareTiffToPng("16_bit_int_separate_chans.tif"));
+}
+
+TEST(TIFF, TestRead16BitFloatSeparate)
+{
+    ASSERT_TRUE(compareTiffToPng("16_bit_float_separate_chans.tif", true));
+}
+
+TEST(TIFF, TestRead24BitFloatSeparate)
+{
+    ASSERT_TRUE(compareTiffToPng("24_bit_float_separate_chans.tif", true));
+}
+
+
+TEST(TIFF, TestRead32BitFloatSeparate)
+{
+    ASSERT_TRUE(compareTiffToPng("32_bit_float_separate_chans.tif", true));
 }
 
 // disabled for now, as hunter version of libtiff has jpg support disabled
