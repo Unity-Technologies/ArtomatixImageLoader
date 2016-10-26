@@ -62,11 +62,14 @@ class TestAImg(unittest.TestCase):
                 for c in range(decoded.shape[2]):
                     self.assertEqual(decoded2[y][x][c], decoded[y][x][c])
 
-
-
     def test_open_bad_file(self):
         with self.assertRaises(AImg.AImgUnsupportedFiletypeException) as context:
             img = AImg.AImg(__file__)
+
+    def test_open_empty_stream(self):
+        with self.assertRaises(AImg.AImgOpenFailedEmptyInputException) as context:
+            stream = io.BytesIO()
+            img = AImg.AImg(stream)
 
     def test_force_away_alpha(self):
         img = AImg.AImg(imagesDir + "/png/alpha.png")

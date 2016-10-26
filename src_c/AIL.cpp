@@ -64,6 +64,14 @@ int32_t AImgOpen(ReadCallback readCallback, TellCallback tellCallback, SeekCallb
 {
     *imgH = (AImgHandle*)NULL;
 
+    int32_t startPos = tellCallback(callbackData);
+
+    uint8_t testByte;
+    if(readCallback(callbackData, &testByte, 1) != 1)
+        return AImgErrorCode::AIMG_OPEN_FAILED_EMPTY_INPUT;
+
+    seekCallback(callbackData, startPos);
+
     int32_t fileFormat = UNKNOWN_IMAGE_FORMAT;
     int32_t retval = AIMG_UNSUPPORTED_FILETYPE;
 

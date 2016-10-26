@@ -63,7 +63,8 @@ enum AImgErrorCode
     AIMG_LOAD_FAILED_EXTERNAL = -2, // load failed in an external library
     AIMG_LOAD_FAILED_INTERNAL = -3, // load failed inside ArtomatixImageLoader
     AIMG_CONVERSION_FAILED_BAD_FORMAT = -4,
-    AIMG_WRITE_FAILED_EXTERNAL = -5
+    AIMG_WRITE_FAILED_EXTERNAL = -5,
+    AIMG_OPEN_FAILED_EMPTY_INPUT = -8
 };
 
 enum AImgFileFormat

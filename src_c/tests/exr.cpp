@@ -216,6 +216,23 @@ TEST(Exr, TestOpenBadImage)
     ASSERT_EQ((size_t)img, (size_t)NULL);
 }
 
+TEST(Exr, TestOpenEmptyStream)
+{
+    ReadCallback readCallback = NULL;
+    WriteCallback writeCallback = NULL;
+    TellCallback tellCallback = NULL;
+    SeekCallback seekCallback = NULL;
+    void* callbackData = NULL;
+
+    AIGetSimpleMemoryBufferCallbacks(&readCallback, &writeCallback, &tellCallback, &seekCallback, &callbackData, NULL, 0);
+
+    AImgHandle img = NULL;
+    int32_t err = AImgOpen(readCallback, tellCallback, seekCallback, callbackData, &img, NULL);
+
+    ASSERT_EQ(err, AImgErrorCode::AIMG_OPEN_FAILED_EMPTY_INPUT);
+    ASSERT_EQ((size_t)img, (size_t)NULL);
+}
+
 #endif
 
 int main(int argc, char **argv) 
