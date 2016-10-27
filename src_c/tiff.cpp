@@ -5,7 +5,7 @@
 #include <vector>
 #include <string.h>
 #include <math.h>
-
+#include <iostream>
 
 #include "AIL.h"
 #include "AIL_internal.h"
@@ -18,27 +18,35 @@ namespace AImg
 
     struct tiffCallbackData
     {
-        ReadCallback mReadCallback;
-        TellCallback mTellCallback;
-        SeekCallback mSeekCallback;
-        void* callbackData;
+        ReadCallback mReadCallback = nullptr;
+        WriteCallback mWriteCallback = nullptr;
+        TellCallback mTellCallback = nullptr;
+        SeekCallback mSeekCallback = nullptr;
+        void* callbackData = nullptr;
 
-        int32_t startPos;
-
+        int32_t startPos = 0;
+        int32_t furthestPositionWritten = 0;
     };
 
     tsize_t tiffRead(thandle_t st, tdata_t buffer, tsize_t size)
     {
         tiffCallbackData* callbacks = (tiffCallbackData*)st;
 
-        tsize_t a = callbacks->mReadCallback(callbacks->callbackData, (uint8_t*)buffer, size);
-        return a;
+        return callbacks->mReadCallback(callbacks->callbackData, (uint8_t*)buffer, size);
     }
 
     tsize_t tiff_Write(thandle_t st, tdata_t buffer, tsize_t size)
     {
+        tiffCallbackData* callbacks = (tiffCallbackData*)st;
 
-        return 0;
+        int32_t start = callbacks->mTellCallback(callbacks->callbackData);
+        callbacks->mWriteCallback(callbacks->callbackData, (uint8_t*)buffer, size);
+        int32_t end = callbacks->mTellCallback(callbacks->callbackData);
+
+        if(end > callbacks->furthestPositionWritten)
+            callbacks->furthestPositionWritten = end;
+
+        return end - start;
     }
 
     // This should never be called
@@ -82,7 +90,7 @@ namespace AImg
             // unlike tiff_Size above.
             case SEEK_END:
             {
-                //finalPos = callbacks->size - pos - 1;
+                finalPos = callbacks->furthestPositionWritten + pos;
                 break;
             }
         }
@@ -506,8 +514,58 @@ namespace AImg
 
             int32_t writeImage(void* data, int32_t width, int32_t height, int32_t inputFormat, WriteCallback writeCallback,
                                TellCallback tellCallback, SeekCallback seekCallback, void* callbackData)
-            {
+            {                
+                tiffCallbackData wCallbacks;
+                wCallbacks.mWriteCallback = writeCallback;
+                wCallbacks.mSeekCallback = seekCallback;
+                wCallbacks.mTellCallback = tellCallback;
+                wCallbacks.callbackData = callbackData;
+                wCallbacks.startPos = tellCallback(callbackData);
+                TIFF* wTiff = TIFFClientOpen("", "w", (thandle_t)&wCallbacks, tiffRead, tiff_Write, tiff_Seek, tiff_Close, tiff_Size, tiff_Map, tiff_Unmap);
 
+                int32_t retval = AIMG_SUCCESS;
+
+                int32_t wFormat = getWriteFormatTiff(inputFormat);
+                if(wFormat == AImgFormat::INVALID_FORMAT)
+                {
+                    mErrorDetails = "[AImg::TIFFImageLoader::TiffFile::writeImage] Cannot write this format to tiff."; // developers: see comment in getWriteFormatTiff
+                    retval = AImgErrorCode::AIMG_WRITE_FAILED_INTERNAL;
+                }
+                else
+                {
+                    int32_t numChannels, bytesPerChannel, floatOrInt;
+                    AIGetFormatDetails(wFormat, &numChannels, &bytesPerChannel, &floatOrInt);
+
+                    TIFFSetField(wTiff, TIFFTAG_IMAGEWIDTH, width);
+                    TIFFSetField(wTiff, TIFFTAG_IMAGELENGTH, height);
+                    TIFFSetField(wTiff, TIFFTAG_SAMPLESPERPIXEL, numChannels);
+                    TIFFSetField(wTiff, TIFFTAG_BITSPERSAMPLE, bytesPerChannel * 8);
+                    TIFFSetField(wTiff, TIFFTAG_SAMPLEFORMAT, floatOrInt == AImgFloatOrIntType::FITYPE_FLOAT ? SAMPLEFORMAT_IEEEFP : SAMPLEFORMAT_UINT);
+                    TIFFSetField(wTiff, TIFFTAG_ORIENTATION, ORIENTATION_TOPLEFT);
+                    TIFFSetField(wTiff, TIFFTAG_PLANARCONFIG, PLANARCONFIG_CONTIG);
+                    TIFFSetField(wTiff, TIFFTAG_PHOTOMETRIC, PHOTOMETRIC_RGB);
+
+                    tsize_t stripRows = TIFFDefaultStripSize(wTiff, 0);
+
+                    TIFFSetField(wTiff, TIFFTAG_ROWSPERSTRIP, stripRows);
+
+                    for(int32_t y = 0; y < height; y++)
+                    {
+                        if(TIFFWriteScanline(wTiff, &((uint8_t*)data)[numChannels * bytesPerChannel * width * y], y, 0) < 0)
+                        {
+                            mErrorDetails = "[AImg::TIFFImageLoader::TiffFile::writeImage] TIFFWriteScanline failed.";
+                            retval = AImgErrorCode::AIMG_WRITE_FAILED_EXTERNAL;
+                            break;
+                        }
+                    }
+                }
+
+                TIFFClose(wTiff);
+
+                // Leave the pointer at the end of the file, because libtiff doesn't... because it's a fantastic piece of software
+                wCallbacks.mSeekCallback(wCallbacks.callbackData, wCallbacks.furthestPositionWritten);
+
+                return retval;
             }
 
     };
@@ -548,6 +606,10 @@ namespace AImg
 
     AImgFormat getWriteFormatTiff(int32_t inputFormat)
     {
+        // Tiff can write all currently supported formats. Here we are just future-proofing in case we add some more formats later that tiff can't do
+        if(inputFormat > AImgFormat::INVALID_FORMAT && inputFormat <= AImgFormat::RGBA32F)
+            return (AImgFormat)inputFormat;
+
         return AImgFormat::INVALID_FORMAT;
     }
 
