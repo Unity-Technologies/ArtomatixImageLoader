@@ -13,6 +13,8 @@ class AImgConversionFailedBadFormatException(AImgException):
     pass
 class AImgWriteFailedExternalException(AImgException):
     pass
+class AImgOpenFailedEmptyInputException(AImgException):
+    pass
 
 
 def checkErrorCode(aImgCapsule, errCode):
@@ -33,5 +35,7 @@ def checkErrorCode(aImgCapsule, errCode):
             raise AImgConversionFailedBadFormatException(msg)
         elif errCode == -5:
             raise AImgWriteFailedExternalException(msg)
+        elif errCode == -8:
+            raise AImgOpenFailedEmptyInputException(msg)
         else:
             raise AImgException("Unknown error occurred, code: " + str(errCode) + " " + msg) 

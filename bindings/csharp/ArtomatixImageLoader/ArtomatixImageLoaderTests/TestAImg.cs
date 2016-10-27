@@ -169,6 +169,15 @@ namespace ArtomatixImageLoaderTests
                     }
                 }
             }
+
+        [Test]
+        public static void TestOpenEmptyStream()
+        {
+            Assert.Throws<AImgOpenFailedEmptyInputException>(delegate
+            {
+                var s = new MemoryStream();
+                AImg img = new AImg(s);
+            });
         }
     }
 }
