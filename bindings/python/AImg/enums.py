@@ -53,6 +53,7 @@ AImgFileFormats = AILEnum(AImgFileFormat, {
     "PNG_IMAGE_FORMAT"  : [2, "png"],
     "JPEG_IMAGE_FORMAT" : [3, "jpeg"],
     "TGA_IMAGE_FORMAT"  : [4, "tga"]
+    "TIFF_IMAGE_FORMAT"  : [5, "tga"]
 })
 
 AImgFloatOrIntType = collections.namedtuple("AImgFloatOrIntType", "name val")
