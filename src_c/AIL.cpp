@@ -141,8 +141,8 @@ void convertToRGBA32F(void* src, std::vector<float>& dest, size_t i, int32_t inF
             uint8_t* srcF = ((uint8_t*)src) + (i*1);
 
             dest[0] = ((float)srcF[0]) / 255.0f;
-            dest[1] = 0;
-            dest[2] = 0;
+            dest[1] = ((float)srcF[0]) / 255.0f;
+            dest[2] = ((float)srcF[0]) / 255.0f;
             dest[3] = 1;
 
             break;
@@ -190,8 +190,8 @@ void convertToRGBA32F(void* src, std::vector<float>& dest, size_t i, int32_t inF
             half* srcF = ((half*)src) + (i*1);
 
             dest[0] = (float)srcF[0];
-            dest[1] = 0;
-            dest[2] = 0;
+            dest[1] = (float)srcF[0];
+            dest[2] = (float)srcF[0];
             dest[3] = 1;
 
             break;
@@ -239,8 +239,8 @@ void convertToRGBA32F(void* src, std::vector<float>& dest, size_t i, int32_t inF
             uint16_t* srcF = ((uint16_t*)src) + (i*1);
 
             dest[0] = ((float)srcF[0]) / 65535.0f;
-            dest[1] = 0;
-            dest[2] = 0;
+            dest[1] = ((float)srcF[0]) / 65535.0f;
+            dest[2] = ((float)srcF[0]) / 65535.0f;
             dest[3] = 1;
 
             break;
@@ -287,8 +287,8 @@ void convertToRGBA32F(void* src, std::vector<float>& dest, size_t i, int32_t inF
             float* srcF = ((float*)src) + (i*1);
 
             dest[0] = srcF[0];
-            dest[1] = 0;
-            dest[2] = 0;
+            dest[1] = srcF[0];
+            dest[2] = srcF[0];
             dest[3] = 1;
 
             break;
