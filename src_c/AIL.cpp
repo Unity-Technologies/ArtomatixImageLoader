@@ -673,9 +673,25 @@ int32_t AImgConvertFormat(void* src, void* dest, int32_t width, int32_t height, 
 
     std::vector<float> scratch(4);
 
+    int32_t _, floatOrInt;
+    AIGetFormatDetails(inFormat, &_, &_, &floatOrInt);
+    bool inIsFloat = floatOrInt == AImgFloatOrIntType::FITYPE_FLOAT;
+    AIGetFormatDetails(outFormat, &_, &_, &floatOrInt);
+    bool outIsFloat = floatOrInt == AImgFloatOrIntType::FITYPE_FLOAT;
+
     for(int32_t i = 0; i < width*height; i++)
     {
         convertToRGBA32F(src, scratch, i, inFormat);
+
+        // clamp to 0-1 range
+        if(inIsFloat && !outIsFloat)
+        {
+            scratch[0] = std::min(1.0f, std::max(0.0f, scratch[0]));
+            scratch[1] = std::min(1.0f, std::max(0.0f, scratch[1]));
+            scratch[2] = std::min(1.0f, std::max(0.0f, scratch[2]));
+            scratch[3] = std::min(1.0f, std::max(0.0f, scratch[3]));
+        }
+
         convertFromRGBA32F(scratch, dest, i, outFormat);
     }
 
