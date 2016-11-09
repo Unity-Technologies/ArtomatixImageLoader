@@ -195,6 +195,63 @@ TEST(PNG, TestRead16BitPNGAttrs)
     ASSERT_TRUE(validateImageHeaders("/png/16-bit.png", 640, 400, 3, 2, AImgFloatOrIntType::FITYPE_INT, AImgFormat::RGB16U));
 }
 
+TEST(PNG, TestReadIndexedPNGAttrs)
+{
+    ASSERT_TRUE(validateImageHeaders("/png/indextest_indexed.png", 256, 256, 3, 1, AImgFloatOrIntType::FITYPE_INT, AImgFormat::RGB8U));
+}
+
+TEST(PNG, TestReadIndexed)
+{
+    auto data = readFile<uint8_t>(getImagesDir() + "/png/indextest_indexed.png");
+
+    ReadCallback readCallback = NULL;
+    WriteCallback writeCallback = NULL;
+    TellCallback tellCallback = NULL;
+    SeekCallback seekCallback = NULL;
+    void* callbackData = NULL;
+
+    AIGetSimpleMemoryBufferCallbacks(&readCallback, &writeCallback, &tellCallback, &seekCallback, &callbackData, &data[0], data.size());
+
+    AImgHandle img = NULL;
+    AImgOpen(readCallback, tellCallback, seekCallback, callbackData, &img, NULL);
+
+
+    int32_t width;
+    int32_t height;
+    int32_t numChannels;
+    int32_t bytesPerChannel;
+    int32_t floatOrInt;
+    int32_t imgFmt;
+    AImgGetInfo(img, &width, &height, &numChannels, &bytesPerChannel, &floatOrInt, &imgFmt);
+
+    std::vector<uint8_t> imgData(width*height*numChannels*bytesPerChannel, 78);
+    AImgDecodeImage(img, &imgData[0], AImgFormat::INVALID_FORMAT);
+
+    AImgClose(img);
+    AIDestroySimpleMemoryBufferCallbacks(readCallback, writeCallback, tellCallback, seekCallback, callbackData);
+
+
+
+    data = readFile<uint8_t>(getImagesDir() + "/png/indextest_nonindexed.png");
+    AIGetSimpleMemoryBufferCallbacks(&readCallback, &writeCallback, &tellCallback, &seekCallback, &callbackData, &data[0], data.size());
+
+    img = NULL;
+    AImgOpen(readCallback, tellCallback, seekCallback, callbackData, &img, NULL);
+    AImgGetInfo(img, &width, &height, &numChannels, &bytesPerChannel, &floatOrInt, &imgFmt);
+
+
+    std::vector<uint8_t> nonIdxData(width*height*numChannels*bytesPerChannel, 78);
+
+    AImgDecodeImage(img, &nonIdxData[0], AImgFormat::INVALID_FORMAT);
+
+    AImgClose(img);
+    AIDestroySimpleMemoryBufferCallbacks(readCallback, writeCallback, tellCallback, seekCallback, callbackData);
+
+    ASSERT_EQ(imgData.size(), nonIdxData.size());
+    for(size_t i = 0; i < imgData.size(); i++)
+        ASSERT_EQ(imgData[i], nonIdxData[i]);
+}
+
 TEST(PNG, TestRead8BitPNG)
 {
     ASSERT_TRUE(validateReadPNGFile("/png/8-bit.png"));
@@ -386,7 +443,6 @@ TEST(Png, TestWriteFrom32Bit)
     AImgClose(img);
     AIDestroySimpleMemoryBufferCallbacks(readCallback, writeCallback, tellCallback, seekCallback, callbackData);
 }
-
 
 
 #endif // HAVE_PNG
