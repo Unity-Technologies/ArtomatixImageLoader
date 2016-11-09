@@ -45,5 +45,7 @@ bool detectImage(const std::string& path, int32_t format);
 bool validateImageHeaders(const std::string & path, int32_t expectedWidth, int32_t expectedHeight, int32_t expectedNumChannels, int32_t expectedBytesPerChannel, int32_t expectedFloatOrInt, int32_t expectedFormat);
 bool compareForceImageFormat(const std::string& path);
 
+void writeToFile(const std::string& path, int32_t width, int32_t height, void* data, int32_t inputFormat, int32_t fileFormat);
+
 
 #endif

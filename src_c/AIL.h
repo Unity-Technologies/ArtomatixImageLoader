@@ -112,4 +112,9 @@ EXPORT_FUNC void AIDestroySimpleMemoryBufferCallbacks(ReadCallback readCallback,
 }
 #endif
 
+#ifdef __cplusplus
+    #include <vector>
+    EXPORT_FUNC void AIGetResizableMemoryBufferCallbacks(ReadCallback* readCallback, WriteCallback* writeCallback, TellCallback* tellCallback, SeekCallback* seekCallback, void** callbackData, std::vector<uint8_t>* vec);
+#endif
+
 #endif //ARTOMATIX_AIL_H

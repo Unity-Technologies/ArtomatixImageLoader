@@ -708,6 +708,8 @@ struct SimpleMemoryCallbackData
     int32_t size;
     uint8_t* buffer;
     int32_t currentPos;
+
+    std::vector<uint8_t>* vecBuffer = NULL; // will be NULL unless buffer is resizable
 };
 
 int32_t CALLCONV simpleMemoryReadCallback(void* callbackData, uint8_t* dest, int32_t count)
@@ -742,6 +744,26 @@ void CALLCONV simpleMemoryWriteCallback(void* callbackData, const uint8_t* src, 
     data->currentPos += toWrite;
 }
 
+void CALLCONV simpleMemoryResizableWriteCallback(void* callbackData, const uint8_t* src, int32_t count)
+{
+    auto data = (SimpleMemoryCallbackData*)callbackData;
+
+    int32_t toWrite = count;
+    int32_t end = data->currentPos + count;
+
+    if(end > data->size)
+    {
+        data->vecBuffer->resize(end);
+        data->buffer = &data->vecBuffer->operator[](0);
+        data->size = data->vecBuffer->size();
+    }
+
+    memcpy(data->buffer + data->currentPos, src, toWrite);
+
+    data->currentPos += toWrite;
+}
+
+
 int32_t CALLCONV simpleMemoryTellCallback(void* callbackData)
 {
     auto data = (SimpleMemoryCallbackData*)callbackData;
@@ -765,6 +787,22 @@ void AIGetSimpleMemoryBufferCallbacks(ReadCallback* readCallback, WriteCallback*
     data->size = size;
     data->buffer = (uint8_t*)buffer;
     data->currentPos = 0;
+
+    *callbackData = data;
+}
+
+void AIGetResizableMemoryBufferCallbacks(ReadCallback* readCallback, WriteCallback* writeCallback, TellCallback* tellCallback, SeekCallback* seekCallback, void** callbackData, std::vector<uint8_t>* vec)
+{
+    *readCallback = &simpleMemoryReadCallback;
+    *writeCallback = &simpleMemoryResizableWriteCallback;
+    *tellCallback = &simpleMemoryTellCallback;
+    *seekCallback = &simpleMemorySeekCallback;
+
+    auto data = new SimpleMemoryCallbackData();
+    data->size = vec->size();
+    data->buffer = &vec->operator[](0);
+    data->currentPos = 0;
+    data->vecBuffer = vec;
 
     *callbackData = data;
 }

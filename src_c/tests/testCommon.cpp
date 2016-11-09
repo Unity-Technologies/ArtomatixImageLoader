@@ -134,3 +134,28 @@ bool compareForceImageFormat(const std::string& path)
 
     return true;
 }
+
+void writeToFile(const std::string& path, int32_t width, int32_t height, void* data, int32_t inputFormat, int32_t fileFormat)
+{
+    ReadCallback readCallback = NULL;
+    WriteCallback writeCallback = NULL;
+    TellCallback tellCallback = NULL;
+    SeekCallback seekCallback = NULL;
+    void* callbackData = NULL;
+
+    std::vector<uint8_t> fData;
+
+    AIGetResizableMemoryBufferCallbacks(&readCallback, &writeCallback, &tellCallback, &seekCallback, &callbackData, &fData);
+
+    AImgHandle wImg = AImgGetAImg(fileFormat);
+
+    AImgWriteImage(wImg, data, width, height, inputFormat, writeCallback, tellCallback, seekCallback, callbackData);
+
+    FILE* f = fopen(path.c_str(), "wb");
+    fwrite(&fData[0], 1, fData.size(), f);
+    fclose(f);
+
+    AImgClose(wImg);
+    AIDestroySimpleMemoryBufferCallbacks(readCallback, writeCallback, tellCallback, seekCallback, callbackData);
+
+}
