@@ -123,6 +123,23 @@ namespace AImg
                 numChannels = png_get_channels(png_read_ptr, png_info_ptr);
                 colour_type = png_get_color_type(png_read_ptr, png_info_ptr);
 
+                // see http://www.libpng.org/pub/png/book/chapter13.html (retrieved 9/Nov/2016), section 13.7
+                if (colour_type == PNG_COLOR_TYPE_PALETTE)
+                {
+                    png_set_expand(png_read_ptr);
+                    numChannels = 3;
+                }
+                if (colour_type == PNG_COLOR_TYPE_GRAY && bit_depth < 8)
+                {
+                    png_set_expand(png_read_ptr);
+                    bit_depth = 8;
+                }
+                if (png_get_valid(png_read_ptr, png_info_ptr, PNG_INFO_tRNS))
+                {
+                    png_set_expand(png_read_ptr);
+                    numChannels++;
+                }
+
                 return AImgErrorCode::AIMG_SUCCESS;
             }
 
