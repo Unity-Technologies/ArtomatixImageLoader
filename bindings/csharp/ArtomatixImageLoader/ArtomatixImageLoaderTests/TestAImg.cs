@@ -169,6 +169,7 @@ namespace ArtomatixImageLoaderTests
                     }
                 }
             }
+        }
 
         [Test]
         public static void TestOpenEmptyStream()
