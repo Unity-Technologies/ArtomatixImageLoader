@@ -127,6 +127,7 @@ namespace AImg
                 if (colour_type == PNG_COLOR_TYPE_PALETTE)
                 {
                     png_set_expand(png_read_ptr);
+                    bit_depth = 8;
                     numChannels = 3;
                 }
                 if (colour_type == PNG_COLOR_TYPE_GRAY && bit_depth < 8)
@@ -137,6 +138,15 @@ namespace AImg
                 if (png_get_valid(png_read_ptr, png_info_ptr, PNG_INFO_tRNS))
                 {
                     png_set_expand(png_read_ptr);
+
+                    if (colour_type == PNG_COLOR_TYPE_GRAY || colour_type == PNG_COLOR_TYPE_GRAY_ALPHA)
+                    {
+                        // expand grayscale images with transparency to 4-channel RGBA because if we don't then we end up
+                        // with gray in R and alpha in G, and converting that up to RGBA will not yield the correct results
+                        png_set_gray_to_rgb(png_read_ptr);
+                        numChannels = 3;
+                    }
+
                     numChannels++;
                 }
 
