@@ -65,6 +65,57 @@ TEST(TGA, TestCompareForceImageFormat2)
     ASSERT_TRUE(compareForceImageFormat("/tga/indexed.tga"));
 }
 
+TEST(TGA, TestForceImageFormatRemoveAlpha)
+{
+    auto data = readFile<uint8_t>(getImagesDir() + "/tga/4channel.tga");
+
+    ReadCallback readCallback = NULL;
+    WriteCallback writeCallback = NULL;
+    TellCallback tellCallback = NULL;
+    SeekCallback seekCallback = NULL;
+    void* callbackData = NULL;
+
+    AIGetSimpleMemoryBufferCallbacks(&readCallback, &writeCallback, &tellCallback, &seekCallback, &callbackData, &data[0], data.size());
+
+    int32_t err = AIMG_SUCCESS;
+
+    AImgHandle img = NULL;
+    err = AImgOpen(readCallback, tellCallback, seekCallback, callbackData, &img, NULL);
+    ASSERT_EQ(err, AIMG_SUCCESS);
+
+    int32_t width = 0;
+    int32_t height = 0;
+    int32_t _ = 0;
+    int32_t decodedImgFormat = 0;
+
+    err = AImgGetInfo(img, &width, &height, &_, &_, &_, &decodedImgFormat);
+    ASSERT_EQ(err, AIMG_SUCCESS);
+
+    std::vector<uint8_t> imgData(width*height*3);
+
+    err = AImgDecodeImage(img, &imgData[0], AImgFormat::RGB8U);
+    ASSERT_EQ(err, AIMG_SUCCESS);
+
+
+    seekCallback(callbackData, 0);
+
+
+    int32_t numChannels, bytesPerChannel;
+    AIGetFormatDetails(decodedImgFormat, &numChannels, &bytesPerChannel, &_);
+
+    std::vector<uint8_t> tmp(width*height*numChannels*bytesPerChannel, 98);
+    err = AImgDecodeImage(img, &tmp[0], AImgFormat::INVALID_FORMAT);
+    ASSERT_EQ(err, AIMG_SUCCESS);
+
+    std::vector<uint8_t> convertedData(width*height*3, 79);
+    AImgConvertFormat(&tmp[0], &convertedData[0], width, height, decodedImgFormat, AImgFormat::RGB8U);
+
+    ASSERT_EQ(memcmp(&convertedData[0], &imgData[0], convertedData.size()), 0);
+
+    AImgClose(img);
+    AIDestroySimpleMemoryBufferCallbacks(readCallback, writeCallback, tellCallback, seekCallback, callbackData);
+}
+
 TEST(TGA, TestReadTGAFile)
 {
     auto data = readFile<uint8_t>(getImagesDir() + "/tga/test.tga");

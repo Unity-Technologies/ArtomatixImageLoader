@@ -101,6 +101,23 @@ namespace AImg
             CallbackData data;
             int32_t numChannels, width, height;
 
+            int32_t getDecodeFormat()
+            {
+                switch (numChannels)
+                {
+                    case 1:
+                        return AImgFormat::R8U;
+                    case 2:
+                        return AImgFormat::RG8U;
+                    case 3:
+                        return AImgFormat::RGB8U;
+                    case 4:
+                        return AImgFormat::RGBA8U;
+                    default:
+                        return AImgFormat::INVALID_FORMAT;
+                }
+            }
+
             virtual int32_t getImageInfo(int32_t *width, int32_t *height, int32_t *numChannels, int32_t *bytesPerChannel, int32_t *floatOrInt, int32_t *decodedImgFormat)
             {
                 *width = this->width;
@@ -109,22 +126,7 @@ namespace AImg
 
                 *bytesPerChannel = 1;
                 *floatOrInt = AImgFloatOrIntType::FITYPE_INT;
-
-                switch (*numChannels)
-                {
-                    case 1:
-                        *decodedImgFormat = AImgFormat::R8U;
-                        break;
-                    case 2:
-                        *decodedImgFormat = AImgFormat::RG8U;
-                        break;
-                    case 3:
-                        *decodedImgFormat = AImgFormat::RGB8U;
-                        break;
-                    case 4:
-                        *decodedImgFormat = AImgFormat::RGBA8U;
-                        break;
-                }
+                *decodedImgFormat = getDecodeFormat();
 
                 return AImgErrorCode::AIMG_SUCCESS;
             }
@@ -135,61 +137,37 @@ namespace AImg
                 callbacks.read = STBICallbacks::readCallback;
                 callbacks.skip = STBICallbacks::seekCallback;
 
-                uint8_t * loadedData = stbi_load_from_callbacks(&callbacks, &data, &width, &height, &numChannels, numChannels);
+                uint8_t* loadedData = stbi_load_from_callbacks(&callbacks, &data, &width, &height, &numChannels, numChannels);
 
-
-                if (loadedData == NULL)
+                if(!loadedData)
                 {
                     mErrorDetails = "[AImg::TGAImageLoader::TGAFile::decodeImage] stbi_load_from_callbacks failed!";
-
-                    return AImgErrorCode::AIMG_LOAD_FAILED_EXTERNAL;
-                }
-                int32_t decodedFormat;
-
-
-
-                void * destBuffer = realDestBuffer;
-
-                switch (numChannels)
-                {
-                    case 1:
-                        decodedFormat = AImgFormat::R8U;
-                        break;
-                    case 2:
-                        decodedFormat = AImgFormat::RG8U;
-                        break;
-                    case 3:
-                        decodedFormat = AImgFormat::RGB8U;
-                        break;
-                    case 4:
-                        decodedFormat = AImgFormat::RGBA8U;
-                }
-                std::vector<uint8_t> convertTempBuffer(0);
-                int32_t convertNumChannels, convertBytesPerChannel, convertFloatOrInt;
-                if (forceImageFormat != AImgFormat::INVALID_FORMAT && forceImageFormat != decodedFormat)
-                {
-                    AIGetFormatDetails(forceImageFormat, &convertNumChannels, &convertBytesPerChannel, &convertFloatOrInt);
-                    convertTempBuffer.resize(convertNumChannels * convertBytesPerChannel * width * height);
-                    realDestBuffer = &convertTempBuffer[0];
-                }
-
-                if (loadedData != NULL)
-                {
-                    memcpy(destBuffer, loadedData, width * height * numChannels);
-                    stbi_image_free(loadedData);
-                }
-                else
-                {
                     return AImgErrorCode::AIMG_LOAD_FAILED_EXTERNAL;
                 }
 
-                if (forceImageFormat != AImgFormat::INVALID_FORMAT && forceImageFormat != decodedFormat)
+                int32_t decodeFormat = getDecodeFormat();
+                int32_t numChannels, bytesPerChannel, floatOrInt;
+                AIGetFormatDetails(decodeFormat, &numChannels, &bytesPerChannel, &floatOrInt);
+
+
+                void* destBuffer = realDestBuffer;
+
+                std::vector<uint8_t> convertTmpBuffer(0);
+                if (forceImageFormat != AImgFormat::INVALID_FORMAT && forceImageFormat != decodeFormat)
                 {
-                    int32_t err = AImgConvertFormat(destBuffer, realDestBuffer, width, height, decodedFormat, forceImageFormat);
-                    memcpy(destBuffer, realDestBuffer, width * height * convertNumChannels * convertBytesPerChannel);
-                    if (err != AImgErrorCode::AIMG_SUCCESS)
+                    convertTmpBuffer.resize(width * height * bytesPerChannel * numChannels);
+                    destBuffer = &convertTmpBuffer[0];
+                }
+
+                memcpy(destBuffer, loadedData, width * height * bytesPerChannel * numChannels);
+                stbi_image_free(loadedData);
+
+
+                if (forceImageFormat != AImgFormat::INVALID_FORMAT && forceImageFormat != decodeFormat)
+                {
+                    int32_t err = AImgConvertFormat(destBuffer, realDestBuffer, width, height, decodeFormat, forceImageFormat);
+                    if(err != AImgErrorCode::AIMG_SUCCESS)
                         return err;
-
                 }
 
                 return AImgErrorCode::AIMG_SUCCESS;
