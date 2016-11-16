@@ -13,8 +13,14 @@
 
 namespace AImg
 {
-    AImgFormat getWriteFormatTiff(int32_t inputFormat);
+    AImgFormat getWriteFormatTiff(int32_t inputFormat)
+    {
+        // Tiff can write all currently supported formats. Here we are just future-proofing in case we add some more formats later that tiff can't do
+        if(inputFormat > AImgFormat::INVALID_FORMAT && inputFormat <= AImgFormat::RGBA32F)
+            return (AImgFormat)inputFormat;
 
+        return AImgFormat::INVALID_FORMAT;
+    }
 
     struct tiffCallbackData
     {
@@ -602,15 +608,6 @@ namespace AImg
     int32_t TIFFImageLoader::getAImgFileFormatValue()
     {
         return AImgFileFormat::TIFF_IMAGE_FORMAT;
-    }
-
-    AImgFormat getWriteFormatTiff(int32_t inputFormat)
-    {
-        // Tiff can write all currently supported formats. Here we are just future-proofing in case we add some more formats later that tiff can't do
-        if(inputFormat > AImgFormat::INVALID_FORMAT && inputFormat <= AImgFormat::RGBA32F)
-            return (AImgFormat)inputFormat;
-
-        return AImgFormat::INVALID_FORMAT;
     }
 
     AImgFormat TIFFImageLoader::getWhatFormatWillBeWrittenForData(int32_t inputFormat)

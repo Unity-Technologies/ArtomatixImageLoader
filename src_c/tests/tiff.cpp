@@ -5,6 +5,8 @@
 
 #include "testCommon.h"
 
+#ifdef HAVE_TIFF
+
 bool compareTiffToPng(const std::string& name, bool convertSrgb = false)
 {
     #ifndef HAVE_PNG
@@ -290,6 +292,8 @@ TEST(TIFF, TestWrite32F)
 {
     testTiffWrite(AImgFormat::RGBA32F);
 }
+
+#endif // HAVE_TIFF
 
 int main(int argc, char **argv)
 {
