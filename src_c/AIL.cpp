@@ -11,6 +11,7 @@
 #include "png.h"
 #include "jpeg.h"
 #include "tga.h"
+#include "tiff.h"
 
 #ifdef HAVE_EXR
     #include <half.h>
@@ -35,6 +36,10 @@ int32_t AImgInitialise()
 
     #ifdef HAVE_TGA
         loaders[AImgFileFormat::TGA_IMAGE_FORMAT] = new AImg::TGAImageLoader();
+    #endif
+
+    #ifdef HAVE_TIFF
+        loaders[AImgFileFormat::TIFF_IMAGE_FORMAT] = new AImg::TIFFImageLoader();
     #endif
 
     for(auto it = loaders.begin(); it != loaders.end(); ++it)

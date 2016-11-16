@@ -64,6 +64,8 @@ enum AImgErrorCode
     AIMG_LOAD_FAILED_INTERNAL = -3, // load failed inside ArtomatixImageLoader
     AIMG_CONVERSION_FAILED_BAD_FORMAT = -4,
     AIMG_WRITE_FAILED_EXTERNAL = -5,
+    AIMG_WRITE_FAILED_INTERNAL = -6,
+    AIMG_LOAD_FAILED_UNSUPPORTED_TIFF = -7,
     AIMG_OPEN_FAILED_EMPTY_INPUT = -8
 };
 
@@ -73,7 +75,8 @@ enum AImgFileFormat
     EXR_IMAGE_FORMAT = 1,
     PNG_IMAGE_FORMAT = 2,
     JPEG_IMAGE_FORMAT = 3,
-    TGA_IMAGE_FORMAT = 4
+    TGA_IMAGE_FORMAT = 4,
+    TIFF_IMAGE_FORMAT = 5
 };
 
 enum AImgFloatOrIntType

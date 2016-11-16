@@ -27,9 +27,13 @@ namespace ArtomatixImageLoader
                         throw new AImgConversionFailedBadFormatException(msg);
                     case -5:
                         throw new AImgWriteFailedExternalException(msg);
+                    case -6:
+                        throw new AImgWriteFailedInternalException(msg);
+                    case -7:
+                        throw new AImgLoadFailedUnsupportedTiffException(msg);
                     case -8:
                         throw new AImgOpenFailedEmptyInputException(msg);
-
+                   
                     default:
                         throw new AImgException("Unknown error code: " + errorCode + " " + msg);
                 }
@@ -62,8 +66,18 @@ namespace ArtomatixImageLoader
         public AImgWriteFailedExternalException(string msg) : base(msg) {}
     }
 
+    public class AImgWriteFailedInternalException : AImgException
+    {
+        public AImgWriteFailedInternalException(string msg) : base(msg) {}
+    }
+
     public class AImgOpenFailedEmptyInputException : AImgException
     {
         public AImgOpenFailedEmptyInputException(string msg) : base(msg) {}
+    }
+
+    public class AImgLoadFailedUnsupportedTiffException : AImgException
+    {
+        public AImgLoadFailedUnsupportedTiffException(string msg) : base(msg) {}
     }
 }

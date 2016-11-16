@@ -13,9 +13,12 @@ class AImgConversionFailedBadFormatException(AImgException):
     pass
 class AImgWriteFailedExternalException(AImgException):
     pass
+class AImgWriteFailedInternalException(AImgException):
+    pass
+class AImgLoadFailedUnsupportedTiffException(AImgException):
+    pass
 class AImgOpenFailedEmptyInputException(AImgException):
     pass
-
 
 def checkErrorCode(aImgCapsule, errCode):
     if errCode != 0:
@@ -35,6 +38,10 @@ def checkErrorCode(aImgCapsule, errCode):
             raise AImgConversionFailedBadFormatException(msg)
         elif errCode == -5:
             raise AImgWriteFailedExternalException(msg)
+        elif errCode == -6:
+            raise AImgWriteFailedInternalException(msg)
+        elif errCode == -7:
+            raise AImgLoadFailedUnsupportedTiffException(msg)
         elif errCode == -8:
             raise AImgOpenFailedEmptyInputException(msg)
         else:

@@ -15,7 +15,9 @@ namespace ArtomatixImageLoader
         UNKNOWN_IMAGE_FORMAT = -1,
         EXR_IMAGE_FORMAT = 1,
         PNG_IMAGE_FORMAT = 2,
-        JPEG_IMAGE_FORMAT = 3
+        JPEG_IMAGE_FORMAT = 3,
+        TGA_IMAGE_FORMAT = 4,
+        TIFF_IMAGE_FORMAT = 5
     };
 
     // format is [channels][bits per channel][U/F]
