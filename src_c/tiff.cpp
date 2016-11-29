@@ -585,6 +585,12 @@ namespace AImg
 
     int32_t TIFFImageLoader::initialise()
     {
+        // silence libtiff's crap output.
+        // also, on windows, it will open message boxes for warnings.
+        // which block until you click ok.
+        // just what I wanted libtiff, thanks
+        TIFFSetWarningHandler(NULL);
+
         return AImgErrorCode::AIMG_SUCCESS;
     }
 
