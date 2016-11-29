@@ -245,9 +245,9 @@ namespace AImg
                 *width = jpeg_read_struct.image_width;
                 *height = jpeg_read_struct.image_height;
                 *bytesPerChannel = 1;
-                *numChannels = 3;
+                *numChannels = jpeg_read_struct.num_components;
                 *floatOrInt = AImgFloatOrIntType::FITYPE_INT;
-                *decodedImgFormat = AImgFormat::RGB8U;
+                *decodedImgFormat = ((int)AImgFormat::R8U) + jpeg_read_struct.num_components - 1;
                 return AImgErrorCode::AIMG_SUCCESS;
             }
 

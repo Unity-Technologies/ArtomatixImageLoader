@@ -112,6 +112,12 @@ TEST(JPEG, TestReadJPEGAttrs)
     ASSERT_TRUE(validateImageHeaders("/jpeg/test.jpeg", 640, 400, 3, 1, AImgFloatOrIntType::FITYPE_INT, AImgFormat::RGB8U));
 }
 
+TEST(JPEG, TestReadJPEGAttrsGreyscale)
+{
+    ASSERT_TRUE(validateImageHeaders("/jpeg/greyscale.jpeg", 2048, 2048, 1, 1, AImgFloatOrIntType::FITYPE_INT, AImgFormat::R8U));
+}
+
+
 TEST(JPEG, TestCompareForceImageFormat1)
 {
     ASSERT_TRUE(compareForceImageFormat("/jpeg/test.jpeg"));
