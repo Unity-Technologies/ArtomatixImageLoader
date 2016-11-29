@@ -6,6 +6,7 @@
 #include <string.h>
 #include <math.h>
 #include <iostream>
+#include <algorithm>
 
 #include "AIL.h"
 #include "AIL_internal.h"

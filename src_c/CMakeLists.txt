@@ -43,6 +43,11 @@ add_library(AIL ${BUILD_SHARE_TYPE}
     extern/stb_image_write.h
 )
 
+
+if(WIN32)
+    add_definitions(-DNOMINMAX) # sigh... https://stackoverflow.com/a/2789509
+endif()
+
 set(AIL_COMPILE_FLAGS "")
 if(UNIX)
     set(AIL_COMPILE_FLAGS "-Wall -pedantic -Wextra -g -std=c++11 -Wno-unknown-pragmas")
