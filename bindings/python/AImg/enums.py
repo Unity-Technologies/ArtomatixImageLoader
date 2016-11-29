@@ -52,7 +52,7 @@ AImgFileFormats = AILEnum(AImgFileFormat, {
     "EXR_IMAGE_FORMAT"  : [1, "exr"],
     "PNG_IMAGE_FORMAT"  : [2, "png"],
     "JPEG_IMAGE_FORMAT" : [3, "jpeg"],
-    "TGA_IMAGE_FORMAT"  : [4, "tga"]
+    "TGA_IMAGE_FORMAT"  : [4, "tga"],
     "TIFF_IMAGE_FORMAT"  : [5, "tiff"]
 })
 
