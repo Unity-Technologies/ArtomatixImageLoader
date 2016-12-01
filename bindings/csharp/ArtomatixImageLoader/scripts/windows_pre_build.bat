@@ -40,7 +40,7 @@ if %errorlevel% neq 0 exit %errorlevel%
 
 if not exist "%PROJDIR%\embedded_files" mkdir "%PROJDIR%\embedded_files"
 
-copy "%C_DLL%" "%PROJDIR%\embedded_files\native_code"
+copy "%C_DLL%" "%PROJDIR%\embedded_files\native_code_windows_%REALARCH%"
 if %errorlevel% neq 0 exit %errorlevel%
 
 cd %CURRDIR%
