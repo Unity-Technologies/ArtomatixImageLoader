@@ -3,14 +3,48 @@ using System;
 using System.IO;
 using System.Runtime.CompilerServices;
 using System.IO.Compression;
+using Stugo.Interop;
 
 namespace ArtomatixImageLoader
 {
-    public class ImgLoader
+    // io callbacks
+    internal delegate int ReadCallback(IntPtr callbackData, IntPtr dest, int count);
+    internal delegate void WriteCallback(IntPtr callbackData, IntPtr src, Int32 count);
+    internal delegate int TellCallback(IntPtr callbackData);
+    internal delegate void SeekCallback(IntPtr callbackData, int pos);
+
+    // native code delegates
+    internal delegate Int32 AImgInitialise();
+    internal delegate IntPtr _AImgGetErrorDetails(IntPtr img);
+    internal delegate IntPtr AImgGetAImg(Int32 fileFormat);
+    internal delegate void AImgClose(IntPtr img);
+    internal delegate Int32 AImgGetInfo(IntPtr img, out Int32 width, out Int32 height, out Int32 numChannels, out Int32 bytesPerChannel, out Int32 floatOrInt, out Int32 decodedImgFormat);
+    internal delegate Int32 AImgDecodeImage(IntPtr img, IntPtr destBuffer, Int32 forceImageFormat);
+    internal delegate void AImgCleanUp();
+    internal delegate Int32 AImgGetWhatFormatWillBeWrittenForData(Int32 fileFormat, Int32 inputFormat);
+
+    internal delegate Int32 AImgOpen(
+        [MarshalAs(UnmanagedType.FunctionPtr)] ReadCallback readCallback,
+        [MarshalAs(UnmanagedType.FunctionPtr)] TellCallback tellCallback,
+        [MarshalAs(UnmanagedType.FunctionPtr)] SeekCallback seekCallback,
+        IntPtr callbackData,
+        out IntPtr img,
+        out Int32 detectedFileFormat
+    );
+    internal delegate Int32 AImgWriteImage(
+        IntPtr img, IntPtr data, Int32 width, Int32 height, Int32 inputFormat, 
+        [MarshalAs(UnmanagedType.FunctionPtr)] WriteCallback writeCallback,
+        [MarshalAs(UnmanagedType.FunctionPtr)] TellCallback tellCallback,
+        [MarshalAs(UnmanagedType.FunctionPtr)] SeekCallback seekCallback, 
+        IntPtr callbackData
+    );
+
+
+    internal class ImgLoader
     {
-        // This instance and the constructor and finalizer below are just a way of ensuring
+        // This instance and the constructors and finalizer below are just a way of ensuring
         // that the AImgInitialise and AImgCleanUp functions get called when they need to be.
-        // The static constructoris there because when we just had the instantiation inline with
+        // The static constructor is there because when we just had the instantiation inline with
         // the declaration, the c# compiler on windows would optimise it out, even though
         // its constructor had side effects. That's also why we have no optimise
         // flags on the static constructor. yaaaaaaaaaay
@@ -22,43 +56,14 @@ namespace ArtomatixImageLoader
             forceStaticConstructorCall = new ImgLoader();
         }
 
-        private static string getCurrentPlatform()
-        {
-            switch (Environment.OSVersion.Platform)
-            {
-                case PlatformID.Unix:
-                // Well, there are chances MacOSX is reported as Unix instead of MacOSX.
-                // Instead of platform check, we'll do a feature checks (Mac specific root folders)
-                if (Directory.Exists("/Applications")
-                    & Directory.Exists("/System")
-                    & Directory.Exists("/Users")
-                    & Directory.Exists("/Volumes"))
-                    return "osx";
-                else
-                    return "linux";
-
-                case PlatformID.MacOSX:
-                return "osx";
-
-                default:
-                return "windows";
-            }
-        }
-
-        private static string getArchString()
-        {
-            if (Environment.Is64BitProcess)
-                return "x64";
-            else
-                return "x86";
-        }
-
+        // extracts the correct native code binary and loads the functions from it
         private ImgLoader()
         {
             // make compiler warnings go away
             if (forceStaticConstructorCall == null)
                 forceStaticConstructorCall = null;
 
+            // zip embedded resource contains native binaries for multiple platforms
             var zipStream = System.Reflection.Assembly.GetExecutingAssembly().GetManifestResourceStream("ArtomatixImageLoader.embedded_files.binaries.zip");
 
             // using ZipStorer (nuget pkg) here instead of ZipArchive (.NET built in) because older versions of mono don't support it
@@ -69,8 +74,23 @@ namespace ArtomatixImageLoader
                 {
                     if (entry.FilenameInZip == nativeCodeFilename)
                     {
-                        using (var f = File.OpenWrite("libAIL.so"))
+                        string dllPath = Path.GetFullPath("libAIL.so");
+
+                        using (var f = File.OpenWrite(dllPath))
                             zip.ExtractFile(entry, f);
+
+                        var loader = UnmanagedModuleLoaderBase.GetLoader(dllPath);
+
+                        AImgInitialise = (AImgInitialise)loader.GetDelegate("AImgInitialise", typeof(AImgInitialise));
+                        _AImgGetErrorDetails = (_AImgGetErrorDetails)loader.GetDelegate("AImgGetErrorDetails", typeof(_AImgGetErrorDetails));
+                        AImgGetAImg = (AImgGetAImg)loader.GetDelegate("AImgGetAImg", typeof(AImgGetAImg));
+                        AImgOpen = (AImgOpen)loader.GetDelegate("AImgOpen", typeof(AImgOpen));
+                        AImgClose = (AImgClose)loader.GetDelegate("AImgClose", typeof(AImgClose));
+                        AImgGetInfo = (AImgGetInfo)loader.GetDelegate("AImgGetInfo", typeof(AImgGetInfo));
+                        AImgDecodeImage = (AImgDecodeImage)loader.GetDelegate("AImgDecodeImage", typeof(AImgDecodeImage));
+                        AImgCleanUp = (AImgCleanUp)loader.GetDelegate("AImgCleanUp", typeof(AImgCleanUp));
+                        AImgGetWhatFormatWillBeWrittenForData = (AImgGetWhatFormatWillBeWrittenForData)loader.GetDelegate("AImgGetWhatFormatWillBeWrittenForData", typeof(AImgGetWhatFormatWillBeWrittenForData));
+                        AImgWriteImage = (AImgWriteImage)loader.GetDelegate("AImgWriteImage", typeof(AImgWriteImage));
 
                         AImgInitialise();
                         return;
@@ -84,61 +104,63 @@ namespace ArtomatixImageLoader
         ~ImgLoader()
         {
             AImgCleanUp();
+
+            try
+            {
+                File.Delete(Path.GetFullPath("libAIL.so"));
+            }
+            catch { }
+
         }
 
+        private static string getCurrentPlatform()
+        {
+            switch (Environment.OSVersion.Platform)
+            {
+                case PlatformID.Unix:
+                    // Well, there are chances MacOSX is reported as Unix instead of MacOSX.
+                    // Instead of platform check, we'll do a feature checks (Mac specific root folders)
+                    if (Directory.Exists("/Applications")
+                        & Directory.Exists("/System")
+                        & Directory.Exists("/Users")
+                        & Directory.Exists("/Volumes"))
+                        return "osx";
+                    else
+                        return "linux";
 
-        [DllImport("libAIL.so", EntryPoint="AImgGetErrorDetails")]
-        static extern IntPtr _AImgGetErrorDetails(IntPtr img);
+                    case PlatformID.MacOSX:
+                    return "osx";
+
+                    default:
+                    return "windows";
+            }
+        }
+
+        private static string getArchString()
+        {
+            if (Environment.Is64BitProcess)
+                return "x64";
+            else
+                return "x86";
+        }
+
+        // native code functions
+        static _AImgGetErrorDetails _AImgGetErrorDetails = null;
+        public static AImgGetAImg AImgGetAImg = null;
+        public static AImgOpen AImgOpen = null;
+        public static AImgClose AImgClose = null;
+        public static AImgGetInfo AImgGetInfo = null;
+        public static AImgDecodeImage AImgDecodeImage = null;
+        static AImgInitialise AImgInitialise = null;
+        static AImgCleanUp AImgCleanUp = null;
+        public static AImgGetWhatFormatWillBeWrittenForData AImgGetWhatFormatWillBeWrittenForData = null;
+        public static AImgWriteImage AImgWriteImage = null;
 
         public static string AImgGetLastErrorDetails(IntPtr img)
         {
             IntPtr cstr = _AImgGetErrorDetails(img);
             return Marshal.PtrToStringAnsi(cstr);
         }
-
-        [DllImport("libAIL.so")]
-        public static extern IntPtr AImgGetAImg(Int32 fileFormat);
-
-
-        [DllImport("libAIL.so")]
-        public static extern Int32 AImgOpen(
-            [MarshalAs(UnmanagedType.FunctionPtr)] ReadCallback readCallback,
-            [MarshalAs(UnmanagedType.FunctionPtr)] TellCallback tellCallback,
-            [MarshalAs(UnmanagedType.FunctionPtr)] SeekCallback seekCallback,
-            IntPtr callbackData,
-            out IntPtr img,
-            out Int32 detectedFileFormat
-        );
-
-        [DllImport("libAIL.so")]
-        public static extern void AImgClose(IntPtr img);
-
-        [DllImport("libAIL.so")]
-        public static extern Int32 AImgGetInfo(IntPtr img, out Int32 width, out Int32 height, out Int32 numChannels, out Int32 bytesPerChannel, out Int32 floatOrInt, out Int32 decodedImgFormat);
-
-        [DllImport("libAIL.so")]
-        public static extern Int32 AImgDecodeImage(IntPtr img, IntPtr destBuffer, Int32 forceImageFormat);
-
-        [DllImport("libAIL.so")]
-        static extern Int32 AImgInitialise();
-
-        [DllImport("libAIL.so")]
-        static extern void AImgCleanUp();
-
-        [DllImport("libAIL.so")]
-        public static extern Int32 AImgGetWhatFormatWillBeWrittenForData(Int32 fileFormat, Int32 inputFormat);
-
-        [DllImport("libAIL.so")]
-        public static extern Int32 AImgWriteImage(IntPtr img, IntPtr data, Int32 width, Int32 height, Int32 inputFormat, 
-            [MarshalAs(UnmanagedType.FunctionPtr)] WriteCallback writeCallback,
-            [MarshalAs(UnmanagedType.FunctionPtr)] TellCallback tellCallback,
-            [MarshalAs(UnmanagedType.FunctionPtr)] SeekCallback seekCallback, 
-            IntPtr callbackData);
-
-        public delegate int ReadCallback(IntPtr callbackData, IntPtr dest, int count);
-        public delegate void WriteCallback(IntPtr callbackData, IntPtr src, Int32 count);
-        public delegate int TellCallback(IntPtr callbackData);
-        public delegate void SeekCallback(IntPtr callbackData, int pos);
 
         public static ReadCallback getReadCallback(Stream s)
         {

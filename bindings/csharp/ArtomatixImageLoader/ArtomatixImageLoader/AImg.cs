@@ -11,9 +11,9 @@ namespace ArtomatixImageLoader
         bool doDisposeStream;
         bool disposed = false;
 
-        ImgLoader.ReadCallback readCallback;
-        ImgLoader.TellCallback tellCallback;
-        ImgLoader.SeekCallback seekCallback;
+        ReadCallback readCallback;
+        TellCallback tellCallback;
+        SeekCallback seekCallback;
 
         Int32 _width, _height;
         Int32 _numChannels;

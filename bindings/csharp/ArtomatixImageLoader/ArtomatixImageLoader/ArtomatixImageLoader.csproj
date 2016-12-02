@@ -61,6 +61,9 @@
     <Reference Include="ZipStorer">
       <HintPath>..\packages\ZipStorer.2.38\lib\net20\ZipStorer.dll</HintPath>
     </Reference>
+    <Reference Include="Stugo.Interop">
+      <HintPath>..\packages\Stugo.Interop.0.1.0\lib\Stugo.Interop.dll</HintPath>
+    </Reference>
   </ItemGroup>
   <ItemGroup>
     <Compile Include="Properties\AssemblyInfo.cs" />
