@@ -1,6 +1,6 @@
-set "PROJDIR=%1"
-set "CONFIG=%2"
-set "REALARCH=%3"
+set "PROJDIR=%~1"
+set "CONFIG=%~2"
+set "REALARCH=%~3"
 
 if %REALARCH%==x64 (
 	set "ARCH= Win64"
@@ -30,17 +30,22 @@ set CURRDIR=%CD%
 
 cd "%BUILD_DIR%"
 
+set "binfile=native_code_windows_%REALARCH%"
 :: delete the old one first, just to be sure
-if exist "%PROJDIR%\embedded_files\native_code" del "%PROJDIR%\embedded_files\native_code"
+if exist "%PROJDIR%\embedded_files\%binfile%" del "%PROJDIR%\embedded_files\%binfile%"
 
 cmake .. -DCMAKE_BUILD_TYPE=%CONFIG% -DPYTHON_ENABLED=Off -DCMAKE_INSTALL_PREFIX=inst -G "Visual Studio 14%ARCH%"
 if %errorlevel% neq 0 exit %errorlevel%
 cmake --build . --target install --config %CONFIG%
 if %errorlevel% neq 0 exit %errorlevel%
 
-if not exist "%PROJDIR%\embedded_files" mkdir "%PROJDIR%\embedded_files"
+copy "%C_DLL%" "%PROJDIR%\embedded_files\%binfile%"
+if %errorlevel% neq 0 exit %errorlevel%
 
-copy "%C_DLL%" "%PROJDIR%\embedded_files\native_code_windows_%REALARCH%"
+if exist "%PROJDIR%\embedded_files\binaries.zip" del "%PROJDIR%\embedded_files\binaries.zip"
+
+echo powershell -ExecutionPolicy ByPass "%PROJDIR%\..\scripts\windows_zip.ps1" "%PROJDIR%\embedded_files"
+powershell -ExecutionPolicy ByPass "%PROJDIR%\..\scripts\windows_zip.ps1" "%PROJDIR%\embedded_files"
 if %errorlevel% neq 0 exit %errorlevel%
 
 cd %CURRDIR%
