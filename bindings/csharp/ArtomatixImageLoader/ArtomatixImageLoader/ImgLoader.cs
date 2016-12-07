@@ -63,42 +63,24 @@ namespace ArtomatixImageLoader
             if (forceStaticConstructorCall == null)
                 forceStaticConstructorCall = null;
 
-            // zip embedded resource contains native binaries for multiple platforms
+            string dllPath = Path.GetFullPath("libAIL.so");
+
             var zipStream = System.Reflection.Assembly.GetExecutingAssembly().GetManifestResourceStream("ArtomatixImageLoader.embedded_files.binaries.zip");
+            NativeBinaryManager.NativeBinaryManager.ExtractNativeBinary(zipStream, dllPath);
+            var loader = UnmanagedModuleLoaderBase.GetLoader(dllPath);
 
-            // using ZipStorer (nuget pkg) here instead of ZipArchive (.NET built in) because older versions of mono don't support it
-            using (var zip = ZipStorer.Open(zipStream, FileAccess.Read))
-            {
-                string nativeCodeFilename = "native_code_" + getCurrentPlatform () + "_" + getArchString();
-                foreach (var entry in zip.ReadCentralDir())
-                {
-                    if (entry.FilenameInZip == nativeCodeFilename)
-                    {
-                        string dllPath = Path.GetFullPath("libAIL.so");
+            AImgInitialise = (AImgInitialise)loader.GetDelegate("AImgInitialise", typeof(AImgInitialise));
+            _AImgGetErrorDetails = (_AImgGetErrorDetails)loader.GetDelegate("AImgGetErrorDetails", typeof(_AImgGetErrorDetails));
+            AImgGetAImg = (AImgGetAImg)loader.GetDelegate("AImgGetAImg", typeof(AImgGetAImg));
+            AImgOpen = (AImgOpen)loader.GetDelegate("AImgOpen", typeof(AImgOpen));
+            AImgClose = (AImgClose)loader.GetDelegate("AImgClose", typeof(AImgClose));
+            AImgGetInfo = (AImgGetInfo)loader.GetDelegate("AImgGetInfo", typeof(AImgGetInfo));
+            AImgDecodeImage = (AImgDecodeImage)loader.GetDelegate("AImgDecodeImage", typeof(AImgDecodeImage));
+            AImgCleanUp = (AImgCleanUp)loader.GetDelegate("AImgCleanUp", typeof(AImgCleanUp));
+            AImgGetWhatFormatWillBeWrittenForData = (AImgGetWhatFormatWillBeWrittenForData)loader.GetDelegate("AImgGetWhatFormatWillBeWrittenForData", typeof(AImgGetWhatFormatWillBeWrittenForData));
+            AImgWriteImage = (AImgWriteImage)loader.GetDelegate("AImgWriteImage", typeof(AImgWriteImage));
 
-                        using (var f = File.OpenWrite(dllPath))
-                            zip.ExtractFile(entry, f);
-
-                        var loader = UnmanagedModuleLoaderBase.GetLoader(dllPath);
-
-                        AImgInitialise = (AImgInitialise)loader.GetDelegate("AImgInitialise", typeof(AImgInitialise));
-                        _AImgGetErrorDetails = (_AImgGetErrorDetails)loader.GetDelegate("AImgGetErrorDetails", typeof(_AImgGetErrorDetails));
-                        AImgGetAImg = (AImgGetAImg)loader.GetDelegate("AImgGetAImg", typeof(AImgGetAImg));
-                        AImgOpen = (AImgOpen)loader.GetDelegate("AImgOpen", typeof(AImgOpen));
-                        AImgClose = (AImgClose)loader.GetDelegate("AImgClose", typeof(AImgClose));
-                        AImgGetInfo = (AImgGetInfo)loader.GetDelegate("AImgGetInfo", typeof(AImgGetInfo));
-                        AImgDecodeImage = (AImgDecodeImage)loader.GetDelegate("AImgDecodeImage", typeof(AImgDecodeImage));
-                        AImgCleanUp = (AImgCleanUp)loader.GetDelegate("AImgCleanUp", typeof(AImgCleanUp));
-                        AImgGetWhatFormatWillBeWrittenForData = (AImgGetWhatFormatWillBeWrittenForData)loader.GetDelegate("AImgGetWhatFormatWillBeWrittenForData", typeof(AImgGetWhatFormatWillBeWrittenForData));
-                        AImgWriteImage = (AImgWriteImage)loader.GetDelegate("AImgWriteImage", typeof(AImgWriteImage));
-
-                        AImgInitialise();
-                        return;
-                    }
-                }
-
-                throw new PlatformNotSupportedException("This package does not contain native code for your platform");
-            }
+            AImgInitialise();
         }
 
         ~ImgLoader()
@@ -111,37 +93,6 @@ namespace ArtomatixImageLoader
             }
             catch { }
 
-        }
-
-        private static string getCurrentPlatform()
-        {
-            switch (Environment.OSVersion.Platform)
-            {
-                case PlatformID.Unix:
-                    // Well, there are chances MacOSX is reported as Unix instead of MacOSX.
-                    // Instead of platform check, we'll do a feature checks (Mac specific root folders)
-                    if (Directory.Exists("/Applications")
-                        & Directory.Exists("/System")
-                        & Directory.Exists("/Users")
-                        & Directory.Exists("/Volumes"))
-                        return "osx";
-                    else
-                        return "linux";
-
-                    case PlatformID.MacOSX:
-                    return "osx";
-
-                    default:
-                    return "windows";
-            }
-        }
-
-        private static string getArchString()
-        {
-            if (Environment.Is64BitProcess)
-                return "x64";
-            else
-                return "x86";
         }
 
         // native code functions

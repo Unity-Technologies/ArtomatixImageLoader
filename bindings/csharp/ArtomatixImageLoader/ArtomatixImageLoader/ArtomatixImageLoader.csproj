@@ -58,11 +58,14 @@
   <ItemGroup>
     <Reference Include="System" />
     <Reference Include="System.IO.Compression" />
+    <Reference Include="Stugo.Interop">
+      <HintPath>..\packages\Stugo.Interop.0.1.0\lib\Stugo.Interop.dll</HintPath>
+    </Reference>
     <Reference Include="ZipStorer">
       <HintPath>..\packages\ZipStorer.2.38\lib\net20\ZipStorer.dll</HintPath>
     </Reference>
-    <Reference Include="Stugo.Interop">
-      <HintPath>..\packages\Stugo.Interop.0.1.0\lib\Stugo.Interop.dll</HintPath>
+    <Reference Include="NativeBinaryManager">
+      <HintPath>..\packages\NativeBinaryManager.0.1.0\lib\NativeBinaryManager.dll</HintPath>
     </Reference>
   </ItemGroup>
   <ItemGroup>
@@ -74,23 +77,14 @@
   </ItemGroup>
   <Import Project="$(MSBuildBinPath)\Microsoft.CSharp.targets" />
   <ItemGroup>
-    <EmbeddedResource Include="embedded_files\binaries.zip" />
-  </ItemGroup>
-  <PropertyGroup>
-    
-    <CustomCommands Condition="'$(OS)' == 'Windows_NT'">
-      <CustomCommands>
-        <Command type="BeforeBuild" command="&quot;$(SolutionDir)/scripts/linux_pre_build.sh&quot; &quot;$(ProjectDir)&quot; &quot;$(ProjectConfigName)&quot;" />
-      </CustomCommands>
-    </CustomCommands>
-
-    <PreBuildEvent Condition="'$(OS)' == 'Windows_NT'">"$(SolutionDir)/scripts/windows_pre_build.bat" "$(ProjectDir)" "$(ConfigurationName)" $(PlatformName)</PreBuildEvent>
-  </PropertyGroup>
-  <ItemGroup>
     <None Include="packages.config" />
+    <None Include="native_code_setting.txt" />
   </ItemGroup>
-  
   <PropertyGroup>
     <DisableFastUpToDateCheck>true</DisableFastUpToDateCheck>
   </PropertyGroup>
+  <Import Project="../packages/NativeCodeBuilder.0.1.0/build/NativeCodeBuilder.targets" Condition="Exists('../packages/NativeCodeBuilder.0.1.0/build/NativeCodeBuilder.targets')" />
+  <ItemGroup>
+    <EmbeddedResource Include="embedded_files\binaries.zip" />
+  </ItemGroup>
 </Project>
