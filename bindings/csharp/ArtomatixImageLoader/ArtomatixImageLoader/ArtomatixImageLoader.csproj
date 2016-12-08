@@ -10,6 +10,8 @@
     <TargetFrameworkVersion>v4.5</TargetFrameworkVersion>
     <ProductVersion>12.0.0</ProductVersion>
     <SchemaVersion>2.0</SchemaVersion>
+    <NuGetPackageImportStamp>
+    </NuGetPackageImportStamp>
   </PropertyGroup>
   <PropertyGroup Condition="'$(Configuration)|$(Platform)' == 'Debug|x64'">
     <DebugSymbols>true</DebugSymbols>
@@ -83,8 +85,14 @@
   <PropertyGroup>
     <DisableFastUpToDateCheck>true</DisableFastUpToDateCheck>
   </PropertyGroup>
-  <Import Project="../packages/NativeCodeBuilder.0.1.0/build/NativeCodeBuilder.targets" Condition="Exists('../packages/NativeCodeBuilder.0.1.0/build/NativeCodeBuilder.targets')" />
   <ItemGroup>
     <EmbeddedResource Include="embedded_files\binaries.zip" />
   </ItemGroup>
+  <Import Project="..\packages\NativeCodeBuilder.0.1.2\build\NativeCodeBuilder.targets" Condition="Exists('..\packages\NativeCodeBuilder.0.1.2\build\NativeCodeBuilder.targets')" />
+  <Target Name="EnsureNuGetPackageBuildImports" BeforeTargets="PrepareForBuild">
+    <PropertyGroup>
+      <ErrorText>This project references NuGet package(s) that are missing on this computer. Use NuGet Package Restore to download them.  For more information, see http://go.microsoft.com/fwlink/?LinkID=322105. The missing file is {0}.</ErrorText>
+    </PropertyGroup>
+    <Error Condition="!Exists('..\packages\NativeCodeBuilder.0.1.2\build\NativeCodeBuilder.targets')" Text="$([System.String]::Format('$(ErrorText)', '..\packages\NativeCodeBuilder.0.1.2\build\NativeCodeBuilder.targets'))" />
+  </Target>
 </Project>
