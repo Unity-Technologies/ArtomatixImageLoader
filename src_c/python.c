@@ -258,6 +258,8 @@ static PyObject* pyail_write(PyObject* self, PyObject* args)
     int err = AImgWriteImage(wImg, PyArray_DATA(sourceArrayObj), width, height, inputFormat, pyail_WriteCallback, pyail_TellCallback, pyail_SeekCallback, callbackData);
     PyEval_RestoreThread(callbackData->threadState);
 
+    pyail_destroyCallbackData(callbackData);
+
     PyObject* imgCapsule = PyCapsule_New(wImg, NULL, pyail_imgCapsuleDestructor);
     PyObject* retval = Py_BuildValue("(iO)", err, imgCapsule);
     Py_DECREF(imgCapsule);
