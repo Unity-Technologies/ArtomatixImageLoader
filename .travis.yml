@@ -1,5 +1,6 @@
 # Enable C++ support
 language: cpp
+dist: xenial
 # Compiler selection
 compiler:
   - clang
@@ -9,4 +10,4 @@ script:
   - cd src_c
   - mkdir build
   - cd build
-  - cmake .. && make
+  - cmake .. -DBUILD_SHARE_TYPE=SHARED && make -j2 && make aitest
