@@ -1,6 +1,6 @@
 # Enable C++ support
 language: cpp
-dist: xenial
+dist: vivid
 # Compiler selection
 compiler:
   - clang
