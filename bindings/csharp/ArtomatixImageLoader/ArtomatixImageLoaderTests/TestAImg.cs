@@ -4,6 +4,7 @@ using ArtomatixImageLoader;
 using System.Reflection;
 using System.IO;
 using System.Runtime.CompilerServices;
+using ArtomatixImageLoader.ImgEncodingOptions;
 
 namespace ArtomatixImageLoaderTests
 {
@@ -116,6 +117,35 @@ namespace ArtomatixImageLoaderTests
                     using (AImg img2 = new AImg(writeStream))
                     {
                         float[] data2 = new float[img.width * img.height * img.decodedImgFormat.numChannels()];
+                        img2.decodeImage(data2);
+
+                        for (int i = 0; i < data.Length; i++)
+                            Assert.AreEqual(data[i], data2[i]);
+                    }
+                }
+            }
+        }
+
+        [Test]
+        public static void TestWriteUncompressedPng()
+        {
+            using (AImg img = new AImg(File.Open(getImagesDir() + "/png/8-bit.png", FileMode.Open)))
+            {
+                byte[] data = new byte[img.width * img.height * img.decodedImgFormat.numChannels() * img.decodedImgFormat.bytesPerChannel()];
+                img.decodeImage(data);
+
+                using (var writeStream = new MemoryStream())
+                {
+                    var wImg = new AImg(AImgFileFormat.PNG_IMAGE_FORMAT);
+
+                    PngEncodingOptions options = new PngEncodingOptions(0, PngEncodingOptions.Filter.PNG_NO_FILTERS);
+
+                    wImg.writeImage(data, img.width, img.height, img.decodedImgFormat, writeStream, options);
+                    writeStream.Seek(0, SeekOrigin.Begin);
+
+                    using (AImg img2 = new AImg(writeStream))
+                    {
+                        byte[] data2 = new byte[img.width * img.height * img.decodedImgFormat.numChannels() * img.decodedImgFormat.bytesPerChannel()];
                         img2.decodeImage(data2);
 
                         for (int i = 0; i < data.Length; i++)
