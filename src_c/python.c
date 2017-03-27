@@ -255,7 +255,7 @@ static PyObject* pyail_write(PyObject* self, PyObject* args)
     AImgHandle wImg = AImgGetAImg(fileFormat);
 
     callbackData->threadState = PyEval_SaveThread();
-    int err = AImgWriteImage(wImg, PyArray_DATA(sourceArrayObj), width, height, inputFormat, pyail_WriteCallback, pyail_TellCallback, pyail_SeekCallback, callbackData);
+    int err = AImgWriteImage(wImg, PyArray_DATA(sourceArrayObj), width, height, inputFormat, pyail_WriteCallback, pyail_TellCallback, pyail_SeekCallback, callbackData, NULL);
     PyEval_RestoreThread(callbackData->threadState);
 
     pyail_destroyCallbackData(callbackData);

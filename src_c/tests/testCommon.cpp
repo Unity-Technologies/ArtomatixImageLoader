@@ -154,7 +154,7 @@ void writeToFile(const std::string& path, int32_t width, int32_t height, void* d
 
     AImgHandle wImg = AImgGetAImg(fileFormat);
 
-    AImgWriteImage(wImg, data, width, height, inputFormat, writeCallback, tellCallback, seekCallback, callbackData);
+    AImgWriteImage(wImg, data, width, height, inputFormat, writeCallback, tellCallback, seekCallback, callbackData, NULL);
 
     FILE* f = fopen(path.c_str(), "wb");
     fwrite(&fData[0], 1, fData.size(), f);

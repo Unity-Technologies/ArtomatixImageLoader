@@ -21,16 +21,21 @@ extern "C"
 	#define EXPORT_FUNC
 #endif
 
-// Callback typedefs
+///////////////////////
+// Callback typedefs //
+///////////////////////
 typedef int32_t (CALLCONV *ReadCallback)    (void* callbackData, uint8_t* dest, int32_t count);
 typedef void    (CALLCONV *WriteCallback)   (void* callbackData, const uint8_t* src, int32_t count);
 typedef int32_t (CALLCONV *TellCallback)    (void* callbackData);
 typedef void    (CALLCONV *SeekCallback)    (void* callbackData, int32_t pos);
 
-typedef void* AImgHandle;
+
+////////////////
+// Core enums //
+////////////////
 
 // format is [channels][bits per channel][U/F]
-// U means unsigned normalised, so eg 8U maps integer vals 0-255 to float range 0-1, F means an normal float value
+// U means unsigned normalised, so eg 8U maps integer vals 0-255 to float range 0-1, F means a normal float value
 enum AImgFormat
 {
     INVALID_FORMAT = -1,
@@ -66,7 +71,8 @@ enum AImgErrorCode
     AIMG_WRITE_FAILED_EXTERNAL = -5,
     AIMG_WRITE_FAILED_INTERNAL = -6,
     AIMG_LOAD_FAILED_UNSUPPORTED_TIFF = -7,
-    AIMG_OPEN_FAILED_EMPTY_INPUT = -8
+    AIMG_OPEN_FAILED_EMPTY_INPUT = -8,
+    AIMG_INVALID_ENCODE_ARGS = -9
 };
 
 enum AImgFileFormat
@@ -86,6 +92,42 @@ enum AImgFloatOrIntType
     FITYPE_INT = 1
 };
 
+/////////////////////////////
+// Encoding option structs //
+/////////////////////////////
+//                         //
+// - All option structs    //
+// will have an int32 as   //
+// their first member,     //
+// which shall be required //
+// to be set to the        //
+// AImgFileFormat code for //
+// that file format.       //
+/////////////////////////////
+
+
+// These defines copied from libpng's png.h
+#define AIL_PNG_NO_FILTERS   0x00
+#define AIL_PNG_FILTER_NONE  0x08
+#define AIL_PNG_FILTER_SUB   0x10
+#define AIL_PNG_FILTER_UP    0x20
+#define AIL_PNG_FILTER_AVG   0x40
+#define AIL_PNG_FILTER_PAETH 0x80
+#define AIL_PNG_ALL_FILTERS  (AIL_PNG_FILTER_NONE | AIL_PNG_FILTER_SUB | AIL_PNG_FILTER_UP | AIL_PNG_FILTER_AVG | AIL_PNG_FILTER_PAETH)
+
+struct PngEncodingOptions
+{
+    int32_t type;
+    int32_t compressionLevel; // Used with png_set_compression_level()
+    int32_t filter; // Used with png_set_filter(), set to some combination of AIL_PNG_ flag defines from above.
+};
+
+//////////////////////////
+// Public API functions //
+//////////////////////////
+
+typedef void* AImgHandle;
+
 EXPORT_FUNC const char* AImgGetErrorDetails(AImgHandle img);
 
 // detectedFileFormat will be set to a member from AImgFileFormat if non-null, otherwise it is ignored.
@@ -104,8 +146,9 @@ EXPORT_FUNC int32_t AImgGetWhatFormatWillBeWrittenForData(int32_t fileFormat, in
 
 EXPORT_FUNC AImgHandle AImgGetAImg(int32_t fileFormat);
 
+// encodingOptions should be one of the encoding option structs detailed in the section above. It shoudl be the struct that corresponds to the image format being written.
 EXPORT_FUNC int32_t AImgWriteImage(AImgHandle imgH, void* data, int32_t width, int32_t height, int32_t inputFormat, WriteCallback writeCallback,
-								   TellCallback tellCallback, SeekCallback seekCallback, void* callbackData);
+								   TellCallback tellCallback, SeekCallback seekCallback, void* callbackData, void* encodingOptions);
 
 EXPORT_FUNC void AIGetSimpleMemoryBufferCallbacks(ReadCallback* readCallback, WriteCallback* writeCallback, TellCallback* tellCallback, SeekCallback* seekCallback, void** callbackData, void* buffer, int32_t size);
 EXPORT_FUNC void AIDestroySimpleMemoryBufferCallbacks(ReadCallback readCallback, WriteCallback writeCallback, TellCallback tellCallback, SeekCallback seekCallback, void* callbackData);

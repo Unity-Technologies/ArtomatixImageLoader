@@ -1,6 +1,7 @@
 ﻿using System;
 using System.IO;
 using System.Runtime.InteropServices;
+using ArtomatixImageLoader.ImgEncodingOptions;
 
 namespace ArtomatixImageLoader
 {
@@ -89,7 +90,7 @@ namespace ArtomatixImageLoader
             return (AImgFormat)ImgLoader.AImgGetWhatFormatWillBeWrittenForData((Int32)fileFormat, (Int32)format);
         }
 
-        public void writeImage<T>(T[] data, int width, int height, AImgFormat format, Stream s) where T : struct
+        public void writeImage<T>(T[] data, int width, int height, AImgFormat format, Stream s, FormatEncodeOptions options = null) where T : struct
         {
             var writeCallback = ImgLoader.getWriteCallback(s);
             var tellCallback = ImgLoader.getTellCallback(s);
@@ -98,10 +99,28 @@ namespace ArtomatixImageLoader
             GCHandle pinnedArray = GCHandle.Alloc(data, GCHandleType.Pinned);
             IntPtr pointer = pinnedArray.AddrOfPinnedObject();
 
-            Int32 errCode = ImgLoader.AImgWriteImage(nativeHandle, pointer, width, height, (Int32)format, writeCallback, tellCallback, seekCallback, IntPtr.Zero);
-            AImgException.checkErrorCode(nativeHandle, errCode);
 
-            pinnedArray.Free();
+            GCHandle encodeOptionsHandle = default(GCHandle);
+            IntPtr encodeOptionsPtr = IntPtr.Zero;
+
+
+            if (options != null)
+            {
+                encodeOptionsHandle = GCHandle.Alloc(options, GCHandleType.Pinned);
+                encodeOptionsPtr = encodeOptionsHandle.AddrOfPinnedObject();
+            }
+            try
+            {
+                Int32 errCode = ImgLoader.AImgWriteImage(nativeHandle, pointer, width, height, (Int32)format, writeCallback, tellCallback, seekCallback, IntPtr.Zero, encodeOptionsPtr);
+                AImgException.checkErrorCode(nativeHandle, errCode);
+            }
+            finally
+            {
+                pinnedArray.Free();
+
+                if(encodeOptionsPtr != IntPtr.Zero)
+                    encodeOptionsHandle.Free();
+            }
 
             GC.KeepAlive(writeCallback);
             GC.KeepAlive(tellCallback);

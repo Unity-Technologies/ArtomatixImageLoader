@@ -8,6 +8,7 @@
 #include <png.h>
 #include <setjmp.h>
 #include <stdint.h>
+#include <ctime>
 #include "testCommon.h"
 
 std::vector<uint8_t> decodePNGFile(const std::string& path)
@@ -117,8 +118,10 @@ failed:
     return isEq;
 }
 
-bool validateWritePNGFile(const std::string& path)
+bool validateWritePNGFile(const std::string& path, void* encodeOptions, int32_t& err, std::vector<char>& fileData)
 {
+    err = AImgErrorCode::AIMG_SUCCESS;
+
     auto data = readFile<uint8_t>(getImagesDir() + path);
 
     ReadCallback readCallback = NULL;
@@ -127,10 +130,16 @@ bool validateWritePNGFile(const std::string& path)
     SeekCallback seekCallback = NULL;
     void* callbackData = NULL;
 
+    std::vector<uint8_t> imgData2;
+    bool passing = true;
+    AImgHandle wImg = NULL;
+    std::vector<uint8_t> imgData;
+
     AIGetSimpleMemoryBufferCallbacks(&readCallback, &writeCallback, &tellCallback, &seekCallback, &callbackData, &data[0], data.size());
 
     AImgHandle img = NULL;
-    AImgOpen(readCallback, tellCallback, seekCallback, callbackData, &img, NULL);
+    err = AImgOpen(readCallback, tellCallback, seekCallback, callbackData, &img, NULL);
+    if(err != AImgErrorCode::AIMG_SUCCESS) goto failed;
 
     int32_t width;
     int32_t height;
@@ -139,40 +148,68 @@ bool validateWritePNGFile(const std::string& path)
     int32_t floatOrInt;
     int32_t fmt;
 
-    AImgGetInfo(img, &width, &height, &numChannels, &bytesPerChannel, &floatOrInt, &fmt);
+    err = AImgGetInfo(img, &width, &height, &numChannels, &bytesPerChannel, &floatOrInt, &fmt);
+    if(err != AImgErrorCode::AIMG_SUCCESS) goto failed;
 
-    std::vector<uint8_t> imgData(width*height*numChannels * bytesPerChannel, 78);
+    imgData.resize(width*height*numChannels * bytesPerChannel, 78);
 
-    AImgDecodeImage(img, &imgData[0], AImgFormat::INVALID_FORMAT);
+    err = AImgDecodeImage(img, &imgData[0], AImgFormat::INVALID_FORMAT);
+    if(err != AImgErrorCode::AIMG_SUCCESS) goto failed;
 
     AImgClose(img);
+    img = NULL;
     AIDestroySimpleMemoryBufferCallbacks(readCallback, writeCallback, tellCallback, seekCallback, callbackData);
+    readCallback = NULL; writeCallback = NULL; tellCallback = NULL, seekCallback = NULL; callbackData = NULL;
 
-    std::vector<char> fileData(width * height * numChannels * bytesPerChannel * 5);
+    fileData.resize(width * height * numChannels * bytesPerChannel * 5);
     AIGetSimpleMemoryBufferCallbacks(&readCallback, &writeCallback, &tellCallback, &seekCallback, &callbackData, &fileData[0], fileData.size());
 
-    AImgHandle wImg = AImgGetAImg(AImgFileFormat::PNG_IMAGE_FORMAT);
-    AImgWriteImage(wImg, &imgData[0], width, height, fmt, writeCallback, tellCallback, seekCallback, callbackData);
+    wImg = AImgGetAImg(AImgFileFormat::PNG_IMAGE_FORMAT);
+    err = AImgWriteImage(wImg, &imgData[0], width, height, fmt, writeCallback, tellCallback, seekCallback, callbackData, encodeOptions);
+    if(err != AImgErrorCode::AIMG_SUCCESS) goto failed;
+
+    fileData.resize(tellCallback(callbackData));
+
+    // reset the callbacks, as the resize above could invalidate the &fileData[0] ptr
+    AIDestroySimpleMemoryBufferCallbacks(readCallback, writeCallback, tellCallback, seekCallback, callbackData);
+    AIGetSimpleMemoryBufferCallbacks(&readCallback, &writeCallback, &tellCallback, &seekCallback, &callbackData, &fileData[0], fileData.size());
+
     AImgClose(wImg);
+    wImg = NULL;
 
     seekCallback(callbackData, 0);
 
-    AImgOpen(readCallback, tellCallback, seekCallback, callbackData, &img, NULL);
+    err = AImgOpen(readCallback, tellCallback, seekCallback, callbackData, &img, NULL);
+    if(err != AImgErrorCode::AIMG_SUCCESS) goto failed;
 
-    std::vector<uint8_t> imgData2(width*height*numChannels*bytesPerChannel, 0);
-    AImgDecodeImage(img, &imgData2[0], AImgFormat::INVALID_FORMAT);
+    imgData2.resize(width*height*numChannels*bytesPerChannel, 0);
+    err = AImgDecodeImage(img, &imgData2[0], AImgFormat::INVALID_FORMAT);
+    if(err != AImgErrorCode::AIMG_SUCCESS) goto failed;
+
     AImgClose(img);
+    img = NULL;
     AIDestroySimpleMemoryBufferCallbacks(readCallback, writeCallback, tellCallback, seekCallback, callbackData);
+    readCallback = NULL; writeCallback = NULL; tellCallback = NULL; seekCallback = NULL; callbackData = NULL;
 
-    bool passing = true;
     for(uint32_t i = 0; i < imgData2.size(); i++)
     {
-            passing = passing && (imgData[i] == imgData2[i]);
-            if (!passing)
-                goto failed;
+        passing = passing && (imgData[i] == imgData2[i]);
+        if (!passing)
+            return false;
     }
+
+    return true;
+
 failed:
-    return passing;
+
+    if(img != NULL)
+        AImgClose(img);
+    if(wImg != NULL)
+        AImgClose(NULL);
+    if(callbackData != NULL)
+        AIDestroySimpleMemoryBufferCallbacks(readCallback, writeCallback, tellCallback, seekCallback, callbackData);
+
+    return false;
 }
 
 TEST(PNG, TestDetect8BitPNG)
@@ -262,14 +299,59 @@ TEST(PNG, TestRead16BitPNG)
     ASSERT_TRUE(validateReadPNGFile("/png/16-bit.png"));
 }
 
-TEST(PNG, TesWrite8BitPNG8)
+TEST(PNG, TestWrite8BitPNG8)
 {
-    ASSERT_TRUE(validateWritePNGFile("/png/8-bit.png"));
+    int32_t err;
+    std::vector<char> fileData;
+    ASSERT_TRUE(validateWritePNGFile("/png/8-bit.png", NULL, err, fileData));
+    ASSERT_EQ(err, AImgErrorCode::AIMG_SUCCESS);
 }
 
-TEST(PNG, TesWrite16BitPNG8)
+TEST(PNG, TestWrite16BitPNG8)
 {
-    ASSERT_TRUE(validateWritePNGFile("/png/16-bit.png"));
+    int32_t err;
+    std::vector<char> fileData;
+    ASSERT_TRUE(validateWritePNGFile("/png/16-bit.png", NULL, err, fileData));
+    ASSERT_EQ(err, AImgErrorCode::AIMG_SUCCESS);
+}
+
+TEST(PNG, TestWriteInvalidOptions)
+{
+    int32_t options = AImgFileFormat::EXR_IMAGE_FORMAT;
+
+    int32_t err;
+    std::vector<char> fileData;
+    ASSERT_FALSE(validateWritePNGFile("/png/8-bit.png", &options, err, fileData));
+    ASSERT_EQ(err, AImgErrorCode::AIMG_INVALID_ENCODE_ARGS);
+}
+
+TEST(PNG, TestWriteNoCompressionOptions)
+{
+    PngEncodingOptions options;
+    options.type = AImgFileFormat::PNG_IMAGE_FORMAT;
+    options.compressionLevel = 0;
+    options.filter = AIL_PNG_NO_FILTERS;
+
+    clock_t uncompressedSaveTime = clock();
+
+    int32_t err;
+    std::vector<char> uncompressedFileData;
+    ASSERT_TRUE(validateWritePNGFile("/png/8-bit.png", &options, err, uncompressedFileData));
+    ASSERT_EQ(err, AImgErrorCode::AIMG_SUCCESS);
+
+    uncompressedSaveTime = clock() - uncompressedSaveTime;
+
+    clock_t compressedSaveTime = clock();
+
+    std::vector<char> defaultCompressionFileData;
+    ASSERT_TRUE(validateWritePNGFile("/png/8-bit.png", NULL, err, defaultCompressionFileData));
+    ASSERT_EQ(err, AImgErrorCode::AIMG_SUCCESS);
+
+    compressedSaveTime = clock() - compressedSaveTime;
+
+    // assert that the compressed save is smaller, but took longer to perform
+    ASSERT_GT(uncompressedFileData.size(), defaultCompressionFileData.size());
+    ASSERT_GT(compressedSaveTime, uncompressedSaveTime);
 }
 
 TEST(PNG, TestCompareForceImageFormat1)
@@ -422,7 +504,7 @@ TEST(Png, TestWriteFrom32Bit)
     AIGetSimpleMemoryBufferCallbacks(&readCallback, &writeCallback, &tellCallback, &seekCallback, &callbackData, &fileData[0], fileData.size());
 
     AImgHandle wImg = AImgGetAImg(AImgFileFormat::PNG_IMAGE_FORMAT);
-    int32_t err = AImgWriteImage(wImg, &fData[0], width, height, AImgFormat::RGBA32F, writeCallback, tellCallback, seekCallback, callbackData);
+    int32_t err = AImgWriteImage(wImg, &fData[0], width, height, AImgFormat::RGBA32F, writeCallback, tellCallback, seekCallback, callbackData, NULL);
     AImgClose(wImg);
 
     seekCallback(callbackData, 0);

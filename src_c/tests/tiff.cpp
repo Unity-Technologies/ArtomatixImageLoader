@@ -171,7 +171,7 @@ bool testTiffWrite(int32_t testFormat)
     AIGetSimpleMemoryBufferCallbacks(&readCallback, &writeCallback, &tellCallback, &seekCallback, &callbackData, &fileData[0], fileData.size());
 
     AImgHandle wImg = AImgGetAImg(AImgFileFormat::TIFF_IMAGE_FORMAT);
-    error = AImgWriteImage(wImg, &pngImgData[0], pngWidth, pngHeight, testFormat, writeCallback, tellCallback, seekCallback, callbackData);
+    error = AImgWriteImage(wImg, &pngImgData[0], pngWidth, pngHeight, testFormat, writeCallback, tellCallback, seekCallback, callbackData, NULL);
     if(error)
         return false;
 

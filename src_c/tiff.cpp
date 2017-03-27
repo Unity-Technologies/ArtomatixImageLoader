@@ -520,8 +520,10 @@ namespace AImg
             }
 
             int32_t writeImage(void* data, int32_t width, int32_t height, int32_t inputFormat, WriteCallback writeCallback,
-                               TellCallback tellCallback, SeekCallback seekCallback, void* callbackData)
-            {                
+                               TellCallback tellCallback, SeekCallback seekCallback, void* callbackData, void* encodingOptions)
+            {
+                AIL_UNUSED_PARAM(encodingOptions);
+
                 tiffCallbackData wCallbacks;
                 wCallbacks.mWriteCallback = writeCallback;
                 wCallbacks.mSeekCallback = seekCallback;

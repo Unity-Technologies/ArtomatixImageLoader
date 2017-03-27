@@ -36,7 +36,8 @@ namespace ArtomatixImageLoader
         [MarshalAs(UnmanagedType.FunctionPtr)] WriteCallback writeCallback,
         [MarshalAs(UnmanagedType.FunctionPtr)] TellCallback tellCallback,
         [MarshalAs(UnmanagedType.FunctionPtr)] SeekCallback seekCallback, 
-        IntPtr callbackData
+        IntPtr callbackData,
+        IntPtr encodeOptions
     );
 
 

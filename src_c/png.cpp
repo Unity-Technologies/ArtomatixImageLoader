@@ -6,6 +6,7 @@
 #include <vector>
 #include <png.h>
 #include <string.h>
+#include <iostream>
 
 namespace AImg
 {
@@ -250,13 +251,21 @@ namespace AImg
                 return AImgErrorCode::AIMG_SUCCESS;
             }
 
-            int32_t writeImage(void *data, int32_t width, int32_t height, int32_t inputFormat, WriteCallback writeCallback, TellCallback tellCallback, SeekCallback seekCallback, void *callbackData)
+            int32_t writeImage(void *data, int32_t width, int32_t height, int32_t inputFormat, WriteCallback writeCallback, TellCallback tellCallback, SeekCallback seekCallback, void *callbackData, void* encodingOptions)
             {
                 AIL_UNUSED_PARAM(tellCallback);
                 AIL_UNUSED_PARAM(seekCallback);
 
                 png_struct * png_write_ptr = png_create_write_struct(PNG_LIBPNG_VER_STRING, NULL, NULL, NULL);
                 png_info * png_info_ptr = png_create_info_struct(png_write_ptr);
+
+                if(encodingOptions != NULL)
+                {
+                    PngEncodingOptions* realOptions = (PngEncodingOptions*)encodingOptions;
+
+                    png_set_compression_level(png_write_ptr, realOptions->compressionLevel);
+                    png_set_filter(png_write_ptr, 0, realOptions->filter);
+                }
 
                 CallbackData * callbackDataStruct = new CallbackData();
 
@@ -366,6 +375,34 @@ namespace AImg
                 png_destroy_write_struct(&png_write_ptr, &png_info_ptr);
                 png_destroy_info_struct(png_write_ptr, &png_info_ptr);
                 delete callbackDataStruct;
+                return AImgErrorCode::AIMG_SUCCESS;
+            }
+
+            int32_t verifyEncodeOptions(void* encodeOptions)
+            {
+                if(encodeOptions != NULL)
+                {
+                    if(*((int*)encodeOptions) != AImgFileFormat::PNG_IMAGE_FORMAT)
+                    {
+                        mErrorDetails = "[AImg::PNGImageLoader::PNGFile::verifyEncodeOptions] Args for another format encoder type passed to png encoder, or incorrectly initialised args struct passed.";
+                        return AImgErrorCode::AIMG_INVALID_ENCODE_ARGS;
+                    }
+
+                    auto options = (PngEncodingOptions*)encodeOptions;
+
+                    if(options->compressionLevel < 0 || options->compressionLevel > 9)
+                    {
+                        mErrorDetails = "[AImg::PNGImageLoader::PNGFile::verifyEncodeOptions] Invalid compression level specified, must be in inclusive range (0-9)";
+                        return AImgErrorCode::AIMG_INVALID_ENCODE_ARGS;
+                    }
+
+                    if((options->filter & PNG_ALL_FILTERS) != options->filter)
+                    {
+                        mErrorDetails = "[AImg::PNGImageLoader::PNGFile::verifyEncodeOptions] Invalid filter flags specified";
+                        return AImgErrorCode::AIMG_INVALID_ENCODE_ARGS;
+                    }
+                }
+
                 return AImgErrorCode::AIMG_SUCCESS;
             }
     };

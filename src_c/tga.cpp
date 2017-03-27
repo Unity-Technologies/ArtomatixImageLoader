@@ -190,8 +190,10 @@ namespace AImg
                 return AImgErrorCode::AIMG_SUCCESS;
             }
 
-            virtual int32_t writeImage(void *data, int32_t width, int32_t height, int32_t inputFormat, WriteCallback writeCallback, TellCallback tellCallback, SeekCallback seekCallback, void *callbackData)
+            virtual int32_t writeImage(void *data, int32_t width, int32_t height, int32_t inputFormat, WriteCallback writeCallback, TellCallback tellCallback, SeekCallback seekCallback, void *callbackData, void* encodingOptions)
             {
+                AIL_UNUSED_PARAM(encodingOptions);
+
                 int32_t writeFormat = getWhatFormatWillBeWrittenForDataTGA(inputFormat);
 
                 std::vector<uint8_t> convertBuffer(0);

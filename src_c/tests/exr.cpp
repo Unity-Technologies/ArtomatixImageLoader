@@ -139,7 +139,7 @@ TEST(Exr, TesWriteExr)
     AIGetSimpleMemoryBufferCallbacks(&readCallback, &writeCallback, &tellCallback, &seekCallback, &callbackData, &fileData[0], fileData.size());
 
     AImgHandle wImg = AImgGetAImg(AImgFileFormat::EXR_IMAGE_FORMAT);
-    AImgWriteImage(wImg, &imgData[0], width, height, AImgFormat::RGB32F, writeCallback, tellCallback, seekCallback, callbackData);
+    AImgWriteImage(wImg, &imgData[0], width, height, AImgFormat::RGB32F, writeCallback, tellCallback, seekCallback, callbackData, NULL);
     AImgClose(wImg);
 
     seekCallback(callbackData, 0);

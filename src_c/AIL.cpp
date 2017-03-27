@@ -131,10 +131,15 @@ AImgHandle AImgGetAImg(int32_t fileFormat)
 }
 
 int32_t AImgWriteImage(AImgHandle imgH, void* data, int32_t width, int32_t height, int32_t inputFormat, WriteCallback writeCallback,
-                   TellCallback tellCallback, SeekCallback seekCallback, void* callbackData)
+                   TellCallback tellCallback, SeekCallback seekCallback, void* callbackData, void* encodingOptions)
 {
     AImg::AImgBase* img = (AImg::AImgBase*)imgH;
-    return img->writeImage(data, width, height, inputFormat, writeCallback, tellCallback, seekCallback, callbackData);
+
+    int32_t err = img->verifyEncodeOptions(encodingOptions);
+    if(err != AImgErrorCode::AIMG_SUCCESS)
+        return err;
+
+    return img->writeImage(data, width, height, inputFormat, writeCallback, tellCallback, seekCallback, callbackData, encodingOptions);
 }
 
 
