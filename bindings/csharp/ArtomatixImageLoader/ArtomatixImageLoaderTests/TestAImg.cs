@@ -116,7 +116,7 @@ namespace ArtomatixImageLoaderTests
                     using (AImg img2 = new AImg(writeStream))
                     {
                         float[] data2 = new float[img.width * img.height * img.decodedImgFormat.numChannels()];
-                        img.decodeImage(data2);
+                        img2.decodeImage(data2);
 
                         for (int i = 0; i < data.Length; i++)
                             Assert.AreEqual(data[i], data2[i]);
