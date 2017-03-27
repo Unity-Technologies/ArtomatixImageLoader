@@ -15,8 +15,11 @@
     <tags>Tag1 Tag2</tags>
     
     <dependencies>
-        <dependency id="ZipStorer" version="2.38" />
+      <dependency id="ZipStorer" version="2.38" />
+      <dependency id="Stugo.Interop" version="0.2.0" />
+      <dependency id="NativeBinaryManager" version="0.1.0" />
     </dependencies>
+
   </metadata>
   <files>
     <file src="ArtomatixImageLoader/bin/x64/Release/ArtomatixImageLoader.dll" target="lib/ArtomatixImageLoader.dll" />
