@@ -19,6 +19,8 @@ class AImgLoadFailedUnsupportedTiffException(AImgException):
     pass
 class AImgOpenFailedEmptyInputException(AImgException):
     pass
+class AImgInvalidEncodeArgsException(AImgException):
+    pass
 
 def checkErrorCode(aImgCapsule, errCode):
     if errCode != 0:
@@ -44,5 +46,7 @@ def checkErrorCode(aImgCapsule, errCode):
             raise AImgLoadFailedUnsupportedTiffException(msg)
         elif errCode == -8:
             raise AImgOpenFailedEmptyInputException(msg)
+        elif errCode == -9:
+            raise AImgInvalidEncodeArgsException(msg)
         else:
             raise AImgException("Unknown error occurred, code: " + str(errCode) + " " + msg) 
