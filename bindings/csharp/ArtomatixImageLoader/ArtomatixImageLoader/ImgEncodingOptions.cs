@@ -31,9 +31,6 @@ namespace ArtomatixImageLoader.ImgEncodingOptions
 
         public PngEncodingOptions(Int32 compressionLevel, Filter filter)
         {
-            if (compressionLevel < 0 || compressionLevel > 9)
-                throw new ArgumentException ("Invalid compressionLevel: must be in [0-9] range (supplied: " + compressionLevel + ")");
-
             _compressionLevel = compressionLevel;
             _filter = filter;
             _type = (Int32)AImgFileFormat.PNG_IMAGE_FORMAT;

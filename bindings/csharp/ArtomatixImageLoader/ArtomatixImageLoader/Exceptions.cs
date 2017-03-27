@@ -33,6 +33,8 @@ namespace ArtomatixImageLoader
                         throw new AImgLoadFailedUnsupportedTiffException(msg);
                     case -8:
                         throw new AImgOpenFailedEmptyInputException(msg);
+                    case -9:
+                        throw new AImgInvalidEncodeArgsException(msg);
                    
                     default:
                         throw new AImgException("Unknown error code: " + errorCode + " " + msg);
@@ -79,5 +81,10 @@ namespace ArtomatixImageLoader
     public class AImgLoadFailedUnsupportedTiffException : AImgException
     {
         public AImgLoadFailedUnsupportedTiffException(string msg) : base(msg) {}
+    }
+
+    public class AImgInvalidEncodeArgsException : AImgException
+    {
+        public AImgInvalidEncodeArgsException(string msg) : base(msg) {}
     }
 }
