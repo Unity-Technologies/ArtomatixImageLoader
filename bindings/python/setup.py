@@ -36,7 +36,7 @@ class my_build_ext(build_ext):
 
 
 setup(  name='AImg',
-        version='000.018.000',
+        version='000.019.000',
         package_dir={'': thisFolder},
         packages=['AImg'],
         cmdclass={'build_ext': my_build_ext },
