@@ -69,7 +69,7 @@ class AImg(object):
         return destBuffer
 
 
-def write(io_or_path, data, fileFormat):
+def write(io_or_path, data, fileFormat, encodeOptions=None):
     if not (data.flags.c_contiguous and data.flags.aligned):
             raise ValueError("data does not meet flags requirements (c_contiguous & aligned)")
 
@@ -83,5 +83,9 @@ def write(io_or_path, data, fileFormat):
     fmt = enums.getFormatFromNumpyArray(data)
     height, width = data.shape[0:2]
 
-    errCode, imgCapsule = native.write(fileFormat.val, data, stream, width, height, fmt.val)
+    encodeOptionsTuple = ()
+    if encodeOptions:
+        encodeOptionsTuple = (encodeOptions,)
+
+    errCode, imgCapsule = native.write(fileFormat.val, data, stream, width, height, fmt.val, encodeOptionsTuple)
     AImgExceptions.checkErrorCode(imgCapsule, errCode)

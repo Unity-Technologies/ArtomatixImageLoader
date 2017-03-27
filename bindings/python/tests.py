@@ -89,6 +89,27 @@ class TestAImg(unittest.TestCase):
                     self.assertEqual(data[y][x][0], dataNoA[y][x][0])
                     self.assertEqual(data[y][x][1], dataNoA[y][x][1])
                     self.assertEqual(data[y][x][2], dataNoA[y][x][2])
+    
+    def test_write_png_no_compression(self):
+        img = AImg.AImg(imagesDir + "/png/alpha.png")
+        decoded = img.decode()
+        
+        outFile = io.BytesIO()
+        
+        options = AImg.PngEncodingOptions(0, AImg.PngEncodingOptions.PNG_NO_FILTERS)
+        AImg.write(outFile, decoded, AImg.AImgFileFormats["PNG_IMAGE_FORMAT"], encodeOptions=options)
+
+        outFile.seek(0)
+        img2 = AImg.AImg(outFile)
+
+        decoded2 = img2.decode()
+
+        for y in range(img2.height):
+            for x in range(img2.width):
+                for c in range(decoded.shape[2]):
+                    self.assertEqual(decoded2[y][x][c], decoded[y][x][c])
+
+
 
 if __name__ == "__main__":
     unittest.main()

@@ -245,17 +245,24 @@ static PyObject* pyail_write(PyObject* self, PyObject* args)
     PyObject* fileLikeObj;
     int width, height;
     int inputFormat;
-    if (!PyArg_ParseTuple(args, "iOOiii", &fileFormat, &sourceArrayObj, &fileLikeObj, &width, &height, &inputFormat))
+    PyObject* encodingOptionsTuple;
+    if (!PyArg_ParseTuple(args, "iOOiiiO", &fileFormat, &sourceArrayObj, &fileLikeObj, &width, &height, &inputFormat, &encodingOptionsTuple))
         return NULL;
 
     PyAIL_callback_data* callbackData;
     if((callbackData = pyail_getCallbackData(fileLikeObj)) == NULL)
         return NULL;
 
+    void* encodingOptions = NULL;
+
+    if(PyTuple_Size(encodingOptionsTuple) == 1)
+        PyArg_ParseTuple(encodingOptionsTuple, "w", &encodingOptions);
+
     AImgHandle wImg = AImgGetAImg(fileFormat);
 
     callbackData->threadState = PyEval_SaveThread();
-    int err = AImgWriteImage(wImg, PyArray_DATA(sourceArrayObj), width, height, inputFormat, pyail_WriteCallback, pyail_TellCallback, pyail_SeekCallback, callbackData, NULL);
+
+    int err = AImgWriteImage(wImg, PyArray_DATA(sourceArrayObj), width, height, inputFormat, pyail_WriteCallback, pyail_TellCallback, pyail_SeekCallback, callbackData, encodingOptions);
     PyEval_RestoreThread(callbackData->threadState);
 
     pyail_destroyCallbackData(callbackData);
