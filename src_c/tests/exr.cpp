@@ -111,7 +111,7 @@ TEST(Exr, TestReadExr)
     AIDestroySimpleMemoryBufferCallbacks(readCallback, writeCallback, tellCallback, seekCallback, callbackData);
 }
 
-TEST(Exr, TesWriteExr)
+TEST(Exr, TestWriteExr)
 {
     auto data = readFile<uint8_t>(getImagesDir() + "/exr/grad_32.exr");
 

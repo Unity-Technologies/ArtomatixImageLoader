@@ -113,6 +113,7 @@ namespace AImg
                 data->callbackData = callbackData;
 
                 png_read_ptr = png_create_read_struct(PNG_LIBPNG_VER_STRING, NULL, NULL, NULL);
+                png_set_option(png_read_ptr, PNG_SKIP_sRGB_CHECK_PROFILE, PNG_OPTION_OFF);
                 png_info_ptr = png_create_info_struct(png_read_ptr);
 
                 png_set_read_fn(png_read_ptr, (void *)(data), png_custom_read_data);
@@ -257,6 +258,7 @@ namespace AImg
                 AIL_UNUSED_PARAM(seekCallback);
 
                 png_struct * png_write_ptr = png_create_write_struct(PNG_LIBPNG_VER_STRING, NULL, NULL, NULL);
+                png_set_option(png_write_ptr, PNG_SKIP_sRGB_CHECK_PROFILE, PNG_OPTION_OFF);
                 png_info * png_info_ptr = png_create_info_struct(png_write_ptr);
 
                 if(encodingOptions != NULL)

@@ -368,21 +368,33 @@ namespace AImg
                     AIGetFormatDetails(inputBufFormat, &numChannels, &bytesPerChannel, &floatOrInt);
 
 
-                    const char* channelNames[] = { "R", "G", "B", "A" };
+                    const char* RGBAChannelNames[] = { "R", "G", "B", "A" };
+                    const char* GreyScaleChannelName = "Y";
 
                     Imf::Header header(width, height);
 
                     for(int32_t i = 0; i < numChannels; i++)
                     {
-                        header.channels().insert(channelNames[i], Imf::Channel(Imf::FLOAT));
+                        const char* channelName;
+                        if (numChannels == 1)
+                            channelName = GreyScaleChannelName;
+                        else
+                            channelName = RGBAChannelNames[i];
+
+                        header.channels().insert(channelName, Imf::Channel(Imf::FLOAT));
                     }
 
                     Imf::FrameBuffer frameBuffer;
 
                     for(int32_t i = 0; i < numChannels; i++)
                     {
+                        const char* channelName;
+                        if (numChannels == 1)
+                            channelName = GreyScaleChannelName;
+                        else
+                            channelName = RGBAChannelNames[i];
                         frameBuffer.insert(
-                            channelNames[i],
+                            channelName,
                             Imf::Slice(
                                 Imf::FLOAT,
                                 &((char*)inputBuf)[bytesPerChannel * i],
