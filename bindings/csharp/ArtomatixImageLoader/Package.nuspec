@@ -2,7 +2,7 @@
 <package >
   <metadata>
     <id>ArtomatixImageLoaders</id>
-    <version>000.019.000</version>
+    <version>0.20.0</version>
     <authors>wheybags</authors>
     <owners>wheybags</owners>
     <licenseUrl>https://opensource.org/licenses/MIT</licenseUrl>
