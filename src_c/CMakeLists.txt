@@ -51,6 +51,7 @@ endif()
 set(AIL_COMPILE_FLAGS "")
 if(UNIX)
     set(AIL_COMPILE_FLAGS "-Wall -pedantic -Wextra -g -std=c++11 -Wno-unknown-pragmas")
+    set(CMAKE_SHARED_LINKER_FLAGS "-Wl,--exclude-libs,ALL") # we don't want to export symbols for libpng, etc
 endif()
 target_compile_definitions(AIL PRIVATE -DIS_AIL_COMPILE)
 
