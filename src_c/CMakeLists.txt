@@ -68,8 +68,9 @@ if(PYTHON_ENABLED)
 	add_library(AIL_py SHARED python.c)
 	set_target_properties(AIL_py PROPERTIES OUTPUT_NAME "ail_py_native" PREFIX "")
 
-	find_package(PythonLibs 2 REQUIRED)
-	find_package(NumPy REQUIRED)
+    find_package(PythonInterp 2 REQUIRED)
+    find_package(PythonLibs ${PYTHON_VERSION_STRING} REQUIRED)
+    find_package(NumPy REQUIRED)
 
 	target_link_libraries(AIL_py
 		AIL

@@ -41,4 +41,5 @@ setup(  name='AImg',
         packages=['AImg'],
         cmdclass={'build_ext': my_build_ext },
         ext_modules=[ail_py_native],
+        install_requires=['numpy']
 )
