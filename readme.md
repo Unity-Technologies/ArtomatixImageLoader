@@ -1,5 +1,5 @@
 # Artomatix Image Loader
-Artomatix Image loader (or ail, or aimg), is a cross-language library for reading and writing various image file formats, including 8bit-per-pixel and, crucially, HDR formats ass well, and is available in C#, python and C.
+Artomatix Image loader (or ail, or aimg), is a cross-language library for reading and writing various image file formats, including 8bit-per-pixel and, crucially, HDR formats as well, and is available in C#, python and C.
 
 ## Supported image formats
 - png (all variants: 8 or 16-bit)
