@@ -64,7 +64,7 @@ if(AIMG_TESTS_ENABLED)
     endif()
 
     if(TIFF_ENABLED)
-        ail_add_test(tiff "AIL", Yes)
+        ail_add_test(tiff "AIL" Yes)
     endif()
 
     add_custom_target(aitest ${all_tests})

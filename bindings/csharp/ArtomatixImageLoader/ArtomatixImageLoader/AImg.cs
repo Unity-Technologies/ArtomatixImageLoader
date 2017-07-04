@@ -118,7 +118,7 @@ namespace ArtomatixImageLoader
             {
                 pinnedArray.Free();
 
-                if(encodeOptionsPtr != IntPtr.Zero)
+                if (encodeOptionsPtr != IntPtr.Zero)
                     encodeOptionsHandle.Free();
             }
 

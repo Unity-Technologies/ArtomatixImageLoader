@@ -58,7 +58,7 @@ namespace ArtomatixImageLoaderTests
                     Assert.AreEqual(realData.Length * 3, data.Length);
 
                     for (int i = 0; i < realData.Length; i++)
-                        Assert.AreEqual(realData[i], data[i*3]);
+                        Assert.AreEqual(realData[i], data[i * 3]);
                 }
             }
         }
@@ -82,7 +82,7 @@ namespace ArtomatixImageLoaderTests
 
                 for (int y = 0; y < img.height; y++)
                 {
-                    for(int x = 0; x < img.width; x++)
+                    for (int x = 0; x < img.width; x++)
                     {
                         float groundTruth = ((float)bData[(x + y * img.width) * 3]) / 255.0f;
                         float forced = fData[(x + y * img.width) * 3];
@@ -209,6 +209,81 @@ namespace ArtomatixImageLoaderTests
                 var s = new MemoryStream();
                 AImg img = new AImg(s);
             });
+        }
+
+
+        public static void TestWriteIMG<T>(int width, int height, AImgFormat format, AImgFileFormat fileformat) where T : struct
+        {
+            var img = new AImg(fileformat);
+            T[] data = new T[width * height * format.numChannels()];
+
+            var r = new Random(123);
+
+            for (int h = 0; h < width; h++)
+            {
+                for (int w = 0; w < height; w++)
+                {
+                    for (int c = 0; c < format.numChannels(); c++)
+                    {
+
+                        if (format.bytesPerChannel() > 1)
+                            data[w * width + h + c] = (T)Convert.ChangeType(r.Next(0, 255) / 255.0f, typeof(T));
+                        else
+                            data[w * width + h + c] = (T)Convert.ChangeType(r.Next(0, 255), typeof(T));
+
+                    }
+                }
+            }
+
+            using (var f = new FileStream(getImagesDir() + "/testOut", FileMode.Create))
+                img.writeImage<T>(data, width, height, format, f);
+
+
+            T[] readBackData = new T[width * height * format.numChannels()];
+
+            using (AImg f = new AImg(new FileStream(getImagesDir() + "/testOut", FileMode.Open)))
+            {
+                f.decodeImage(readBackData, format);
+            }
+
+            for (int i = 0; i < readBackData.Length; i++)
+            {
+                //Console.WriteLine(data[i] + " " + readBackData[i] + " " + fileformat.ToString());
+                Assert.AreEqual(data[i], readBackData[i]);
+            }
+
+
+            try
+            {
+                Directory.Delete(getImagesDir() + "/testOut");
+            }
+            catch { }
+        }
+
+
+        [Test]
+        public static void TestWriteTiff()
+        {
+            TestWriteIMG<float>(128, 128, AImgFormat.RGBA32F, AImgFileFormat.TIFF_IMAGE_FORMAT);
+            TestWriteIMG<float>(128, 128, AImgFormat.RGBA16F, AImgFileFormat.TIFF_IMAGE_FORMAT);
+            TestWriteIMG<byte>(128, 128, AImgFormat.RGBA8U, AImgFileFormat.TIFF_IMAGE_FORMAT);
+            TestWriteIMG<short>(128, 128, AImgFormat.RGBA16U, AImgFileFormat.TIFF_IMAGE_FORMAT);
+        }
+
+        [Test]
+        public static void TestWritePng()
+        {
+            TestWriteIMG<float>(128, 128, AImgFormat.RGBA32F, AImgFileFormat.PNG_IMAGE_FORMAT);
+            TestWriteIMG<byte>(128, 128, AImgFormat.RGBA8U, AImgFileFormat.PNG_IMAGE_FORMAT);
+            TestWriteIMG<short>(128, 128, AImgFormat.RGBA16U, AImgFileFormat.PNG_IMAGE_FORMAT);
+        }
+
+        [Test]
+        public static void TestWriteEXR()
+        {
+            TestWriteIMG<float>(128, 128, AImgFormat.RGBA32F, AImgFileFormat.EXR_IMAGE_FORMAT);
+            TestWriteIMG<float>(128, 128, AImgFormat.RGBA16F, AImgFileFormat.EXR_IMAGE_FORMAT);
+            TestWriteIMG<float>(128, 128, AImgFormat.RGBA16U, AImgFileFormat.EXR_IMAGE_FORMAT);
         }
     }
 }
