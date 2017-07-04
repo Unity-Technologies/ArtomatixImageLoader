@@ -25,7 +25,7 @@ set(BUILD_SHARE_TYPE SHARED CACHE STRING "set build type, valid values: SHARED|S
 
 set(CMAKE_POSITION_INDEPENDENT_CODE YES)
 add_library(AIL ${BUILD_SHARE_TYPE}
-	exr.cpp
+    exr.cpp
     exr.h
     png.h
     png.cpp
@@ -65,38 +65,38 @@ install (TARGETS AIL
 set(CMAKE_MODULE_PATH ${CMAKE_MODULE_PATH} "${CMAKE_SOURCE_DIR}/cmake/")
 
 if(PYTHON_ENABLED)
-	add_library(AIL_py SHARED python.c)
-	set_target_properties(AIL_py PROPERTIES OUTPUT_NAME "ail_py_native" PREFIX "")
+    add_library(AIL_py SHARED python.c)
+    set_target_properties(AIL_py PROPERTIES OUTPUT_NAME "ail_py_native" PREFIX "")
 
-	find_package(PythonLibs 2 REQUIRED)
-	find_package(NumPy REQUIRED)
+    find_package(PythonInterp 2 REQUIRED)
+    find_package(PythonLibs ${PYTHON_VERSION_STRING} REQUIRED)
+    find_package(NumPy REQUIRED)
 
-	target_link_libraries(AIL_py
-		AIL
-		${PYTHON_LIBRARIES})
-		
-	include_directories(${PYTHON_INCLUDE_DIR} ${PYTHON_NUMPY_INCLUDE_DIR})
+    target_link_libraries(AIL_py
+        AIL
+        ${PYTHON_LIBRARIES})
+    include_directories(${PYTHON_INCLUDE_DIR} ${PYTHON_NUMPY_INCLUDE_DIR})
 endif()
 
 if(EXR_ENABLED)
     hunter_add_package(OpenEXR)
-	find_package(OpenEXR REQUIRED)
-	target_link_libraries(AIL ${OPENEXR_LIBRARIES})
+    find_package(OpenEXR REQUIRED)
+    target_link_libraries(AIL ${OPENEXR_LIBRARIES})
     include_directories(${OPENEXR_INCLUDE_DIRS})
-	add_definitions(-DHAVE_EXR)
+    add_definitions(-DHAVE_EXR)
 endif()
 
 if(PNG_ENABLED)
     hunter_add_package(PNG)
-	find_package(PNG CONFIG REQUIRED)
-	target_link_libraries(AIL PNG::png)
-	add_definitions(-DHAVE_PNG)
+    find_package(PNG CONFIG REQUIRED)
+    target_link_libraries(AIL PNG::png)
+    add_definitions(-DHAVE_PNG)
 endif()
 
 if(JPEG_ENABLED)
     hunter_add_package(Jpeg)
     find_package(JPEG CONFIG REQUIRED)
-	target_link_libraries(AIL JPEG::jpeg)
+    target_link_libraries(AIL JPEG::jpeg)
     add_definitions(-DHAVE_JPEG)
 endif()
 
@@ -107,7 +107,7 @@ endif()
 if(TIFF_ENABLED)
     hunter_add_package(TIFF)
     find_package(TIFF CONFIG REQUIRED)
-	target_link_libraries(AIL TIFF::libtiff)
+    target_link_libraries(AIL TIFF::libtiff)
     add_definitions(-DHAVE_TIFF)
 endif()
 

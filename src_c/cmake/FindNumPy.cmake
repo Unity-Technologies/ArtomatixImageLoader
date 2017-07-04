@@ -2,10 +2,9 @@
 # PYTHON_NUMPY_INCLUDE_DIR
 # PYTHON_NUMPY_FOUND
 # will be set by this script
+# rewuires that you have already done Find_Package(PythonInterp)
 
 cmake_minimum_required(VERSION 2.6)
-
-find_package(PythonInterp 2)
 
 if (PYTHON_EXECUTABLE)
   # Find out the include path
@@ -23,7 +22,7 @@ elseif()
 endif(PYTHON_EXECUTABLE)
 
 find_path(PYTHON_NUMPY_INCLUDE_DIR numpy/arrayobject.h
-  HINTS "${__numpy_path}" "${PYTHON_INCLUDE_PATH}" NO_DEFAULT_PATH)
+  HINTS "${__numpy_path}" NO_DEFAULT_PATH)
 
 if(PYTHON_NUMPY_INCLUDE_DIR)
   set(PYTHON_NUMPY_FOUND 1 CACHE INTERNAL "Python numpy found")
