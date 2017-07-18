@@ -219,20 +219,12 @@ namespace ArtomatixImageLoaderTests
 
             var r = new Random(123);
 
-            for (int h = 0; h < width; h++)
+            for (int i = 0; i < data.Length; i++)
             {
-                for (int w = 0; w < height; w++)
-                {
-                    for (int c = 0; c < format.numChannels(); c++)
-                    {
-
-                        if (format.bytesPerChannel() > 1)
-                            data[w * width + h + c] = (T)Convert.ChangeType(r.Next(0, 255) / 255.0f, typeof(T));
-                        else
-                            data[w * width + h + c] = (T)Convert.ChangeType(r.Next(0, 255), typeof(T));
-
-                    }
-                }
+                if (format.bytesPerChannel() > 1)
+                    data[i] = (T)Convert.ChangeType(r.Next(0, 255) / 255.0f, typeof(T));
+                else
+                    data[i] = (T)Convert.ChangeType(r.Next(0, 255), typeof(T));
             }
 
             using (var f = new FileStream(getImagesDir() + "/testOut", FileMode.Create))
@@ -284,6 +276,15 @@ namespace ArtomatixImageLoaderTests
             TestWriteIMG<float>(128, 128, AImgFormat.RGBA32F, AImgFileFormat.EXR_IMAGE_FORMAT);
             TestWriteIMG<float>(128, 128, AImgFormat.RGBA16F, AImgFileFormat.EXR_IMAGE_FORMAT);
             TestWriteIMG<float>(128, 128, AImgFormat.RGBA16U, AImgFileFormat.EXR_IMAGE_FORMAT);
+        }
+
+        [Test]
+        public static void TestWriteTGA()
+        {
+            TestWriteIMG<byte>(128, 128, AImgFormat.RGBA8U, AImgFileFormat.TGA_IMAGE_FORMAT);
+            TestWriteIMG<byte>(128, 128, AImgFormat.RGB8U, AImgFileFormat.TGA_IMAGE_FORMAT);
+            TestWriteIMG<byte>(128, 128, AImgFormat.RG8U, AImgFileFormat.TGA_IMAGE_FORMAT);
+            TestWriteIMG<byte>(128, 128, AImgFormat.R8U, AImgFileFormat.TGA_IMAGE_FORMAT);
         }
     }
 }
