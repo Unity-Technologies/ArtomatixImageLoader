@@ -366,13 +366,17 @@ class ExrFile : public AImgBase
             void *inputBuf = data;
             AImgFormat inputBufFormat = (AImgFormat)inputFormat;
 
-            // need 32F data, so convert if necessary
-            if (inputFormat < AImgFormat::R32F || inputFormat > AImgFormat::RGBA32F)
+            // need 32F or 16F data, so convert if necessary
+            if (!((inputFormat >= AImgFormat::R32F && inputFormat <= AImgFormat::RGBA32F) || (inputFormat >= AImgFormat::R16F && inputFormat <= AImgFormat::RGBA16F)))
             {
                 // set inputBufFormat to the format with the same number of channels as inputFormat, but is 32F
                 int32_t bytesPerChannelTmp, numChannelsTmp, floatOrIntTmp;
                 AIGetFormatDetails(inputFormat, &numChannelsTmp, &bytesPerChannelTmp, &floatOrIntTmp);
-                inputBufFormat = (AImgFormat)(AImgFormat::R32F + numChannelsTmp - 1);
+
+                if(bytesPerChannelTmp > 2)
+                    inputBufFormat = (AImgFormat)(AImgFormat::R32F + numChannelsTmp - 1);
+                else
+                    inputBufFormat = (AImgFormat)(AImgFormat::R16F + numChannelsTmp - 1);
 
                 // resize reformattedDataTmp to fit the converted image data
                 AIGetFormatDetails(inputBufFormat, &numChannelsTmp, &bytesPerChannelTmp, &floatOrIntTmp);
@@ -398,7 +402,7 @@ class ExrFile : public AImgBase
                 else
                     channelName = RGBAChannelNames[i];
 
-                header.channels().insert(channelName, Imf::Channel(Imf::FLOAT));
+                header.channels().insert(channelName, Imf::Channel((bytesPerChannel == 4) ? Imf::FLOAT : Imf::HALF));
             }
 
             Imf::FrameBuffer frameBuffer;
@@ -410,10 +414,11 @@ class ExrFile : public AImgBase
                     channelName = GreyScaleChannelName;
                 else
                     channelName = RGBAChannelNames[i];
+
                 frameBuffer.insert(
                     channelName,
                     Imf::Slice(
-                        Imf::FLOAT,
+                        (bytesPerChannel == 4) ? Imf::FLOAT : Imf::HALF,
                         &((char *)inputBuf)[bytesPerChannel * i],
                         bytesPerChannel * numChannels,
                         bytesPerChannel * width * numChannels,

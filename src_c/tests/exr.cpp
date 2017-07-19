@@ -5,6 +5,8 @@
 
 #ifdef HAVE_EXR
 
+#include <half.h>
+
 TEST(Exr, TestDetectExr)
 {
     ASSERT_TRUE(detectImage("/exr/grad_32.exr", EXR_IMAGE_FORMAT));
@@ -231,6 +233,55 @@ TEST(Exr, TestOpenEmptyStream)
 
     ASSERT_EQ(err, AImgErrorCode::AIMG_OPEN_FAILED_EMPTY_INPUT);
     ASSERT_EQ((size_t)img, (size_t)NULL);
+}
+
+TEST(Exr, TestWriteExr16)
+{
+    auto data = readFile<uint8_t>(getImagesDir() + "/exr/grad_32.exr");
+
+    ReadCallback readCallback = NULL;
+    WriteCallback writeCallback = NULL;
+    TellCallback tellCallback = NULL;
+    SeekCallback seekCallback = NULL;
+    void* callbackData = NULL;
+
+    AIGetSimpleMemoryBufferCallbacks(&readCallback, &writeCallback, &tellCallback, &seekCallback, &callbackData, &data[0], data.size());
+
+    AImgHandle img = NULL;
+    AImgOpen(readCallback, tellCallback, seekCallback, callbackData, &img, NULL);
+
+    int32_t width = 64;
+    int32_t height = 32;
+
+    std::vector<half> imgData(width*height*3, 0.0f);
+
+    AImgDecodeImage(img, &imgData[0], AImgFormat::RGB16F);
+    AImgClose(img);
+    AIDestroySimpleMemoryBufferCallbacks(readCallback, writeCallback, tellCallback, seekCallback, callbackData);
+
+    std::vector<char> fileData(8192); // fixed size buffer for a file write, not the best but it'll do for this test
+    AIGetSimpleMemoryBufferCallbacks(&readCallback, &writeCallback, &tellCallback, &seekCallback, &callbackData, &fileData[0], fileData.size());
+
+    AImgHandle wImg = AImgGetAImg(AImgFileFormat::EXR_IMAGE_FORMAT);
+    AImgWriteImage(wImg, &imgData[0], width, height, AImgFormat::RGB16F, writeCallback, tellCallback, seekCallback, callbackData, NULL);
+    AImgClose(wImg);
+
+    seekCallback(callbackData, 0);
+
+
+    AImgOpen(readCallback, tellCallback, seekCallback, callbackData, &img, NULL);
+
+    int32_t _, writtenFormat;
+    AImgGetInfo(img, &_, &_, &_, &_, &_, &writtenFormat);
+    ASSERT_EQ(writtenFormat, AImgFormat::RGB16F);
+
+    std::vector<half> imgData2(width*height*3, 0.0f);
+    AImgDecodeImage(img, &imgData2[0], AImgFormat::INVALID_FORMAT);
+    AImgClose(img);
+    AIDestroySimpleMemoryBufferCallbacks(readCallback, writeCallback, tellCallback, seekCallback, callbackData);
+
+    for(uint32_t i = 0; i < imgData2.size(); i++)
+        ASSERT_EQ(imgData[i], imgData2[i]);
 }
 
 #endif
