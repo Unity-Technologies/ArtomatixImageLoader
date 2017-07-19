@@ -142,22 +142,29 @@ class ExrFile : public AImgBase
 
     int32_t getDecodeFormat()
     {
+        bool useHalfFloat = true;
+
         // yes, I am actually pretty sure this is the only way to get a channel count...
         int32_t channelNum = 0;
         const Imf::ChannelList &channels = file->header().channels();
         for (Imf::ChannelList::ConstIterator it = channels.begin(); it != channels.end(); ++it)
+        {
             channelNum++;
 
-        if (channelNum > 3)
-            return AImgFormat::RGBA32F;
-        if (channelNum == 3)
-            return AImgFormat::RGB32F;
-        if (channelNum == 2)
-            return AImgFormat::RG32F;
-        if (channelNum == 1)
-            return AImgFormat::R32F;
+            // If any channels are UINT or FLOAT, then decode the whole thing as FLOAT
+            // Otherwise, if everything is HALF, then we can decode as HALF
+            if(it.channel().type != Imf::PixelType::HALF)
+                useHalfFloat = false;
+        }
 
-        return AImgFormat::INVALID_FORMAT;
+        if(channelNum <= 0)
+            return AImgFormat::INVALID_FORMAT;
+
+        // start at the 1-channel version + offset to get the correct channel count format
+        int32_t format = useHalfFloat ? AImgFormat::R16F : AImgFormat::R32F;
+        format += (std::min(channelNum, 4) - 1); // min because we just truncate channels if we have >4 (exrs can have any number of channels)
+
+        return format;
     }
 
     virtual int32_t getImageInfo(int32_t *width, int32_t *height, int32_t *numChannels, int32_t *bytesPerChannel, int32_t *floatOrInt, int32_t *decodedImgFormat)
@@ -229,15 +236,16 @@ class ExrFile : public AImgBase
 
             int32_t decodeFormat = getDecodeFormat();
 
+            int32_t decodeFormatNumChannels, decodeFormatBytesPerChannel, decodeFormatFloatOrInt;
+            AIGetFormatDetails(decodeFormat, &decodeFormatNumChannels, &decodeFormatBytesPerChannel, &decodeFormatFloatOrInt);
+
+
             void *destBuffer = realDestBuffer;
 
             std::vector<uint8_t> convertTmpBuffer(0);
             if (forceImageFormat != AImgFormat::INVALID_FORMAT && forceImageFormat != decodeFormat)
             {
-                int32_t numChannels, bytesPerChannel, floatOrInt;
-                AIGetFormatDetails(decodeFormat, &numChannels, &bytesPerChannel, &floatOrInt);
-
-                convertTmpBuffer.resize(width * height * bytesPerChannel * numChannels);
+                convertTmpBuffer.resize(width * height * decodeFormatBytesPerChannel * decodeFormatNumChannels);
                 destBuffer = &convertTmpBuffer[0];
             }
 
@@ -281,16 +289,33 @@ class ExrFile : public AImgBase
             }
 
             Imf::FrameBuffer frameBuffer;
-
             for (uint32_t i = 0; i < usedChannelNames.size(); i++)
             {
-                frameBuffer.insert(usedChannelNames[i],
-                                   Imf::Slice(Imf::FLOAT,
-                                              ((char *)destBuffer) + i * sizeof(float),
-                                              sizeof(float) * usedChannelNames.size(),
-                                              sizeof(float) * width * usedChannelNames.size(),
-                                              1, 1,
-                                              0.0));
+                if(decodeFormatBytesPerChannel == 4)
+                {
+                    frameBuffer.insert(usedChannelNames[i],
+                                       Imf::Slice(Imf::FLOAT,
+                                                  ((char *)destBuffer) + i * sizeof(float),
+                                                  sizeof(float) * usedChannelNames.size(),
+                                                  sizeof(float) * width * usedChannelNames.size(),
+                                                  1, 1,
+                                                  0.0));
+                }
+                else if(decodeFormatBytesPerChannel == 2)
+                {
+                    frameBuffer.insert(usedChannelNames[i],
+                                       Imf::Slice(Imf::HALF,
+                                                  ((char *)destBuffer) + i * sizeof(half),
+                                                  sizeof(half) * usedChannelNames.size(),
+                                                  sizeof(half) * width * usedChannelNames.size(),
+                                                  1, 1,
+                                                  0.0));
+                }
+                else
+                {
+                    mErrorDetails = "[AImg::EXRImageLoader::EXRFile::] invalid decodeFormatBytesPerChannel";
+                    return AImgErrorCode::AIMG_LOAD_FAILED_INTERNAL;
+                }
             }
 
             file->setFrameBuffer(frameBuffer);
