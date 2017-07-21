@@ -65,7 +65,7 @@ namespace AImg
         AIGetFormatDetails(inputFormat, &numChannels, &bytesPerChannel, &floatOrInt);
 
         if(floatOrInt == AImgFloatOrIntType::FITYPE_FLOAT)
-            return (AImgFormat) (AImgFormat::R16U + bytesPerChannel - 1); // convert to 16U version with same channelNum
+            return (AImgFormat) (AImgFormat::R16U + numChannels - 1); // convert to 16U version with same channelNum
 
         if(inputFormat >= AImgFormat::R8U && inputFormat <= AImgFormat::RGBA8U)
             return (AImgFormat)inputFormat;
