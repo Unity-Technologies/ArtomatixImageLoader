@@ -160,6 +160,8 @@ namespace ArtomatixImageLoaderTests
         {
             using (AImg img = new AImg(File.Open(getImagesDir() + "/exr/grad_32.exr", FileMode.Open)))
             {
+                Assert.AreEqual(AImgFormat.RGB32F, img.decodedImgFormat);
+
                 float[] data = new float[img.width * img.height * img.decodedImgFormat.numChannels()];
                 img.decodeImage(data);
 
@@ -171,7 +173,7 @@ namespace ArtomatixImageLoaderTests
 
                     using (AImg img2 = new AImg(writeStream))
                     {
-                        Assert.AreEqual(img2.decodedImgFormat, AImgFormat.RGBA16U);
+                        Assert.AreEqual(img2.decodedImgFormat, AImgFormat.RGB16U);
 
                         UInt16[] data2 = new UInt16[img2.width * img2.height * img2.decodedImgFormat.numChannels()];
                         img2.decodeImage(data2);
@@ -183,17 +185,14 @@ namespace ArtomatixImageLoaderTests
                                 var fR = data[((x + y * img.width) * img.decodedImgFormat.numChannels()) + 0];
                                 var fG = data[((x + y * img.width) * img.decodedImgFormat.numChannels()) + 1];
                                 var fB = data[((x + y * img.width) * img.decodedImgFormat.numChannels()) + 2];
-                                var fA = 1.0f;
 
                                 var hR = data2[((x + y * img.width) * img2.decodedImgFormat.numChannels()) + 0];
                                 var hG = data2[((x + y * img.width) * img2.decodedImgFormat.numChannels()) + 1];
                                 var hB = data2[((x + y * img.width) * img2.decodedImgFormat.numChannels()) + 2];
-                                var hA = data2[((x + y * img.width) * img2.decodedImgFormat.numChannels()) + 3];
 
                                 Assert.AreEqual((UInt16)(fR * 65535), hR);
                                 Assert.AreEqual((UInt16)(fG * 65535), hG);
                                 Assert.AreEqual((UInt16)(fB * 65535), hB);
-                                Assert.AreEqual((UInt16)(fA * 65535), hA);
                             }
                         }
                     }
