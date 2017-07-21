@@ -135,6 +135,46 @@ namespace ArtomatixImageLoader
 
             throw new InvalidEnumArgumentException();
         }
-    }
 
+        public static AImgFloatOrIntType floatOrInt(this AImgFormat format)
+        {
+            switch (format)
+            {
+                case AImgFormat.R8U:
+                    return AImgFloatOrIntType.FITYPE_INT;
+                case AImgFormat.RG8U:
+                    return AImgFloatOrIntType.FITYPE_INT;
+                case AImgFormat.RGB8U:
+                    return AImgFloatOrIntType.FITYPE_INT;
+                case AImgFormat.RGBA8U:
+                    return AImgFloatOrIntType.FITYPE_INT;
+                case AImgFormat.R16U:
+                    return AImgFloatOrIntType.FITYPE_INT;
+                case AImgFormat.RG16U:
+                    return AImgFloatOrIntType.FITYPE_INT;
+                case AImgFormat.RGB16U:
+                    return AImgFloatOrIntType.FITYPE_INT;
+                case AImgFormat.RGBA16U:
+                    return AImgFloatOrIntType.FITYPE_INT;
+                case AImgFormat.R16F:
+                    return AImgFloatOrIntType.FITYPE_FLOAT;
+                case AImgFormat.RG16F:
+                    return AImgFloatOrIntType.FITYPE_FLOAT;
+                case AImgFormat.RGB16F:
+                    return AImgFloatOrIntType.FITYPE_FLOAT;
+                case AImgFormat.RGBA16F:
+                    return AImgFloatOrIntType.FITYPE_FLOAT;
+                case AImgFormat.R32F:
+                    return AImgFloatOrIntType.FITYPE_FLOAT;
+                case AImgFormat.RG32F:
+                    return AImgFloatOrIntType.FITYPE_FLOAT;
+                case AImgFormat.RGB32F:
+                    return AImgFloatOrIntType.FITYPE_FLOAT;
+                case AImgFormat.RGBA32F:
+                    return AImgFloatOrIntType.FITYPE_FLOAT;
+            }
+
+            throw new InvalidEnumArgumentException();
+        }
+    }
 }
