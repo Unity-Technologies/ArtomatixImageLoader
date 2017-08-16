@@ -72,6 +72,7 @@
   <ItemGroup>
     <Service Include="{82A7F48D-3B50-4B1E-B82E-3ADA8210C358}" />
   </ItemGroup>
+  <Import Project="..\..\..\..\.paket\paket.targets" />
   <Choose>
     <When Condition="$(TargetFrameworkIdentifier) == '.NETFramework' And $(TargetFrameworkVersion) == 'v4.6'">
       <ItemGroup>
@@ -98,7 +99,7 @@
     <When Condition="$(TargetFrameworkIdentifier) == '.NETFramework' And $(TargetFrameworkVersion) == 'v4.6'">
       <ItemGroup>
         <Reference Include="ZipStorer">
-          <HintPath>..\..\..\..\packages\ZipStorer\lib\net452\ZipStorer.dll</HintPath>
+          <HintPath>..\..\..\..\packages\ZipStorer\lib\net20\ZipStorer.dll</HintPath>
           <Private>True</Private>
           <Paket>True</Paket>
         </Reference>
