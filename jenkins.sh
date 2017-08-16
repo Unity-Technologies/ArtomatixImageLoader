@@ -48,9 +48,7 @@ virtualenv env
 
 source ./env/bin/activate
 pip install -r ./bindings/python/requirements.txt
-python ./bindings/python/tests.py
 python ./bindings/python/setup.py install
+python ./bindings/python/tests.py
 
-
-
-exit 0
+exit $?
