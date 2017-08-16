@@ -47,10 +47,9 @@ cd ${TOP_DIR}
 virtualenv env
 
 source ./env/bin/activate
-python ./bindings/python/setup.py install
 pip install -r ./bindings/python/requirements.txt
 python ./bindings/python/tests.py
-
+python ./bindings/python/setup.py install
 
 
 
