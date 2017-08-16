@@ -234,12 +234,16 @@ namespace ArtomatixImageLoaderTests
                 img.writeImage<T>(data, width, height, format, f);
 
 
-            T[] readBackData = new T[width * height * format.numChannels()];
 
+
+            T[] readBackData = null;
             using (AImg f = new AImg(new FileStream(getImagesDir() + "/testOut", FileMode.Open)))
+            {
+                readBackData = new T[width * height * f.decodedImgFormat.numChannels()];
                 f.decodeImage(readBackData, format);
+            }
 
-            for (int i = 0; i < readBackData.Length; i++)
+            for (int i = 0; i < data.Length; i++)
                 Assert.That(data[i], Is.EqualTo(readBackData[i]).Within(allowedDelta));
 
 
@@ -283,6 +287,13 @@ namespace ArtomatixImageLoaderTests
             TestWriteIMG<byte>(128, 128, AImgFormat.RGB8U, AImgFileFormat.TGA_IMAGE_FORMAT);
             TestWriteIMG<byte>(128, 128, AImgFormat.RG8U, AImgFileFormat.TGA_IMAGE_FORMAT);
             TestWriteIMG<byte>(128, 128, AImgFormat.R8U, AImgFileFormat.TGA_IMAGE_FORMAT);
+        }
+
+
+        [Test]
+        public static void TestWrite2ChannelPNGs()
+        {
+            TestWriteIMG<byte>(128, 128, AImgFormat.RG8U, AImgFileFormat.PNG_IMAGE_FORMAT);
         }
     }
 }

@@ -12,3 +12,4 @@ build/
 CMakeLists.txt.user
 *.pyc
 *.autosave
+test_images/testOut

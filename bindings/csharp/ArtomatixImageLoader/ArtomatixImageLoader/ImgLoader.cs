@@ -2,7 +2,6 @@
 using System;
 using System.IO;
 using System.Runtime.CompilerServices;
-using System.IO.Compression;
 using Stugo.Interop;
 
 namespace ArtomatixImageLoader
