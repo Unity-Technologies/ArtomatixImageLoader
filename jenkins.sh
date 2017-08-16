@@ -38,6 +38,7 @@ cd ${TOP_DIR}
 cd bindings/csharp/ArtomatixImageLoader
 
 xbuild ArtomatixImageLoader.sln
+quitOnFailure
 doTests ArtomatixImageLoaderTests/bin/x64/Debug/ArtomatixImageLoaderTests.dll
 
 
