@@ -239,7 +239,7 @@ namespace ArtomatixImageLoaderTests
             T[] readBackData = null;
             using (AImg f = new AImg(new FileStream(getImagesDir() + "/testOut", FileMode.Open)))
             {
-                readBackData = new T[width * height * f.decodedImgFormat.numChannels()];
+                readBackData = new T[width * height * f.decodedImgFormat.sizeInBytes()];
                 f.decodeImage(readBackData, format);
             }
 
