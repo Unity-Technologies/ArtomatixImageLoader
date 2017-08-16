@@ -23,6 +23,7 @@ cd ${TOP_DIR}
 
 
 cd src_c
+rm -rf build
 mkdir build
 cd build
 
@@ -31,7 +32,7 @@ quitOnFailure
 
 cd ${TOP_DIR}
 
-cd bindings/csharp
+cd bindings/csharp/ArtomatixImageLoader
 
 xbuild ArtomatixImageLoader.sln
 doTests ArtomatixImageLoaderTests/bin/x64/Debug/ArtomatixImageLoaderTests.dll
