@@ -72,7 +72,6 @@
   </ItemGroup>
   <Import Project="$(MSBuildBinPath)\Microsoft.CSharp.targets" />
   <ItemGroup>
-    <None Include="packages.config" />
     <None Include="native_code_setting.txt" />
   </ItemGroup>
   <PropertyGroup>
