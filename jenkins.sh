@@ -21,7 +21,7 @@ cd ${TOP_DIR}
 #git checkout .
 #git clean -dxf
 
-.paket/get_paket.sh
+bash .paket/get_paket.sh
 
 mono .paket/paket.exe restore
 
