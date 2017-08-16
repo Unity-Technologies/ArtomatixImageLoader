@@ -1,5 +1,5 @@
 ﻿<?xml version="1.0" encoding="utf-8"?>
-<Project DefaultTargets="Build" ToolsVersion="4.0" xmlns="http://schemas.microsoft.com/developer/msbuild/2003">
+<Project DefaultTargets="Build" ToolsVersion="12.0" xmlns="http://schemas.microsoft.com/developer/msbuild/2003">
   <PropertyGroup>
     <Configuration Condition=" '$(Configuration)' == '' ">Debug</Configuration>
     <Platform Condition=" '$(Platform)' == '' ">x64</Platform>
@@ -7,11 +7,12 @@
     <OutputType>Library</OutputType>
     <RootNamespace>ArtomatixImageLoader</RootNamespace>
     <AssemblyName>ArtomatixImageLoader</AssemblyName>
-    <TargetFrameworkVersion>v4.5</TargetFrameworkVersion>
+    <TargetFrameworkVersion>v4.6</TargetFrameworkVersion>
     <ProductVersion>12.0.0</ProductVersion>
     <SchemaVersion>2.0</SchemaVersion>
     <NuGetPackageImportStamp>
     </NuGetPackageImportStamp>
+    <TargetFrameworkProfile />
   </PropertyGroup>
   <PropertyGroup Condition="'$(Configuration)|$(Platform)' == 'Debug|x64'">
     <DebugSymbols>true</DebugSymbols>
@@ -60,15 +61,6 @@
   <ItemGroup>
     <Reference Include="System" />
     <Reference Include="System.IO.Compression" />
-    <Reference Include="Stugo.Interop">
-      <HintPath>..\packages\Stugo.Interop.0.1.0\lib\Stugo.Interop.dll</HintPath>
-    </Reference>
-    <Reference Include="ZipStorer">
-      <HintPath>..\packages\ZipStorer.2.38\lib\net20\ZipStorer.dll</HintPath>
-    </Reference>
-    <Reference Include="NativeBinaryManager">
-      <HintPath>..\packages\NativeBinaryManager.0.1.0\lib\NativeBinaryManager.dll</HintPath>
-    </Reference>
   </ItemGroup>
   <ItemGroup>
     <Compile Include="Properties\AssemblyInfo.cs" />
@@ -96,4 +88,37 @@
     </PropertyGroup>
     <Error Condition="!Exists('..\packages\NativeCodeBuilder.0.1.3\build\NativeCodeBuilder.targets')" Text="$([System.String]::Format('$(ErrorText)', '..\packages\NativeCodeBuilder.0.1.3\build\NativeCodeBuilder.targets'))" />
   </Target>
+  <Choose>
+    <When Condition="$(TargetFrameworkIdentifier) == '.NETFramework' And $(TargetFrameworkVersion) == 'v4.6'">
+      <ItemGroup>
+        <Reference Include="NativeBinaryManager">
+          <HintPath>..\..\..\..\packages\NativeBinaryManager\lib\NativeBinaryManager.dll</HintPath>
+          <Private>True</Private>
+          <Paket>True</Paket>
+        </Reference>
+      </ItemGroup>
+    </When>
+  </Choose>
+  <Choose>
+    <When Condition="$(TargetFrameworkIdentifier) == '.NETFramework' And $(TargetFrameworkVersion) == 'v4.6'">
+      <ItemGroup>
+        <Reference Include="Stugo.Interop">
+          <HintPath>..\..\..\..\packages\Stugo.Interop\lib\Stugo.Interop.dll</HintPath>
+          <Private>True</Private>
+          <Paket>True</Paket>
+        </Reference>
+      </ItemGroup>
+    </When>
+  </Choose>
+  <Choose>
+    <When Condition="$(TargetFrameworkIdentifier) == '.NETFramework' And $(TargetFrameworkVersion) == 'v4.6'">
+      <ItemGroup>
+        <Reference Include="ZipStorer">
+          <HintPath>..\..\..\..\packages\ZipStorer\lib\net452\ZipStorer.dll</HintPath>
+          <Private>True</Private>
+          <Paket>True</Paket>
+        </Reference>
+      </ItemGroup>
+    </When>
+  </Choose>
 </Project>

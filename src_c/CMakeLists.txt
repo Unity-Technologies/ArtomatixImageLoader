@@ -13,6 +13,7 @@ PROJECT (AIL)
 # Options #
 ###########
 
+SET(CMAKE_DEBUG_POSTFIX "")
 set(TESTS_ENABLED ON CACHE BOOL "enable tests")
 set(PYTHON_ENABLED OFF CACHE BOOL "enable python binding")
 set(EXR_ENABLED ON CACHE BOOL "enable loading EXR files")
