@@ -17,9 +17,9 @@ function doTests
 }
 
 cd ${TOP_DIR}
-#git reset .
-#git checkout .
-#git clean -dxf
+git reset .
+git checkout .
+git clean -dxf
 
 bash .paket/get_paket.sh
 
