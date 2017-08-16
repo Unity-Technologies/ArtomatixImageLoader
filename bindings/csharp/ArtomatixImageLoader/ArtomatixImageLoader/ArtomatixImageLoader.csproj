@@ -80,7 +80,7 @@
   <ItemGroup>
     <EmbeddedResource Include="embedded_files\binaries.zip" />
   </ItemGroup>
-  <Import Project="..\..\..\..\packages\NativeCodeBuilder\build\NativeCodeBuilder.targets" Condition="Exists('..\..\..\..\packages\NativeCodeBuilder\build\NativeCodeBuilder.targets'" />
+  <Import Project="..\..\..\..\packages\NativeCodeBuilder\build\NativeCodeBuilder.targets" Condition="Exists('..\..\..\..\packages\NativeCodeBuilder\build\NativeCodeBuilder.targets')" />
   <Import Project="..\..\..\..\.paket\paket.targets" />
   <Choose>
     <When Condition="$(TargetFrameworkIdentifier) == '.NETFramework' And $(TargetFrameworkVersion) == 'v4.6'">
