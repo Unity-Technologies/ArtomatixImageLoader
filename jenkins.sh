@@ -42,6 +42,14 @@ quitOnFailure
 doTests ArtomatixImageLoaderTests/bin/x64/Debug/ArtomatixImageLoaderTests.dll
 
 
+cd ${TOP_DIR}
+
+virtualenv env
+
+source ./env/bin/activate
+python ./bindings/python/setup.py install
+pip install -r ./bindings/python/requirements.txt
+python ./bindings/python/tests.py
 
 
 
