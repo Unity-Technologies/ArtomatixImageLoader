@@ -2,12 +2,11 @@
 <package >
   <metadata>
     <id>ArtomatixImageLoaders</id>
-    <version>0.27.0</version>
+    <version>000.028.000</version>
     <authors>wheybags</authors>
-    <owners>wheybags</owners>
+    <owners>Artomatix Ltd, wheybags</owners>
     <licenseUrl>https://opensource.org/licenses/MIT</licenseUrl>
-    <projectUrl>http://PROJECT_URL_HERE_OR_DELETE_THIS_LINE</projectUrl>
-    <iconUrl>http://ICON_URL_HERE_OR_DELETE_THIS_LINE</iconUrl>
+    <projectUrl>https://github.com/Artomatix/ArtomatixImageLoader/</projectUrl>
     <requireLicenseAcceptance>false</requireLicenseAcceptance>
     <description>Package description</description>
     <releaseNotes>Summary of changes made in this release of the package.</releaseNotes>
