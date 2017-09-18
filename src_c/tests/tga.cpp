@@ -88,7 +88,7 @@ TEST(TGA, TestForceImageFormatRemoveAlpha)
     int32_t _ = 0;
     int32_t decodedImgFormat = 0;
 
-    err = AImgGetInfo(img, &width, &height, &_, &_, &_, &decodedImgFormat);
+    err = AImgGetInfo(img, &width, &height, &_, &_, &_, &decodedImgFormat, NULL);
     ASSERT_EQ(err, AIMG_SUCCESS);
 
     std::vector<uint8_t> imgData(width*height*3);
@@ -138,7 +138,7 @@ TEST(TGA, TestReadTGAFile)
     int32_t floatOrInt;
     int32_t imgFmt;
 
-    AImgGetInfo(img, &width, &height, &numChannels, &bytesPerChannel, &floatOrInt, &imgFmt);
+    AImgGetInfo(img, &width, &height, &numChannels, &bytesPerChannel, &floatOrInt, &imgFmt, NULL);
 
     std::vector<uint8_t> imgData(width*height*numChannels*bytesPerChannel, 78);
 
@@ -186,7 +186,7 @@ TEST(TGA, TestWriteTGAFile)
     int32_t floatOrInt;
     int32_t fmt;
 
-    AImgGetInfo(img, &width, &height, &numChannels, &bytesPerChannel, &floatOrInt, &fmt);
+    AImgGetInfo(img, &width, &height, &numChannels, &bytesPerChannel, &floatOrInt, &fmt, NULL);
 
     std::vector<uint8_t> imgData(width*height*numChannels * bytesPerChannel, 78);
 
@@ -199,7 +199,7 @@ TEST(TGA, TestWriteTGAFile)
     AIGetSimpleMemoryBufferCallbacks(&readCallback, &writeCallback, &tellCallback, &seekCallback, &callbackData, &fileData[0], fileData.size());
 
     AImgHandle wImg = AImgGetAImg(AImgFileFormat::TGA_IMAGE_FORMAT);
-    auto err = AImgWriteImage(wImg, &imgData[0], width, height, fmt, writeCallback, tellCallback, seekCallback, callbackData, NULL);
+    auto err = AImgWriteImage(wImg, &imgData[0], width, height, fmt, NULL, NULL, 0, writeCallback, tellCallback, seekCallback, callbackData, NULL);
     ASSERT_EQ(err, AImgErrorCode::AIMG_SUCCESS);
     AImgClose(wImg);
 
@@ -238,7 +238,7 @@ TEST(TGA, TestForceImageFormat)
     int32_t bytesPerChannel;
     int32_t floatOrInt;
     int32_t imgFmt;
-    AImgGetInfo(img, &width, &height, &numChannels, &bytesPerChannel, &floatOrInt, &imgFmt);
+    AImgGetInfo(img, &width, &height, &numChannels, &bytesPerChannel, &floatOrInt, &imgFmt, NULL);
 
 
     std::vector<float> imgData(width*height*3, 78);

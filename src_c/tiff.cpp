@@ -4,6 +4,7 @@
 #include <tiffio.h>
 #include <vector>
 #include <string.h>
+#include <cstring>
 #include <math.h>
 #include <iostream>
 #include <algorithm>
@@ -214,11 +215,15 @@ class TiffFile : public AImgBase
         return AImgFormat::INVALID_FORMAT;
     }
 
-    virtual int32_t getImageInfo(int32_t *width, int32_t *height, int32_t *numChannels, int32_t *bytesPerChannel, int32_t *floatOrInt, int32_t *decodedImgFormat)
+    virtual int32_t getImageInfo(int32_t *width, int32_t *height, int32_t *numChannels, int32_t *bytesPerChannel, int32_t *floatOrInt, int32_t *decodedImgFormat, uint32_t *colorProfileLen)
     {
         *width = this->width;
         *height = this->height;
         *numChannels = this->channels;
+        if(colorProfileLen != NULL)
+        {
+            *colorProfileLen = 0;
+        }
 
         if (bitsPerChannel % 8 == 0)
             *bytesPerChannel = bitsPerChannel / 8;
@@ -233,6 +238,17 @@ class TiffFile : public AImgBase
             *floatOrInt = AImgFloatOrIntType::FITYPE_UNKNOWN;
 
         *decodedImgFormat = getDecodeFormat();
+
+        return AImgErrorCode::AIMG_SUCCESS;
+    }
+            
+    virtual int32_t getColorProfile(char *profileName, uint8_t *colorProfile, uint32_t *colorProfileLen)
+    {
+        if(colorProfile != NULL)
+        {
+            std::strcpy(profileName, "no_profile");
+            *colorProfileLen = 0;
+        }
 
         return AImgErrorCode::AIMG_SUCCESS;
     }
@@ -515,8 +531,8 @@ class TiffFile : public AImgBase
         return retval;
     }
 
-    int32_t writeImage(void *data, int32_t width, int32_t height, int32_t inputFormat, WriteCallback writeCallback,
-                       TellCallback tellCallback, SeekCallback seekCallback, void *callbackData, void *encodingOptions)
+    int32_t writeImage(void *data, int32_t width, int32_t height, int32_t inputFormat, char *profileName, uint8_t *colorProfile, uint32_t colorProfileLen,
+                        WriteCallback writeCallback, TellCallback tellCallback, SeekCallback seekCallback, void *callbackData, void *encodingOptions)
     {
         AIL_UNUSED_PARAM(encodingOptions);
 

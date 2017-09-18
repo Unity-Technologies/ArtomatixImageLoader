@@ -3,6 +3,7 @@
 #include "AIL_internal.h"
 #include <vector>
 #include <string.h>
+#include <cstring>
 #include <setjmp.h>
 #include <jpeglib.h>
 
@@ -240,7 +241,7 @@ namespace AImg
 				return AImgErrorCode::AIMG_SUCCESS;
             }
 
-            virtual int32_t getImageInfo(int32_t *width, int32_t *height, int32_t *numChannels, int32_t *bytesPerChannel, int32_t *floatOrInt, int32_t *decodedImgFormat)
+            virtual int32_t getImageInfo(int32_t *width, int32_t *height, int32_t *numChannels, int32_t *bytesPerChannel, int32_t *floatOrInt, int32_t *decodedImgFormat, uint32_t *colorProfileLen)
             {
                 *width = jpeg_read_struct.image_width;
                 *height = jpeg_read_struct.image_height;
@@ -248,6 +249,21 @@ namespace AImg
                 *numChannels = jpeg_read_struct.num_components;
                 *floatOrInt = AImgFloatOrIntType::FITYPE_INT;
                 *decodedImgFormat = ((int)AImgFormat::R8U) + jpeg_read_struct.num_components - 1;
+                if(colorProfileLen != NULL)
+                {
+                    *colorProfileLen = 0;
+                }
+                return AImgErrorCode::AIMG_SUCCESS;
+            }
+            
+            virtual int32_t getColorProfile(char *profileName, uint8_t *colorProfile, uint32_t *colorProfileLen)
+            {
+                if(colorProfile != NULL)
+                {
+                    std::strcpy(profileName, "no_profile");
+                    *colorProfileLen = 0;
+                }
+
                 return AImgErrorCode::AIMG_SUCCESS;
             }
 
@@ -310,7 +326,8 @@ namespace AImg
                 return AImgErrorCode::AIMG_SUCCESS;
             }
 
-            int32_t writeImage(void *data, int32_t width, int32_t height, int32_t inputFormat, WriteCallback writeCallback, TellCallback tellCallback, SeekCallback seekCallback, void *callbackData, void* encodingOptions)
+            int32_t writeImage(void *data, int32_t width, int32_t height, int32_t inputFormat, char *profileName, uint8_t *colorProfile, uint32_t colorProfileLen,
+                                WriteCallback writeCallback, TellCallback tellCallback, SeekCallback seekCallback, void *callbackData, void* encodingOptions)
             {
                 AIL_UNUSED_PARAM(encodingOptions);
 

@@ -8,6 +8,7 @@
 
 #include <stdint.h>
 #include <vector>
+#include <cstring>
 #include <exception>
 #include <algorithm>
 
@@ -167,11 +168,15 @@ class ExrFile : public AImgBase
         return format;
     }
 
-    virtual int32_t getImageInfo(int32_t *width, int32_t *height, int32_t *numChannels, int32_t *bytesPerChannel, int32_t *floatOrInt, int32_t *decodedImgFormat)
+    virtual int32_t getImageInfo(int32_t *width, int32_t *height, int32_t *numChannels, int32_t *bytesPerChannel, int32_t *floatOrInt, int32_t *decodedImgFormat, uint32_t *colorProfileLen)
     {
         *width = dw.max.x - dw.min.x + 1;
         *height = dw.max.y - dw.min.y + 1;
         *decodedImgFormat = getDecodeFormat();
+        if(colorProfileLen != NULL)
+        {
+            *colorProfileLen = 0;
+        }
 
         *numChannels = 0;
 
@@ -222,6 +227,17 @@ class ExrFile : public AImgBase
                 mErrorDetails = "[AImg::EXRImageLoader::EXRFile::] Invalid channel type in exr file";
                 return AImgErrorCode::AIMG_LOAD_FAILED_INTERNAL;
             }
+        }
+
+        return AImgErrorCode::AIMG_SUCCESS;
+    }
+    
+    virtual int32_t getColorProfile(char *profileName, uint8_t *colorProfile, uint32_t *colorProfileLen)
+    {
+        if(colorProfile != NULL)
+        {
+            std::strcpy(profileName, "no_profile");
+            *colorProfileLen = 0;
         }
 
         return AImgErrorCode::AIMG_SUCCESS;
@@ -354,8 +370,8 @@ class ExrFile : public AImgBase
         }
     }
 
-    int32_t writeImage(void *data, int32_t width, int32_t height, int32_t inputFormat, WriteCallback writeCallback,
-                       TellCallback tellCallback, SeekCallback seekCallback, void *callbackData, void *encodingOptions)
+    int32_t writeImage(void *data, int32_t width, int32_t height, int32_t inputFormat, char *profileName, uint8_t *colorProfile, uint32_t colorProfileLen,
+                       WriteCallback writeCallback, TellCallback tellCallback, SeekCallback seekCallback, void *callbackData, void *encodingOptions)
     {
         AIL_UNUSED_PARAM(encodingOptions);
 

@@ -6,6 +6,7 @@
 #include <vector>
 #include <png.h>
 #include <string.h>
+#include <cstring>
 #include <iostream>
 
 namespace AImg
@@ -83,7 +84,7 @@ namespace AImg
     }
 
     class PNGFile : public AImgBase
-    {
+    {       
         public:
             CallbackData * data = nullptr;
             png_info * png_info_ptr = nullptr;
@@ -93,6 +94,12 @@ namespace AImg
             uint8_t colour_type;
             uint8_t bit_depth;
             uint8_t numChannels;
+            // Convenient name for referring to the profile
+            char * profileName = NULL;
+            // The only compression method defined is method 0
+            int32_t compressionMethod = 0;
+            uint8_t * compressedProfile = NULL;
+            uint32_t compressedProfileLen = 0;
 
             PNGFile()
             {
@@ -157,15 +164,29 @@ namespace AImg
 
                     numChannels++;
                 }
+                if(png_get_iCCP(png_read_ptr, png_info_ptr, &profileName, &compressionMethod, &compressedProfile, &compressedProfileLen) & PNG_INFO_iCCP)
+                {
+                    printf("PNG png_get_iCCP Success\n");
+                    printf("    profileName: %s\n", profileName);
+                    printf("    compressionMethod: %d\n", compressionMethod);
+                }
+                else
+                {
+                    compressedProfile = NULL;
+                }
 
                 return AImgErrorCode::AIMG_SUCCESS;
             }
 
-            virtual int32_t getImageInfo(int32_t *width, int32_t *height, int32_t *numChannels, int32_t *bytesPerChannel, int32_t *floatOrInt, int32_t *decodedImgFormat)
+            virtual int32_t getImageInfo(int32_t *width, int32_t *height, int32_t *numChannels, int32_t *bytesPerChannel, int32_t *floatOrInt, int32_t *decodedImgFormat, uint32_t *colorProfileLen)
             {
                 *width = this->width;
                 *height = this->height;
                 *numChannels = this->numChannels;
+                if(colorProfileLen != NULL)
+                {   
+                    *colorProfileLen = this->compressedProfileLen;
+                }
 
                 if (bit_depth / 8 == 0)
                     *bytesPerChannel = -1;
@@ -175,6 +196,26 @@ namespace AImg
                 *floatOrInt = AImgFloatOrIntType::FITYPE_INT;
 
                 *decodedImgFormat = getDecodeFormat();
+                return AImgErrorCode::AIMG_SUCCESS;
+            }
+            
+            
+            virtual int32_t getColorProfile(char *profileName, uint8_t *colorProfile, uint32_t *colorProfileLen)
+            {
+                if(colorProfile != NULL)
+                {
+                    if(this->profileName != NULL)
+                    {
+//                        printf("Copying %p to %p\n", this->profileName, profileName);
+                        std::strcpy(profileName, this->profileName);
+                    }
+                    if(this->compressedProfile != NULL)
+                    {
+//                        printf("Copying %p to %p\n", this->compressedProfile, colorProfile);
+                        memcpy(colorProfile, this->compressedProfile, this->compressedProfileLen);
+                    }
+                    *colorProfileLen = this->compressedProfileLen;
+                }
 
                 return AImgErrorCode::AIMG_SUCCESS;
             }
@@ -258,7 +299,7 @@ namespace AImg
                 return AImgErrorCode::AIMG_SUCCESS;
             }
 
-            int32_t writeImage(void *data, int32_t width, int32_t height, int32_t inputFormat, WriteCallback writeCallback, TellCallback tellCallback, SeekCallback seekCallback, void *callbackData, void* encodingOptions)
+            int32_t writeImage(void *data, int32_t width, int32_t height, int32_t inputFormat, char *profileName, uint8_t *colorProfile, uint32_t colorProfileLen, WriteCallback writeCallback, TellCallback tellCallback, SeekCallback seekCallback, void *callbackData, void* encodingOptions)
             {
                 AIL_UNUSED_PARAM(tellCallback);
                 AIL_UNUSED_PARAM(seekCallback);
@@ -355,8 +396,15 @@ namespace AImg
 
                 png_set_IHDR(png_write_ptr, png_info_ptr, width, height, bit_depth, colour_type, PNG_INTERLACE_NONE, PNG_COMPRESSION_TYPE_DEFAULT, PNG_FILTER_TYPE_DEFAULT);
 
+                if(colorProfile == NULL)
+                    printf("COLOR PROFILE IS NULL!!!\n");
+                if(colorProfile != NULL)
+                {
+                    printf("4 COLOR PROFILE NAME: %s\n", profileName);
+                    printf("4 COLOR PROFILE LEN: %d\n", colorProfileLen);
+                    png_set_iCCP(png_write_ptr, png_info_ptr, profileName, 0, colorProfile, colorProfileLen);
+                }
                 png_write_info(png_write_ptr, png_info_ptr);
-
 
                 #if AIL_BYTEORDER == AIL_LIL_ENDIAN
                 if (bit_depth > 8)
@@ -368,7 +416,6 @@ namespace AImg
                     mErrorDetails = "[AImg::PNGImageLoader::PNGFile::writeImage] Failed to write file";
                     return AImgErrorCode::AIMG_WRITE_FAILED_EXTERNAL;
                 }
-
                 png_write_image(png_write_ptr, (png_bytepp)ptrs);
 
                 if (setjmp(png_jmpbuf(png_write_ptr)))

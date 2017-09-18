@@ -34,7 +34,7 @@ bool compareTiffToPng(const std::string& name, bool convertSrgb = false)
     int32_t pngBytesPerChannel;
     int32_t pngFloatOrInt;
     int32_t pngImgFmt;
-    error = AImgGetInfo(img, &pngWidth, &pngHeight, &pngNumChannels, &pngBytesPerChannel, &pngFloatOrInt, &pngImgFmt);
+    error = AImgGetInfo(img, &pngWidth, &pngHeight, &pngNumChannels, &pngBytesPerChannel, &pngFloatOrInt, &pngImgFmt, NULL);
     if(error)
         return false;
 
@@ -65,7 +65,7 @@ bool compareTiffToPng(const std::string& name, bool convertSrgb = false)
     int32_t tiffBytesPerChannel;
     int32_t tiffFloatOrInt;
     int32_t tiffImgFmt;
-    error = AImgGetInfo(img, &tiffWidth, &tiffHeight, &tiffNumChannels, &tiffBytesPerChannel, &tiffFloatOrInt, &tiffImgFmt);
+    error = AImgGetInfo(img, &tiffWidth, &tiffHeight, &tiffNumChannels, &tiffBytesPerChannel, &tiffFloatOrInt, &tiffImgFmt, NULL);
     if(error)
         return false;
 
@@ -146,7 +146,7 @@ bool testTiffWrite(int32_t testFormat)
     int32_t pngBytesPerChannel;
     int32_t pngFloatOrInt;
     int32_t pngImgFmt;
-    error = AImgGetInfo(img, &pngWidth, &pngHeight, &pngNumChannels, &pngBytesPerChannel, &pngFloatOrInt, &pngImgFmt);
+    error = AImgGetInfo(img, &pngWidth, &pngHeight, &pngNumChannels, &pngBytesPerChannel, &pngFloatOrInt, &pngImgFmt, NULL);
     if(error)
         return false;
 
@@ -171,7 +171,7 @@ bool testTiffWrite(int32_t testFormat)
     AIGetSimpleMemoryBufferCallbacks(&readCallback, &writeCallback, &tellCallback, &seekCallback, &callbackData, &fileData[0], fileData.size());
 
     AImgHandle wImg = AImgGetAImg(AImgFileFormat::TIFF_IMAGE_FORMAT);
-    error = AImgWriteImage(wImg, &pngImgData[0], pngWidth, pngHeight, testFormat, writeCallback, tellCallback, seekCallback, callbackData, NULL);
+    error = AImgWriteImage(wImg, &pngImgData[0], pngWidth, pngHeight, testFormat, NULL, NULL, 0, writeCallback, tellCallback, seekCallback, callbackData, NULL);
     if(error)
         return false;
 
@@ -182,7 +182,7 @@ bool testTiffWrite(int32_t testFormat)
         return false;
 
     int32_t tiffWidth, tiffHeight, tiffNumChannels, tiffBytesPerChannel, tiffFloatOrInt, tiffImgFmt;
-    error = AImgGetInfo(img, &tiffWidth, &tiffHeight, &tiffNumChannels, &tiffBytesPerChannel, &tiffFloatOrInt, &tiffImgFmt);
+    error = AImgGetInfo(img, &tiffWidth, &tiffHeight, &tiffNumChannels, &tiffBytesPerChannel, &tiffFloatOrInt, &tiffImgFmt, NULL);
     if(error)
         return false;
 
