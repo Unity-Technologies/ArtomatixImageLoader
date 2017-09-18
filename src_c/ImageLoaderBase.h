@@ -13,11 +13,11 @@ namespace AImg
             virtual ~AImgBase();
 
             virtual int32_t openImage(ReadCallback readCallback, TellCallback tellCallback, SeekCallback seekCallback, void* callbackData) = 0;
-            virtual int32_t getImageInfo(int32_t* width, int32_t* height, int32_t* numChannels, int32_t* bytesPerChannel, int32_t* floatOrInt, int32_t* decodedImgFormat, uint32_t *colorProfileLen) = 0;
-            virtual int32_t getColorProfile(char* profileName, uint8_t* colorProfile, uint32_t *colorProfileLen) = 0;
+            virtual int32_t getImageInfo(int32_t* width, int32_t* height, int32_t* numChannels, int32_t* bytesPerChannel, int32_t* floatOrInt, int32_t* decodedImgFormat, uint32_t *colourProfileLen) = 0;
+            virtual int32_t getColourProfile(char* profileName, uint8_t* colourProfile, uint32_t *colourProfileLen) = 0;
             virtual int32_t decodeImage(void* destBuffer, int32_t forceImageFormat) = 0;
 
-            virtual int32_t writeImage(void* data, int32_t width, int32_t height, int32_t inputFormat, char *profileName, uint8_t *colorProfile, uint32_t colorProfileLen,
+            virtual int32_t writeImage(void* data, int32_t width, int32_t height, int32_t inputFormat, char *profileName, uint8_t *colourProfile, uint32_t colourProfileLen,
                                        WriteCallback writeCallback, TellCallback tellCallback, SeekCallback seekCallback, void* callbackData, void* encodingOptions) = 0;
 
             const char* getErrorDetails()

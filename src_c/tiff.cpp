@@ -215,14 +215,14 @@ class TiffFile : public AImgBase
         return AImgFormat::INVALID_FORMAT;
     }
 
-    virtual int32_t getImageInfo(int32_t *width, int32_t *height, int32_t *numChannels, int32_t *bytesPerChannel, int32_t *floatOrInt, int32_t *decodedImgFormat, uint32_t *colorProfileLen)
+    virtual int32_t getImageInfo(int32_t *width, int32_t *height, int32_t *numChannels, int32_t *bytesPerChannel, int32_t *floatOrInt, int32_t *decodedImgFormat, uint32_t *colourProfileLen)
     {
         *width = this->width;
         *height = this->height;
         *numChannels = this->channels;
-        if(colorProfileLen != NULL)
+        if(colourProfileLen != NULL)
         {
-            *colorProfileLen = 0;
+            *colourProfileLen = 0;
         }
 
         if (bitsPerChannel % 8 == 0)
@@ -242,12 +242,12 @@ class TiffFile : public AImgBase
         return AImgErrorCode::AIMG_SUCCESS;
     }
             
-    virtual int32_t getColorProfile(char *profileName, uint8_t *colorProfile, uint32_t *colorProfileLen)
+    virtual int32_t getColourProfile(char *profileName, uint8_t *colourProfile, uint32_t *colourProfileLen)
     {
-        if(colorProfile != NULL)
+        if(colourProfile != NULL)
         {
             std::strcpy(profileName, "no_profile");
-            *colorProfileLen = 0;
+            *colourProfileLen = 0;
         }
 
         return AImgErrorCode::AIMG_SUCCESS;
@@ -531,7 +531,7 @@ class TiffFile : public AImgBase
         return retval;
     }
 
-    int32_t writeImage(void *data, int32_t width, int32_t height, int32_t inputFormat, char *profileName, uint8_t *colorProfile, uint32_t colorProfileLen,
+    int32_t writeImage(void *data, int32_t width, int32_t height, int32_t inputFormat, char *profileName, uint8_t *colourProfile, uint32_t colourProfileLen,
                         WriteCallback writeCallback, TellCallback tellCallback, SeekCallback seekCallback, void *callbackData, void *encodingOptions)
     {
         AIL_UNUSED_PARAM(encodingOptions);

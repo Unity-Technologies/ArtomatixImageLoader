@@ -166,9 +166,6 @@ namespace AImg
                 }
                 if(png_get_iCCP(png_read_ptr, png_info_ptr, &profileName, &compressionMethod, &compressedProfile, &compressedProfileLen) & PNG_INFO_iCCP)
                 {
-                    printf("PNG png_get_iCCP Success\n");
-                    printf("    profileName: %s\n", profileName);
-                    printf("    compressionMethod: %d\n", compressionMethod);
                 }
                 else
                 {
@@ -178,14 +175,14 @@ namespace AImg
                 return AImgErrorCode::AIMG_SUCCESS;
             }
 
-            virtual int32_t getImageInfo(int32_t *width, int32_t *height, int32_t *numChannels, int32_t *bytesPerChannel, int32_t *floatOrInt, int32_t *decodedImgFormat, uint32_t *colorProfileLen)
+            virtual int32_t getImageInfo(int32_t *width, int32_t *height, int32_t *numChannels, int32_t *bytesPerChannel, int32_t *floatOrInt, int32_t *decodedImgFormat, uint32_t *colourProfileLen)
             {
                 *width = this->width;
                 *height = this->height;
                 *numChannels = this->numChannels;
-                if(colorProfileLen != NULL)
+                if(colourProfileLen != NULL)
                 {   
-                    *colorProfileLen = this->compressedProfileLen;
+                    *colourProfileLen = this->compressedProfileLen;
                 }
 
                 if (bit_depth / 8 == 0)
@@ -200,21 +197,19 @@ namespace AImg
             }
             
             
-            virtual int32_t getColorProfile(char *profileName, uint8_t *colorProfile, uint32_t *colorProfileLen)
+            virtual int32_t getColourProfile(char *profileName, uint8_t *colourProfile, uint32_t *colourProfileLen)
             {
-                if(colorProfile != NULL)
+                if(colourProfile != NULL)
                 {
                     if(this->profileName != NULL)
                     {
-//                        printf("Copying %p to %p\n", this->profileName, profileName);
                         std::strcpy(profileName, this->profileName);
                     }
                     if(this->compressedProfile != NULL)
                     {
-//                        printf("Copying %p to %p\n", this->compressedProfile, colorProfile);
-                        memcpy(colorProfile, this->compressedProfile, this->compressedProfileLen);
+                        memcpy(colourProfile, this->compressedProfile, this->compressedProfileLen);
                     }
-                    *colorProfileLen = this->compressedProfileLen;
+                    *colourProfileLen = this->compressedProfileLen;
                 }
 
                 return AImgErrorCode::AIMG_SUCCESS;
@@ -299,7 +294,7 @@ namespace AImg
                 return AImgErrorCode::AIMG_SUCCESS;
             }
 
-            int32_t writeImage(void *data, int32_t width, int32_t height, int32_t inputFormat, char *profileName, uint8_t *colorProfile, uint32_t colorProfileLen, WriteCallback writeCallback, TellCallback tellCallback, SeekCallback seekCallback, void *callbackData, void* encodingOptions)
+            int32_t writeImage(void *data, int32_t width, int32_t height, int32_t inputFormat, char *profileName, uint8_t *colourProfile, uint32_t colourProfileLen, WriteCallback writeCallback, TellCallback tellCallback, SeekCallback seekCallback, void *callbackData, void* encodingOptions)
             {
                 AIL_UNUSED_PARAM(tellCallback);
                 AIL_UNUSED_PARAM(seekCallback);
@@ -396,13 +391,9 @@ namespace AImg
 
                 png_set_IHDR(png_write_ptr, png_info_ptr, width, height, bit_depth, colour_type, PNG_INTERLACE_NONE, PNG_COMPRESSION_TYPE_DEFAULT, PNG_FILTER_TYPE_DEFAULT);
 
-                if(colorProfile == NULL)
-                    printf("COLOR PROFILE IS NULL!!!\n");
-                if(colorProfile != NULL)
+                if(colourProfile != NULL)
                 {
-                    printf("4 COLOR PROFILE NAME: %s\n", profileName);
-                    printf("4 COLOR PROFILE LEN: %d\n", colorProfileLen);
-                    png_set_iCCP(png_write_ptr, png_info_ptr, profileName, 0, colorProfile, colorProfileLen);
+                    png_set_iCCP(png_write_ptr, png_info_ptr, profileName, 0, colourProfile, colourProfileLen);
                 }
                 png_write_info(png_write_ptr, png_info_ptr);
 

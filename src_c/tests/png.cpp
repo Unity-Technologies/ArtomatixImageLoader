@@ -87,13 +87,13 @@ bool validateReadPNGFile(const std::string& path)
     int32_t bytesPerChannel;
     int32_t floatOrInt;
     int32_t imgFmt;
-    uint32_t colorProfileLen;
+    uint32_t colourProfileLen;
 
-    AImgGetInfo(img, &width, &height, &numChannels, &bytesPerChannel, &floatOrInt, &imgFmt, &colorProfileLen);
+    AImgGetInfo(img, &width, &height, &numChannels, &bytesPerChannel, &floatOrInt, &imgFmt, &colourProfileLen);
     
     char profileName[30];
-    std::vector<uint8_t> colorProfile(colorProfileLen);
-    AImgGetColorProfile(img, profileName, colorProfile.data(), &colorProfileLen);
+    std::vector<uint8_t> colourProfile(colourProfileLen);
+    AImgGetColourProfile(img, profileName, colourProfile.data(), &colourProfileLen);
 
     std::vector<uint8_t> imgData(width*height*numChannels*bytesPerChannel, 78);
 
@@ -155,12 +155,12 @@ bool validateWritePNGFile(const std::string& path, void* encodeOptions, int32_t&
         int32_t bytesPerChannel;
         int32_t floatOrInt;
         int32_t fmt;
-        uint32_t colorProfileLen;
+        uint32_t colourProfileLen;
 
-        err = AImgGetInfo(img, &width, &height, &numChannels, &bytesPerChannel, &floatOrInt, &fmt, &colorProfileLen);
+        err = AImgGetInfo(img, &width, &height, &numChannels, &bytesPerChannel, &floatOrInt, &fmt, &colourProfileLen);
         char profileName[30];
-        std::vector<uint8_t> colorProfile(colorProfileLen);
-        AImgGetColorProfile(img, profileName, colorProfile.data(), &colorProfileLen);
+        std::vector<uint8_t> colourProfile(colourProfileLen);
+        AImgGetColourProfile(img, profileName, colourProfile.data(), &colourProfileLen);
         if(err == AImgErrorCode::AIMG_SUCCESS)
         {
             imgData.resize(width*height*numChannels * bytesPerChannel, 78);
@@ -177,7 +177,7 @@ bool validateWritePNGFile(const std::string& path, void* encodeOptions, int32_t&
                 AIGetSimpleMemoryBufferCallbacks(&readCallback, &writeCallback, &tellCallback, &seekCallback, &callbackData, &fileData[0], fileData.size());
 
                 wImg = AImgGetAImg(AImgFileFormat::PNG_IMAGE_FORMAT);
-                err = AImgWriteImage(wImg, &imgData[0], width, height, fmt, profileName, colorProfile.data(), colorProfileLen, writeCallback, tellCallback, seekCallback, callbackData, encodeOptions);
+                err = AImgWriteImage(wImg, &imgData[0], width, height, fmt, profileName, colourProfile.data(), colourProfileLen, writeCallback, tellCallback, seekCallback, callbackData, encodeOptions);
                 if(err == AImgErrorCode::AIMG_SUCCESS)
                 {
                     fileData.resize(tellCallback(callbackData));
@@ -273,11 +273,11 @@ TEST(PNG, TestReadIndexed)
     int32_t bytesPerChannel;
     int32_t floatOrInt;
     int32_t imgFmt;
-    uint32_t colorProfileLen;
-    AImgGetInfo(img, &width, &height, &numChannels, &bytesPerChannel, &floatOrInt, &imgFmt, &colorProfileLen);
+    uint32_t colourProfileLen;
+    AImgGetInfo(img, &width, &height, &numChannels, &bytesPerChannel, &floatOrInt, &imgFmt, &colourProfileLen);
     char profileName[30];
-    std::vector<uint8_t> colorProfile(colorProfileLen);
-    AImgGetColorProfile(img, profileName, colorProfile.data(), &colorProfileLen);
+    std::vector<uint8_t> colourProfile(colourProfileLen);
+    AImgGetColourProfile(img, profileName, colourProfile.data(), &colourProfileLen);
 
     std::vector<uint8_t> imgData(width*height*numChannels*bytesPerChannel, 78);
     AImgDecodeImage(img, &imgData[0], AImgFormat::INVALID_FORMAT);
@@ -292,9 +292,9 @@ TEST(PNG, TestReadIndexed)
 
     img = NULL;
     AImgOpen(readCallback, tellCallback, seekCallback, callbackData, &img, NULL);
-    AImgGetInfo(img, &width, &height, &numChannels, &bytesPerChannel, &floatOrInt, &imgFmt, &colorProfileLen);
-    colorProfile.resize(colorProfileLen);
-    AImgGetColorProfile(img, profileName, colorProfile.data(), &colorProfileLen);
+    AImgGetInfo(img, &width, &height, &numChannels, &bytesPerChannel, &floatOrInt, &imgFmt, &colourProfileLen);
+    colourProfile.resize(colourProfileLen);
+    AImgGetColourProfile(img, profileName, colourProfile.data(), &colourProfileLen);
 
 
     std::vector<uint8_t> nonIdxData(width*height*numChannels*bytesPerChannel, 78);
@@ -322,16 +322,12 @@ TEST(PNG, TestRead16BitPNG)
 TEST(PNG, TestReadWriteICCProfile)
 {
     char profileName[30];
-    uint8_t * colorProfile = NULL;
-    uint32_t colorProfileLen = 0;
-    readWriteIcc("/png/ICC.png", "/png/ICC_out.png", profileName, colorProfile, &colorProfileLen);
-    printf("5 COLOR PROFILE NAME: %s\n", profileName);
-    printf("5 COLOR PROFILE LEN: %d\n", colorProfileLen);
+    uint8_t * colourProfile = NULL;
+    uint32_t colourProfileLen = 0;
+    readWriteIcc("/png/ICC.png", "/png/ICC_out.png", profileName, colourProfile, &colourProfileLen);
     int res = std::strcmp(profileName, "ICC profile");
-    printf("B\n");
     ASSERT_EQ(res, 0);
-    ASSERT_EQ(colorProfileLen, 560u);
-    printf("C\n");
+    ASSERT_EQ(colourProfileLen, 560u);
 }
 
 TEST(PNG, TestWrite8BitPNG8)
@@ -426,12 +422,12 @@ TEST(PNG, TestForceImageFormat)
     int32_t bytesPerChannel;
     int32_t floatOrInt;
     int32_t imgFmt;
-    uint32_t colorProfileLen;
+    uint32_t colourProfileLen;
     
-    AImgGetInfo(img, &width, &height, &numChannels, &bytesPerChannel, &floatOrInt, &imgFmt, &colorProfileLen);
+    AImgGetInfo(img, &width, &height, &numChannels, &bytesPerChannel, &floatOrInt, &imgFmt, &colourProfileLen);
     char profileName[30];
-    std::vector<uint8_t> colorProfile(colorProfileLen);
-    AImgGetColorProfile(img, profileName, colorProfile.data(), &colorProfileLen);
+    std::vector<uint8_t> colourProfile(colourProfileLen);
+    AImgGetColourProfile(img, profileName, colourProfile.data(), &colourProfileLen);
 
 
     std::vector<float> imgData(width*height*3, 78);
@@ -475,12 +471,12 @@ TEST(Png, TestForceAwayAlpha)
     int32_t bytesPerChannel;
     int32_t floatOrInt;
     int32_t imgFmt;
-    uint32_t colorProfileLen;
+    uint32_t colourProfileLen;
     
-    AImgGetInfo(img, &width, &height, &numChannels, &bytesPerChannel, &floatOrInt, &imgFmt, &colorProfileLen);
+    AImgGetInfo(img, &width, &height, &numChannels, &bytesPerChannel, &floatOrInt, &imgFmt, &colourProfileLen);
     char profileName[30];
-    std::vector<uint8_t> colorProfile(colorProfileLen);
-    AImgGetColorProfile(img, profileName, colorProfile.data(), &colorProfileLen);
+    std::vector<uint8_t> colourProfile(colourProfileLen);
+    AImgGetColourProfile(img, profileName, colourProfile.data(), &colourProfileLen);
 
 
     std::vector<uint8_t> imgData(width*height*3, 78);

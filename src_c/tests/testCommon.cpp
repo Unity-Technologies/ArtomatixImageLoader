@@ -50,12 +50,12 @@ bool validateImageHeaders(const std::string & path, int32_t expectedWidth, int32
     int32_t bytesPerChannel = 0;
     int32_t floatOrInt = 0;
     int32_t decodedImgFormat = 0;
-    uint32_t colorProfileLen = 0;
+    uint32_t colourProfileLen = 0;
 
-    AImgGetInfo(img, &width, &height, &numChannels, &bytesPerChannel, &floatOrInt, &decodedImgFormat, &colorProfileLen);
+    AImgGetInfo(img, &width, &height, &numChannels, &bytesPerChannel, &floatOrInt, &decodedImgFormat, &colourProfileLen);
     char profileName[30];
-    std::vector<uint8_t> colorProfile(colorProfileLen);
-    AImgGetColorProfile(img, profileName, colorProfile.data(), &colorProfileLen);
+    std::vector<uint8_t> colourProfile(colourProfileLen);
+    AImgGetColourProfile(img, profileName, colourProfile.data(), &colourProfileLen);
     AImgClose(img);
     AIDestroySimpleMemoryBufferCallbacks(readCallback, writeCallback, tellCallback, seekCallback, callbackData);
     
@@ -145,7 +145,7 @@ bool compareForceImageFormat(const std::string& path)
     return true;
 }
 
-void writeToFile(const std::string& path, int32_t width, int32_t height, void* data, int32_t inputFormat, int32_t fileFormat, char *profileName, uint8_t *colorProfile, uint32_t colorProfileLen)
+void writeToFile(const std::string& path, int32_t width, int32_t height, void* data, int32_t inputFormat, int32_t fileFormat, char *profileName, uint8_t *colourProfile, uint32_t colourProfileLen)
 {
     ReadCallback readCallback = NULL;
     WriteCallback writeCallback = NULL;
@@ -159,7 +159,7 @@ void writeToFile(const std::string& path, int32_t width, int32_t height, void* d
 
     AImgHandle wImg = AImgGetAImg(fileFormat);
 
-    AImgWriteImage(wImg, data, width, height, inputFormat, profileName, colorProfile, colorProfileLen, writeCallback, tellCallback, seekCallback, callbackData, NULL);
+    AImgWriteImage(wImg, data, width, height, inputFormat, profileName, colourProfile, colourProfileLen, writeCallback, tellCallback, seekCallback, callbackData, NULL);
 
     FILE* f = fopen(path.c_str(), "wb");
     fwrite(&fData[0], 1, fData.size(), f);
@@ -170,7 +170,7 @@ void writeToFile(const std::string& path, int32_t width, int32_t height, void* d
 
 }
 
-void readWriteIcc(const std::string & path, const std::string & outPath, char *profileName, uint8_t *colorProfile, uint32_t *colorProfileLen)
+void readWriteIcc(const std::string & path, const std::string & outPath, char *profileName, uint8_t *colourProfile, uint32_t *colourProfileLen)
 {
     // Read
     auto data = readFile<uint8_t>(getImagesDir() + path);
@@ -194,15 +194,10 @@ void readWriteIcc(const std::string & path, const std::string & outPath, char *p
     int32_t floatOrInt = 0;
     int32_t decodedImgFormat = 0;
 
-    AImgGetInfo(img, &width, &height, &numChannels, &bytesPerChannel, &floatOrInt, &decodedImgFormat, colorProfileLen);
-    std::vector<uint8_t> colorProfile_(*colorProfileLen);
-    printf("    0 COLOR PROFILE NAME: %s\n", profileName);
-    printf("    0 COLOR PROFILE: %p\n", colorProfile_.data());
-    printf("    0 COLOR PROFILE LEN: %d\n", *colorProfileLen);
-    AImgGetColorProfile(img, profileName, colorProfile_.data(), colorProfileLen);
-    colorProfile = colorProfile_.data();
-    printf("    1 COLOR PROFILE NAME: %s\n", profileName);
-    printf("    1 COLOR PROFILE LEN: %d\n", *colorProfileLen);
+    AImgGetInfo(img, &width, &height, &numChannels, &bytesPerChannel, &floatOrInt, &decodedImgFormat, colourProfileLen);
+    std::vector<uint8_t> colourProfile_(*colourProfileLen);
+    AImgGetColourProfile(img, profileName, colourProfile_.data(), colourProfileLen);
+    colourProfile = colourProfile_.data();
     
     std::vector<uint8_t> imgData;
     imgData.resize(width*height*numChannels * bytesPerChannel, 78);
@@ -220,9 +215,7 @@ void readWriteIcc(const std::string & path, const std::string & outPath, char *p
     AIGetSimpleMemoryBufferCallbacks(&readCallback, &writeCallback, &tellCallback, &seekCallback, &callbackData, &fileData[0], fileData.size());
 
     AImgHandle wImg = AImgGetAImg(detectedFormat);
-    printf("            2 COLOR PROFILE NAME: %s\n", profileName);
-    printf("            2 COLOR PROFILE LEN: %d\n", *colorProfileLen);
-    AImgWriteImage(wImg, &imgData[0], width, height, decodedImgFormat, profileName, colorProfile, *colorProfileLen, writeCallback, tellCallback, seekCallback, callbackData, NULL);
+    AImgWriteImage(wImg, &imgData[0], width, height, decodedImgFormat, profileName, colourProfile, *colourProfileLen, writeCallback, tellCallback, seekCallback, callbackData, NULL);
     
     FILE* f = fopen((getImagesDir() + outPath).c_str(), "wb");
     fwrite(&fileData[0], 1, fileData.size(), f);

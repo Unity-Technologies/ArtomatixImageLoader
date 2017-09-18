@@ -113,16 +113,16 @@ EXPORT_FUNC const char* AImgGetErrorDetails(AImgHandle imgH)
     return img->getErrorDetails();
 }
 
-int32_t AImgGetColorProfile(AImgHandle imgH, char *profileName, uint8_t *colorProfile, uint32_t *colorProfileLen)
+int32_t AImgGetColourProfile(AImgHandle imgH, char *profileName, uint8_t *colourProfile, uint32_t *colourProfileLen)
 {
     AImg::AImgBase* img = (AImg::AImgBase*)imgH;
-    return img->getColorProfile(profileName, colorProfile, colorProfileLen);
+    return img->getColourProfile(profileName, colourProfile, colourProfileLen);
 }
 
-int32_t AImgGetInfo(AImgHandle imgH, int32_t* width, int32_t* height, int32_t* numChannels, int32_t* bytesPerChannel, int32_t* floatOrInt, int32_t* decodedImgFormat, uint32_t *colorProfileLen)
+int32_t AImgGetInfo(AImgHandle imgH, int32_t* width, int32_t* height, int32_t* numChannels, int32_t* bytesPerChannel, int32_t* floatOrInt, int32_t* decodedImgFormat, uint32_t *colourProfileLen)
 {
     AImg::AImgBase* img = (AImg::AImgBase*)imgH;
-    return img->getImageInfo(width, height, numChannels, bytesPerChannel, floatOrInt, decodedImgFormat, colorProfileLen);
+    return img->getImageInfo(width, height, numChannels, bytesPerChannel, floatOrInt, decodedImgFormat, colourProfileLen);
 }
 
 int32_t AImgDecodeImage(AImgHandle imgH, void* destBuffer, int32_t forceImageFormat)
@@ -136,7 +136,7 @@ AImgHandle AImgGetAImg(int32_t fileFormat)
     return loaders[fileFormat]->getAImg();
 }
 
-int32_t AImgWriteImage(AImgHandle imgH, void* data, int32_t width, int32_t height, int32_t inputFormat, char *profileName, uint8_t *colorProfile, uint32_t colorProfileLen,
+int32_t AImgWriteImage(AImgHandle imgH, void* data, int32_t width, int32_t height, int32_t inputFormat, char *profileName, uint8_t *colourProfile, uint32_t colourProfileLen,
                    WriteCallback writeCallback, TellCallback tellCallback, SeekCallback seekCallback, void* callbackData, void* encodingOptions)
 {
     AImg::AImgBase* img = (AImg::AImgBase*)imgH;
@@ -145,9 +145,7 @@ int32_t AImgWriteImage(AImgHandle imgH, void* data, int32_t width, int32_t heigh
     if(err != AImgErrorCode::AIMG_SUCCESS)
         return err;
 
-    printf("        3 COLOR PROFILE NAME: %s\n", profileName);
-    printf("        3 COLOR PROFILE LEN: %d\n", colorProfileLen);
-    return img->writeImage(data, width, height, inputFormat, profileName, colorProfile, colorProfileLen, writeCallback, tellCallback, seekCallback, callbackData, encodingOptions);
+    return img->writeImage(data, width, height, inputFormat, profileName, colourProfile, colourProfileLen, writeCallback, tellCallback, seekCallback, callbackData, encodingOptions);
 }
 
 
