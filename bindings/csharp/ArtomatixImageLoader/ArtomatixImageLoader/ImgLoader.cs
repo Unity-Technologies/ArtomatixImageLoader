@@ -9,19 +9,30 @@ namespace ArtomatixImageLoader
 {
     // io callbacks
     internal delegate int ReadCallback(IntPtr callbackData, IntPtr dest, int count);
+
     internal delegate void WriteCallback(IntPtr callbackData, IntPtr src, Int32 count);
+
     internal delegate int TellCallback(IntPtr callbackData);
+
     internal delegate void SeekCallback(IntPtr callbackData, int pos);
 
     // native code delegates
     internal delegate Int32 AImgInitialise();
+
     internal delegate IntPtr _AImgGetErrorDetails(IntPtr img);
+
     internal delegate IntPtr AImgGetAImg(Int32 fileFormat);
+
     internal delegate void AImgClose(IntPtr img);
+
     internal delegate Int32 AImgGetInfo(IntPtr img, out Int32 width, out Int32 height, out Int32 numChannels, out Int32 bytesPerChannel, out Int32 floatOrInt, out Int32 decodedImgFormat, out Int32 colorProfileLength);
+
     internal delegate Int32 AImgGetColourProfile(IntPtr img, StringBuilder profileName, IntPtr colorProfile, out Int32 colorProfileLength);
+
     internal delegate Int32 AImgDecodeImage(IntPtr img, IntPtr destBuffer, Int32 forceImageFormat);
+
     internal delegate void AImgCleanUp();
+
     internal delegate Int32 AImgGetWhatFormatWillBeWrittenForData(Int32 fileFormat, Int32 inputFormat);
 
     internal delegate Int32 AImgOpen(
@@ -32,11 +43,12 @@ namespace ArtomatixImageLoader
         out IntPtr img,
         out Int32 detectedFileFormat
     );
+
     internal delegate Int32 AImgWriteImage(
         IntPtr img, IntPtr data, Int32 width, Int32 height, Int32 inputFormat, string profileName, IntPtr colorProfile, Int32 colorProfileLength,
         [MarshalAs(UnmanagedType.FunctionPtr)] WriteCallback writeCallback,
         [MarshalAs(UnmanagedType.FunctionPtr)] TellCallback tellCallback,
-        [MarshalAs(UnmanagedType.FunctionPtr)] SeekCallback seekCallback, 
+        [MarshalAs(UnmanagedType.FunctionPtr)] SeekCallback seekCallback,
         IntPtr callbackData,
         IntPtr encodeOptions
     );
@@ -65,8 +77,8 @@ namespace ArtomatixImageLoader
                 forceStaticConstructorCall = null;
 
             string dllPath = Path.GetFullPath("libAIL.so");
-            var asm = System.Reflection.Assembly.GetAssembly(typeof(ImgLoader));
-            var zipStream = asm.GetManifestResourceStream("ArtomatixImageLoader.embedded_files.binaries.zip");
+
+            var zipStream = System.Reflection.Assembly.GetAssembly(typeof(ImgLoader)).GetManifestResourceStream("ArtomatixImageLoader.embedded_files.binaries.zip");
 
             NativeBinaryManager.NativeBinaryManager.ExtractNativeBinary(zipStream, dllPath);
             var loader = UnmanagedModuleLoaderBase.GetLoader(dllPath);
@@ -95,19 +107,19 @@ namespace ArtomatixImageLoader
                 File.Delete(Path.GetFullPath("libAIL.so"));
             }
             catch { }
-
         }
 
         // native code functions
-        static _AImgGetErrorDetails _AImgGetErrorDetails = null;
+        private static _AImgGetErrorDetails _AImgGetErrorDetails = null;
+
         public static AImgGetAImg AImgGetAImg = null;
         public static AImgOpen AImgOpen = null;
         public static AImgClose AImgClose = null;
         public static AImgGetInfo AImgGetInfo = null;
         public static AImgGetColourProfile AImgGetColourProfile = null;
         public static AImgDecodeImage AImgDecodeImage = null;
-        static AImgInitialise AImgInitialise = null;
-        static AImgCleanUp AImgCleanUp = null;
+        private static AImgInitialise AImgInitialise = null;
+        private static AImgCleanUp AImgCleanUp = null;
         public static AImgGetWhatFormatWillBeWrittenForData AImgGetWhatFormatWillBeWrittenForData = null;
         public static AImgWriteImage AImgWriteImage = null;
 
@@ -169,7 +181,7 @@ namespace ArtomatixImageLoader
         {
             return (_, pos) =>
             {
-                s.Position = pos;   
+                s.Position = pos;
             };
         }
     }

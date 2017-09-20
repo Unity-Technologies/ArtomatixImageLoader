@@ -122,7 +122,7 @@ namespace ArtomatixImageLoaderTests
                         img2.decodeImage(data2);
 
                         for (int i = 0; i < data.Length; i++)
-                            Assert.AreEqual(data [i], data2 [i]);
+                            Assert.AreEqual(data[i], data2[i]);
                     }
                 }
             }
@@ -212,7 +212,6 @@ namespace ArtomatixImageLoaderTests
             });
         }
 
-
         public static void TestWriteIMG<T>(int width, int height, AImgFormat format, AImgFileFormat fileformat, float allowedDelta = 0) where T : struct
         {
             var img = new AImg(fileformat);
@@ -223,13 +222,11 @@ namespace ArtomatixImageLoaderTests
             for (int i = 0; i < data.Length; i++)
             {
                 if (format.bytesPerChannel() == 2)
-                    data [i] = (T)Convert.ChangeType(r.Next(0, ushort.MaxValue), typeof(T));
+                    data[i] = (T)Convert.ChangeType(r.Next(0, ushort.MaxValue), typeof(T));
                 else if (format.bytesPerChannel() > 1)
                     data[i] = (T)Convert.ChangeType(r.Next(0, 255) / 255.0f, typeof(T));
                 else
                     data[i] = (T)Convert.ChangeType(r.Next(0, 255), typeof(T));
-
-
             }
 
             using (var f = new FileStream(getImagesDir() + "/testOut", FileMode.Create))
@@ -245,7 +242,6 @@ namespace ArtomatixImageLoaderTests
             for (int i = 0; i < data.Length; i++)
                 Assert.That(data[i], Is.EqualTo(readBackData[i]).Within(allowedDelta));
 
-
             try
             {
                 Directory.Delete(getImagesDir() + "/testOut");
@@ -253,7 +249,8 @@ namespace ArtomatixImageLoaderTests
             catch { }
         }
 
-        public static void TestICCPrfilePng()
+        [Test]
+        public static void TestICCProfilePng()
         {
             // Read image with colour profile
             using (AImg img = new AImg(File.Open(getImagesDir() + "/png/ICC.png", FileMode.Open)))
@@ -319,7 +316,6 @@ namespace ArtomatixImageLoaderTests
             TestWriteIMG<byte>(128, 128, AImgFormat.RG8U, AImgFileFormat.TGA_IMAGE_FORMAT);
             TestWriteIMG<byte>(128, 128, AImgFormat.R8U, AImgFileFormat.TGA_IMAGE_FORMAT);
         }
-
 
         [Test]
         public static void TestWrite2ChannelPNGs()
