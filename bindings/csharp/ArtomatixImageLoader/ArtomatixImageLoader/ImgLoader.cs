@@ -1,6 +1,7 @@
 ﻿using System.Runtime.InteropServices;
 using System;
 using System.IO;
+using System.Text;
 using System.Runtime.CompilerServices;
 using Stugo.Interop;
 
@@ -17,7 +18,8 @@ namespace ArtomatixImageLoader
     internal delegate IntPtr _AImgGetErrorDetails(IntPtr img);
     internal delegate IntPtr AImgGetAImg(Int32 fileFormat);
     internal delegate void AImgClose(IntPtr img);
-    internal delegate Int32 AImgGetInfo(IntPtr img, out Int32 width, out Int32 height, out Int32 numChannels, out Int32 bytesPerChannel, out Int32 floatOrInt, out Int32 decodedImgFormat);
+    internal delegate Int32 AImgGetInfo(IntPtr img, out Int32 width, out Int32 height, out Int32 numChannels, out Int32 bytesPerChannel, out Int32 floatOrInt, out Int32 decodedImgFormat, out Int32 colorProfileLength);
+    internal delegate Int32 AImgGetColourProfile(IntPtr img, StringBuilder profileName, IntPtr colorProfile, out Int32 colorProfileLength);
     internal delegate Int32 AImgDecodeImage(IntPtr img, IntPtr destBuffer, Int32 forceImageFormat);
     internal delegate void AImgCleanUp();
     internal delegate Int32 AImgGetWhatFormatWillBeWrittenForData(Int32 fileFormat, Int32 inputFormat);
@@ -31,14 +33,13 @@ namespace ArtomatixImageLoader
         out Int32 detectedFileFormat
     );
     internal delegate Int32 AImgWriteImage(
-        IntPtr img, IntPtr data, Int32 width, Int32 height, Int32 inputFormat, 
+        IntPtr img, IntPtr data, Int32 width, Int32 height, Int32 inputFormat, string profileName, IntPtr colorProfile, Int32 colorProfileLength,
         [MarshalAs(UnmanagedType.FunctionPtr)] WriteCallback writeCallback,
         [MarshalAs(UnmanagedType.FunctionPtr)] TellCallback tellCallback,
         [MarshalAs(UnmanagedType.FunctionPtr)] SeekCallback seekCallback, 
         IntPtr callbackData,
         IntPtr encodeOptions
     );
-
 
     internal class ImgLoader
     {
@@ -64,8 +65,9 @@ namespace ArtomatixImageLoader
                 forceStaticConstructorCall = null;
 
             string dllPath = Path.GetFullPath("libAIL.so");
+            var asm = System.Reflection.Assembly.GetAssembly(typeof(ImgLoader));
+            var zipStream = asm.GetManifestResourceStream("ArtomatixImageLoader.embedded_files.binaries.zip");
 
-            var zipStream = System.Reflection.Assembly.GetExecutingAssembly().GetManifestResourceStream("ArtomatixImageLoader.embedded_files.binaries.zip");
             NativeBinaryManager.NativeBinaryManager.ExtractNativeBinary(zipStream, dllPath);
             var loader = UnmanagedModuleLoaderBase.GetLoader(dllPath);
 
@@ -75,6 +77,7 @@ namespace ArtomatixImageLoader
             AImgOpen = (AImgOpen)loader.GetDelegate("AImgOpen", typeof(AImgOpen));
             AImgClose = (AImgClose)loader.GetDelegate("AImgClose", typeof(AImgClose));
             AImgGetInfo = (AImgGetInfo)loader.GetDelegate("AImgGetInfo", typeof(AImgGetInfo));
+            AImgGetColourProfile = (AImgGetColourProfile)loader.GetDelegate("AImgGetColourProfile", typeof(AImgGetColourProfile));
             AImgDecodeImage = (AImgDecodeImage)loader.GetDelegate("AImgDecodeImage", typeof(AImgDecodeImage));
             AImgCleanUp = (AImgCleanUp)loader.GetDelegate("AImgCleanUp", typeof(AImgCleanUp));
             AImgGetWhatFormatWillBeWrittenForData = (AImgGetWhatFormatWillBeWrittenForData)loader.GetDelegate("AImgGetWhatFormatWillBeWrittenForData", typeof(AImgGetWhatFormatWillBeWrittenForData));
@@ -101,6 +104,7 @@ namespace ArtomatixImageLoader
         public static AImgOpen AImgOpen = null;
         public static AImgClose AImgClose = null;
         public static AImgGetInfo AImgGetInfo = null;
+        public static AImgGetColourProfile AImgGetColourProfile = null;
         public static AImgDecodeImage AImgDecodeImage = null;
         static AImgInitialise AImgInitialise = null;
         static AImgCleanUp AImgCleanUp = null;
@@ -165,7 +169,7 @@ namespace ArtomatixImageLoader
         {
             return (_, pos) =>
             {
-                s.Position = pos;
+                s.Position = pos;   
             };
         }
     }

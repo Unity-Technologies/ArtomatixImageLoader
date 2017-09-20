@@ -170,6 +170,7 @@ namespace AImg
                 else
                 {
                     compressedProfile = NULL;
+                    profileName = NULL;
                 }
 
                 return AImgErrorCode::AIMG_SUCCESS;
@@ -201,15 +202,18 @@ namespace AImg
             {
                 if(colourProfile != NULL)
                 {
-                    if(this->profileName != NULL)
-                    {
-                        std::strcpy(profileName, this->profileName);
-                    }
                     if(this->compressedProfile != NULL)
                     {
                         memcpy(colourProfile, this->compressedProfile, this->compressedProfileLen);
                     }
                     *colourProfileLen = this->compressedProfileLen;
+                }
+                if(profileName != NULL)
+                {
+                    if(this->profileName != NULL)
+                    {
+                        std::strcpy(profileName, this->profileName);
+                    }
                 }
 
                 return AImgErrorCode::AIMG_SUCCESS;
@@ -294,7 +298,7 @@ namespace AImg
                 return AImgErrorCode::AIMG_SUCCESS;
             }
 
-            int32_t writeImage(void *data, int32_t width, int32_t height, int32_t inputFormat, char *profileName, uint8_t *colourProfile, uint32_t colourProfileLen, WriteCallback writeCallback, TellCallback tellCallback, SeekCallback seekCallback, void *callbackData, void* encodingOptions)
+            int32_t writeImage(void *data, int32_t width, int32_t height, int32_t inputFormat, const char *profileName, uint8_t *colourProfile, uint32_t colourProfileLen, WriteCallback writeCallback, TellCallback tellCallback, SeekCallback seekCallback, void *callbackData, void* encodingOptions)
             {
                 AIL_UNUSED_PARAM(tellCallback);
                 AIL_UNUSED_PARAM(seekCallback);

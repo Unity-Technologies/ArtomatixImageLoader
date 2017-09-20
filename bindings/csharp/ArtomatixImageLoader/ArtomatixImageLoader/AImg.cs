@@ -27,6 +27,8 @@ namespace ArtomatixImageLoader
         public AImgFloatOrIntType floatOrInt { get; private set; }
         public AImgFileFormat detectedFileFormat { get; private set; }
         public AImgFormat decodedImgFormat { get; private set; }
+        public string colourProfileName { get; private set; }
+        public byte[] colourProfile { get; private set; }
 
         public AImg(AImgFileFormat fmt)
         {
@@ -53,14 +55,23 @@ namespace ArtomatixImageLoader
             Int32 errCode = ImgLoader.AImgOpen(readCallback, tellCallback, seekCallback, IntPtr.Zero, out nativeHandle, out detectedImageFormatTmp);
             AImgException.checkErrorCode(nativeHandle, errCode);
 
-
             detectedFileFormat = (AImgFileFormat)detectedImageFormatTmp;
 
             Int32 floatOrIntTmp = 0;
             Int32 decodedImgFormatTmp = 0;
-            ImgLoader.AImgGetInfo(nativeHandle, out _width, out _height, out _numChannels, out _bytesPerChannel, out floatOrIntTmp, out decodedImgFormatTmp);
+            Int32 colourProfileLen = 0;
+            ImgLoader.AImgGetInfo(nativeHandle, out _width, out _height, out _numChannels, out _bytesPerChannel, out floatOrIntTmp, out decodedImgFormatTmp, out colourProfileLen);
             floatOrInt = (AImgFloatOrIntType)floatOrIntTmp;
             decodedImgFormat = (AImgFormat)decodedImgFormatTmp;
+
+            colourProfile = new byte[colourProfileLen];
+            GCHandle pinnedArray = GCHandle.Alloc(colourProfile, GCHandleType.Pinned);
+            IntPtr pointer = pinnedArray.AddrOfPinnedObject();
+            System.Text.StringBuilder _colourProfileName =  new System.Text.StringBuilder(30);
+            ImgLoader.AImgGetColourProfile(nativeHandle, _colourProfileName, pointer, out colourProfileLen);
+            colourProfileName = _colourProfileName.ToString();
+            // Console.WriteLine("colourProfileLen: " + colourProfileLen);
+            // Console.WriteLine("colourProfileName: " + _colourProfileName);
         }
 
         /// <summary>
@@ -99,6 +110,9 @@ namespace ArtomatixImageLoader
             GCHandle pinnedArray = GCHandle.Alloc(data, GCHandleType.Pinned);
             IntPtr pointer = pinnedArray.AddrOfPinnedObject();
 
+            pinnedArray = GCHandle.Alloc(colourProfile, GCHandleType.Pinned);
+            IntPtr cp_pointer = pinnedArray.AddrOfPinnedObject();
+
 
             GCHandle encodeOptionsHandle = default(GCHandle);
             IntPtr encodeOptionsPtr = IntPtr.Zero;
@@ -111,7 +125,9 @@ namespace ArtomatixImageLoader
             }
             try
             {
-                Int32 errCode = ImgLoader.AImgWriteImage(nativeHandle, pointer, width, height, (Int32)format, writeCallback, tellCallback, seekCallback, IntPtr.Zero, encodeOptionsPtr);
+                int len = colourProfile != null ? colourProfile.Length : 0;
+                Int32 errCode = ImgLoader.AImgWriteImage(nativeHandle, pointer, width, height, (Int32)format, colourProfileName, cp_pointer, len,
+                    writeCallback, tellCallback, seekCallback, IntPtr.Zero, encodeOptionsPtr);
                 AImgException.checkErrorCode(nativeHandle, errCode);
             }
             finally

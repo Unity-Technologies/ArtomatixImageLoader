@@ -17,7 +17,7 @@ namespace AImg
             virtual int32_t getColourProfile(char* profileName, uint8_t* colourProfile, uint32_t *colourProfileLen) = 0;
             virtual int32_t decodeImage(void* destBuffer, int32_t forceImageFormat) = 0;
 
-            virtual int32_t writeImage(void* data, int32_t width, int32_t height, int32_t inputFormat, char *profileName, uint8_t *colourProfile, uint32_t colourProfileLen,
+            virtual int32_t writeImage(void* data, int32_t width, int32_t height, int32_t inputFormat, const char *profileName, uint8_t *colourProfile, uint32_t colourProfileLen,
                                        WriteCallback writeCallback, TellCallback tellCallback, SeekCallback seekCallback, void* callbackData, void* encodingOptions) = 0;
 
             const char* getErrorDetails()

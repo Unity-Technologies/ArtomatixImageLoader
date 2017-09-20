@@ -136,7 +136,7 @@ AImgHandle AImgGetAImg(int32_t fileFormat)
     return loaders[fileFormat]->getAImg();
 }
 
-int32_t AImgWriteImage(AImgHandle imgH, void* data, int32_t width, int32_t height, int32_t inputFormat, char *profileName, uint8_t *colourProfile, uint32_t colourProfileLen,
+int32_t AImgWriteImage(AImgHandle imgH, void* data, int32_t width, int32_t height, int32_t inputFormat, const char *profileName, uint8_t *colourProfile, uint32_t colourProfileLen,
                    WriteCallback writeCallback, TellCallback tellCallback, SeekCallback seekCallback, void* callbackData, void* encodingOptions)
 {
     AImg::AImgBase* img = (AImg::AImgBase*)imgH;
@@ -147,7 +147,6 @@ int32_t AImgWriteImage(AImgHandle imgH, void* data, int32_t width, int32_t heigh
 
     return img->writeImage(data, width, height, inputFormat, profileName, colourProfile, colourProfileLen, writeCallback, tellCallback, seekCallback, callbackData, encodingOptions);
 }
-
 
 void convertToRGBA32F(void* src, std::vector<float>& dest, size_t i, int32_t inFormat)
 {

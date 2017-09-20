@@ -36,6 +36,8 @@ namespace ArtomatixImageLoaderTests
                 Assert.AreEqual(AImgFloatOrIntType.FITYPE_FLOAT, img.floatOrInt);
                 Assert.AreEqual(AImgFileFormat.EXR_IMAGE_FORMAT, img.detectedFileFormat);
                 Assert.AreEqual(AImgFormat.RGB32F, img.decodedImgFormat);
+                Assert.AreEqual(0, img.colourProfile.Length);
+                Assert.AreEqual("no_profile", img.colourProfileName);
             }
         }
 
@@ -233,9 +235,6 @@ namespace ArtomatixImageLoaderTests
             using (var f = new FileStream(getImagesDir() + "/testOut", FileMode.Create))
                 img.writeImage<T>(data, width, height, format, f);
 
-
-
-
             T[] readBackData = null;
             using (AImg f = new AImg(new FileStream(getImagesDir() + "/testOut", FileMode.Open)))
             {
@@ -254,6 +253,38 @@ namespace ArtomatixImageLoaderTests
             catch { }
         }
 
+        public static void TestICCPrfilePng()
+        {
+            // Read image with colour profile
+            using (AImg img = new AImg(File.Open(getImagesDir() + "/png/ICC.png", FileMode.Open)))
+            {
+                float[] data = new float[img.width * img.height * img.decodedImgFormat.numChannels()];
+                // Decode image
+                img.decodeImage(data);
+
+                // Write image with colour profile
+                using (var dataStream = File.Open(getImagesDir() + "/png/ICC_out.png", FileMode.Create))
+                {
+                    img.writeImage(data, img.width, img.height, img.decodedImgFormat, dataStream);
+                    dataStream.Close();
+
+                    // Read the image back
+                    using (AImg img2 = new AImg(File.Open(getImagesDir() + "/png/ICC_out.png", FileMode.Open)))
+                    {
+                        Assert.AreEqual(img.colourProfileName, img2.colourProfileName);
+                        Assert.AreEqual(img.colourProfile.Length, img2.colourProfile.Length);
+                        for (int i = 0; i < img.colourProfile.Length; i++)
+                            Assert.AreEqual(img.colourProfile[i], img2.colourProfile[i]);
+                    }
+                }
+            }
+
+            try
+            {
+                File.Delete(getImagesDir() + "/png/ICC_out.png");
+            }
+            catch { }
+        }
 
         [Test]
         public static void TestWriteTiffs()

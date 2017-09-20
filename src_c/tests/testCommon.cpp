@@ -145,7 +145,7 @@ bool compareForceImageFormat(const std::string& path)
     return true;
 }
 
-void writeToFile(const std::string& path, int32_t width, int32_t height, void* data, int32_t inputFormat, int32_t fileFormat, char *profileName, uint8_t *colourProfile, uint32_t colourProfileLen)
+void writeToFile(const std::string& path, int32_t width, int32_t height, void* data, int32_t inputFormat, int32_t fileFormat, const char *profileName, uint8_t *colourProfile, uint32_t colourProfileLen)
 {
     ReadCallback readCallback = NULL;
     WriteCallback writeCallback = NULL;

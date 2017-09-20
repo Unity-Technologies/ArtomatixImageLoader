@@ -246,8 +246,11 @@ class TiffFile : public AImgBase
     {
         if(colourProfile != NULL)
         {
-            std::strcpy(profileName, "no_profile");
             *colourProfileLen = 0;
+        }        
+        if(profileName != NULL)
+        {
+            std::strcpy(profileName, "no_profile");
         }
 
         return AImgErrorCode::AIMG_SUCCESS;
@@ -531,7 +534,7 @@ class TiffFile : public AImgBase
         return retval;
     }
 
-    int32_t writeImage(void *data, int32_t width, int32_t height, int32_t inputFormat, char *profileName, uint8_t *colourProfile, uint32_t colourProfileLen,
+    int32_t writeImage(void *data, int32_t width, int32_t height, int32_t inputFormat, const char *profileName, uint8_t *colourProfile, uint32_t colourProfileLen,
                         WriteCallback writeCallback, TellCallback tellCallback, SeekCallback seekCallback, void *callbackData, void *encodingOptions)
     {
         AIL_UNUSED_PARAM(encodingOptions);
