@@ -212,7 +212,8 @@ namespace ArtomatixImageLoaderTests
             });
         }
 
-        public static void TestWriteIMG<T>(int width, int height, AImgFormat format, AImgFileFormat fileformat, float allowedDelta = 0) where T : struct
+
+        public static void TestWriteIMG<T>(int width, int height, AImgFormat format, AImgFileFormat fileformat, float allowedDelta = 0, bool deleteAfterwards = true) where T : struct
         {
             var img = new AImg(fileformat);
             T[] data = new T[width * height * format.numChannels()];
@@ -242,11 +243,15 @@ namespace ArtomatixImageLoaderTests
             for (int i = 0; i < data.Length; i++)
                 Assert.That(data[i], Is.EqualTo(readBackData[i]).Within(allowedDelta));
 
-            try
+
+            if (deleteAfterwards)
             {
-                Directory.Delete(getImagesDir() + "/testOut");
+                try
+                {
+                    Directory.Delete(getImagesDir() + "/testOut");
+                }
+                catch { }
             }
-            catch { }
         }
 
         [Test]
@@ -290,6 +295,7 @@ namespace ArtomatixImageLoaderTests
             TestWriteIMG<ushort>(128, 128, AImgFormat.RGBA16F, AImgFileFormat.TIFF_IMAGE_FORMAT);
             TestWriteIMG<byte>(128, 128, AImgFormat.RGBA8U, AImgFileFormat.TIFF_IMAGE_FORMAT);
             TestWriteIMG<ushort>(128, 128, AImgFormat.RGBA16U, AImgFileFormat.TIFF_IMAGE_FORMAT);
+            TestWriteIMG<ushort>(128, 128, AImgFormat.R16U, AImgFileFormat.TIFF_IMAGE_FORMAT);
         }
 
         [Test]

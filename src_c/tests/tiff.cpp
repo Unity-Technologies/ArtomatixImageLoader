@@ -9,9 +9,9 @@
 
 bool compareTiffToPng(const std::string& name, bool convertSrgb = false)
 {
-    #ifndef HAVE_PNG
-        #error "this test needs png loading enabled"
-    #endif
+#ifndef HAVE_PNG
+#error "this test needs png loading enabled"
+#endif
 
     auto pngData = readFile<uint8_t>(getImagesDir() + "/tiff/8_bit_png.png");
 
@@ -25,7 +25,7 @@ bool compareTiffToPng(const std::string& name, bool convertSrgb = false)
 
     AImgHandle img = NULL;
     int32_t error = AImgOpen(readCallback, tellCallback, seekCallback, callbackData, &img, NULL);
-    if(error)
+    if (error)
         return false;
 
     int32_t pngWidth;
@@ -38,10 +38,10 @@ bool compareTiffToPng(const std::string& name, bool convertSrgb = false)
     if(error)
         return false;
 
-    std::vector<uint8_t> pngImgData(pngWidth*pngHeight*4, 78);
+    std::vector<uint8_t> pngImgData(pngWidth*pngHeight * 4, 78);
 
     error = AImgDecodeImage(img, &pngImgData[0], AImgFormat::RGBA8U);
-    if(error)
+    if (error)
         return false;
 
     AImgClose(img);
@@ -50,13 +50,12 @@ bool compareTiffToPng(const std::string& name, bool convertSrgb = false)
 
     /////////////////
 
-
     auto tiffData = readFile<uint8_t>(getImagesDir() + "/tiff/" + name);
 
     AIGetSimpleMemoryBufferCallbacks(&readCallback, &writeCallback, &tellCallback, &seekCallback, &callbackData, &tiffData[0], tiffData.size());
 
     error = AImgOpen(readCallback, tellCallback, seekCallback, callbackData, &img, NULL);
-    if(error)
+    if (error)
         return false;
 
     int32_t tiffWidth;
@@ -65,35 +64,36 @@ bool compareTiffToPng(const std::string& name, bool convertSrgb = false)
     int32_t tiffBytesPerChannel;
     int32_t tiffFloatOrInt;
     int32_t tiffImgFmt;
+  
     error = AImgGetInfo(img, &tiffWidth, &tiffHeight, &tiffNumChannels, &tiffBytesPerChannel, &tiffFloatOrInt, &tiffImgFmt, NULL);
     if(error)
         return false;
 
-    if(tiffWidth != pngWidth || tiffHeight != pngHeight)
+    if (tiffWidth != pngWidth || tiffHeight != pngHeight)
         return false;
 
-    std::vector<uint8_t> tiffImgData(tiffWidth*tiffHeight*4, 78);
+    std::vector<uint8_t> tiffImgData(tiffWidth*tiffHeight * 4, 78);
 
     error = AImgDecodeImage(img, &tiffImgData[0], AImgFormat::RGBA8U);
-    if(error)
+    if (error)
         return false;
 
     AImgClose(img);
     img = NULL;
     AIDestroySimpleMemoryBufferCallbacks(readCallback, writeCallback, tellCallback, seekCallback, callbackData);
 
-    for(int32_t y = 0; y < pngHeight; y++)
+    for (int32_t y = 0; y < pngHeight; y++)
     {
-        for(int32_t x = 0; x < pngWidth; x++)
+        for (int32_t x = 0; x < pngWidth; x++)
         {
-            uint8_t pngR = pngImgData[(x + y*pngWidth)*4 + 0];
-            uint8_t pngG = pngImgData[(x + y*pngWidth)*4 + 1];
-            uint8_t pngB = pngImgData[(x + y*pngWidth)*4 + 2];
-            uint8_t pngA = pngImgData[(x + y*pngWidth)*4 + 3];
+            uint8_t pngR = pngImgData[(x + y*pngWidth) * 4 + 0];
+            uint8_t pngG = pngImgData[(x + y*pngWidth) * 4 + 1];
+            uint8_t pngB = pngImgData[(x + y*pngWidth) * 4 + 2];
+            uint8_t pngA = pngImgData[(x + y*pngWidth) * 4 + 3];
 
             // Test files were written with ps, the int files, and the baseline png that we compare to are written
             // in srgb. The float files, however, are written as linear colour. So, we need to convert one to the other before we compare.
-            if(convertSrgb)
+            if (convertSrgb)
             {
                 float f;
                 f = pngR / 255.0f; pngR = std::pow(f, 2.2f) * 255.0f;
@@ -102,23 +102,20 @@ bool compareTiffToPng(const std::string& name, bool convertSrgb = false)
                 f = pngA / 255.0f; pngA = std::pow(f, 2.2f) * 255.0f;
             }
 
-            uint8_t tiffR = tiffImgData[(x + y*pngWidth)*4 + 0];
-            uint8_t tiffG = tiffImgData[(x + y*pngWidth)*4 + 1];
-            uint8_t tiffB = tiffImgData[(x + y*pngWidth)*4 + 2];
-            uint8_t tiffA = tiffImgData[(x + y*pngWidth)*4 + 3];
-
+            uint8_t tiffR = tiffImgData[(x + y*pngWidth) * 4 + 0];
+            uint8_t tiffG = tiffImgData[(x + y*pngWidth) * 4 + 1];
+            uint8_t tiffB = tiffImgData[(x + y*pngWidth) * 4 + 2];
+            uint8_t tiffA = tiffImgData[(x + y*pngWidth) * 4 + 3];
 
             int32_t diffR = std::abs(((int32_t)pngR) - ((int32_t)tiffR));
             int32_t diffG = std::abs(((int32_t)pngG) - ((int32_t)tiffG));
             int32_t diffB = std::abs(((int32_t)pngB) - ((int32_t)tiffB));
             int32_t diffA = std::abs(((int32_t)pngA) - ((int32_t)tiffA));
 
-
             int32_t thresh = 3;
-            if(diffR > thresh || diffG > thresh || diffB > thresh || diffA > thresh)
+            if (diffR > thresh || diffG > thresh || diffB > thresh || diffA > thresh)
                 return false;
         }
-
     }
 
     return true;
@@ -139,13 +136,13 @@ bool testTiffWrite(int32_t testFormat)
     AImgHandle img = NULL;
     int32_t error = AImgOpen(readCallback, tellCallback, seekCallback, callbackData, &img, NULL);
 
-
     int32_t pngWidth;
     int32_t pngHeight;
     int32_t pngNumChannels;
     int32_t pngBytesPerChannel;
     int32_t pngFloatOrInt;
     int32_t pngImgFmt;
+
     error = AImgGetInfo(img, &pngWidth, &pngHeight, &pngNumChannels, &pngBytesPerChannel, &pngFloatOrInt, &pngImgFmt, NULL);
     if(error)
         return false;
@@ -156,21 +153,21 @@ bool testTiffWrite(int32_t testFormat)
     std::vector<uint8_t> pngImgData(pngWidth*pngHeight*numChannels*bytesPerChannel, 78);
 
     error = AImgDecodeImage(img, &pngImgData[0], testFormat);
-    if(error)
+    if (error)
         return false;
 
     AImgClose(img);
     img = NULL;
     AIDestroySimpleMemoryBufferCallbacks(readCallback, writeCallback, tellCallback, seekCallback, callbackData);
 
-
     ///////////
 
-
-    std::vector<uint8_t> fileData(pngWidth*pngHeight*bytesPerChannel*numChannels*10, 79); // 10x the raw data size, should be well enough space
+    std::vector<uint8_t> fileData(pngWidth*pngHeight*bytesPerChannel*numChannels * 10, 79); // 10x the raw data size, should be well enough space
     AIGetSimpleMemoryBufferCallbacks(&readCallback, &writeCallback, &tellCallback, &seekCallback, &callbackData, &fileData[0], fileData.size());
 
     AImgHandle wImg = AImgGetAImg(AImgFileFormat::TIFF_IMAGE_FORMAT);
+
+  
     error = AImgWriteImage(wImg, &pngImgData[0], pngWidth, pngHeight, testFormat, NULL, NULL, 0, writeCallback, tellCallback, seekCallback, callbackData, NULL);
     if(error)
         return false;
@@ -178,29 +175,30 @@ bool testTiffWrite(int32_t testFormat)
     seekCallback(callbackData, 0);
 
     error = AImgOpen(readCallback, tellCallback, seekCallback, callbackData, &img, NULL);
-    if(error)
+    if (error)
         return false;
 
     int32_t tiffWidth, tiffHeight, tiffNumChannels, tiffBytesPerChannel, tiffFloatOrInt, tiffImgFmt;
+
     error = AImgGetInfo(img, &tiffWidth, &tiffHeight, &tiffNumChannels, &tiffBytesPerChannel, &tiffFloatOrInt, &tiffImgFmt, NULL);
     if(error)
         return false;
 
-    if(tiffImgFmt != testFormat)
+    if (tiffImgFmt != testFormat)
         return false;
 
-    if(tiffWidth != pngWidth || tiffHeight != pngHeight)
+    if (tiffWidth != pngWidth || tiffHeight != pngHeight)
         return false;
 
     std::vector<uint8_t> tiffImgData(pngWidth*pngHeight*numChannels*bytesPerChannel, 78);
 
     error = AImgDecodeImage(img, &tiffImgData[0], AImgFormat::INVALID_FORMAT);
-    if(error)
+    if (error)
         return false;
 
-    for(size_t i = 0; i < tiffImgData.size(); i++)
+    for (size_t i = 0; i < tiffImgData.size(); i++)
     {
-        if(tiffImgData[i] != pngImgData[i])
+        if (tiffImgData[i] != pngImgData[i])
             return false;
     }
 
