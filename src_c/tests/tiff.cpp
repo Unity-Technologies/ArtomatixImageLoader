@@ -34,8 +34,8 @@ bool compareTiffToPng(const std::string& name, bool convertSrgb = false)
     int32_t pngBytesPerChannel;
     int32_t pngFloatOrInt;
     int32_t pngImgFmt;
-    error = AImgGetInfo(img, &pngWidth, &pngHeight, &pngNumChannels, &pngBytesPerChannel, &pngFloatOrInt, &pngImgFmt);
-    if (error)
+    error = AImgGetInfo(img, &pngWidth, &pngHeight, &pngNumChannels, &pngBytesPerChannel, &pngFloatOrInt, &pngImgFmt, NULL);
+    if(error)
         return false;
 
     std::vector<uint8_t> pngImgData(pngWidth*pngHeight * 4, 78);
@@ -64,8 +64,9 @@ bool compareTiffToPng(const std::string& name, bool convertSrgb = false)
     int32_t tiffBytesPerChannel;
     int32_t tiffFloatOrInt;
     int32_t tiffImgFmt;
-    error = AImgGetInfo(img, &tiffWidth, &tiffHeight, &tiffNumChannels, &tiffBytesPerChannel, &tiffFloatOrInt, &tiffImgFmt);
-    if (error)
+  
+    error = AImgGetInfo(img, &tiffWidth, &tiffHeight, &tiffNumChannels, &tiffBytesPerChannel, &tiffFloatOrInt, &tiffImgFmt, NULL);
+    if(error)
         return false;
 
     if (tiffWidth != pngWidth || tiffHeight != pngHeight)
@@ -141,8 +142,9 @@ bool testTiffWrite(int32_t testFormat)
     int32_t pngBytesPerChannel;
     int32_t pngFloatOrInt;
     int32_t pngImgFmt;
-    error = AImgGetInfo(img, &pngWidth, &pngHeight, &pngNumChannels, &pngBytesPerChannel, &pngFloatOrInt, &pngImgFmt);
-    if (error)
+
+    error = AImgGetInfo(img, &pngWidth, &pngHeight, &pngNumChannels, &pngBytesPerChannel, &pngFloatOrInt, &pngImgFmt, NULL);
+    if(error)
         return false;
 
     int32_t numChannels, bytesPerChannel, floatOrInt;
@@ -164,8 +166,10 @@ bool testTiffWrite(int32_t testFormat)
     AIGetSimpleMemoryBufferCallbacks(&readCallback, &writeCallback, &tellCallback, &seekCallback, &callbackData, &fileData[0], fileData.size());
 
     AImgHandle wImg = AImgGetAImg(AImgFileFormat::TIFF_IMAGE_FORMAT);
-    error = AImgWriteImage(wImg, &pngImgData[0], pngWidth, pngHeight, testFormat, writeCallback, tellCallback, seekCallback, callbackData, NULL);
-    if (error)
+
+  
+    error = AImgWriteImage(wImg, &pngImgData[0], pngWidth, pngHeight, testFormat, NULL, NULL, 0, writeCallback, tellCallback, seekCallback, callbackData, NULL);
+    if(error)
         return false;
 
     seekCallback(callbackData, 0);
@@ -175,8 +179,9 @@ bool testTiffWrite(int32_t testFormat)
         return false;
 
     int32_t tiffWidth, tiffHeight, tiffNumChannels, tiffBytesPerChannel, tiffFloatOrInt, tiffImgFmt;
-    error = AImgGetInfo(img, &tiffWidth, &tiffHeight, &tiffNumChannels, &tiffBytesPerChannel, &tiffFloatOrInt, &tiffImgFmt);
-    if (error)
+
+    error = AImgGetInfo(img, &tiffWidth, &tiffHeight, &tiffNumChannels, &tiffBytesPerChannel, &tiffFloatOrInt, &tiffImgFmt, NULL);
+    if(error)
         return false;
 
     if (tiffImgFmt != testFormat)

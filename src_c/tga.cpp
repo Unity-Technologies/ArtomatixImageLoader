@@ -4,6 +4,7 @@
 #include "AIL_internal.h"
 #include <vector>
 #include <string.h>
+#include <cstring>
 #include <setjmp.h>
 #define STBI_ONLY_TGA
 #define STB_IMAGE_IMPLEMENTATION
@@ -118,15 +119,33 @@ namespace AImg
                 }
             }
 
-            virtual int32_t getImageInfo(int32_t *width, int32_t *height, int32_t *numChannels, int32_t *bytesPerChannel, int32_t *floatOrInt, int32_t *decodedImgFormat)
+            virtual int32_t getImageInfo(int32_t *width, int32_t *height, int32_t *numChannels, int32_t *bytesPerChannel, int32_t *floatOrInt, int32_t *decodedImgFormat, uint32_t *colourProfileLen)
             {
                 *width = this->width;
                 *height = this->height;
                 *numChannels = this->numChannels;
+                if(colourProfileLen != NULL)
+                {
+                    *colourProfileLen = 0;
+                }
 
                 *bytesPerChannel = 1;
                 *floatOrInt = AImgFloatOrIntType::FITYPE_INT;
                 *decodedImgFormat = getDecodeFormat();
+
+                return AImgErrorCode::AIMG_SUCCESS;
+            }
+            
+            virtual int32_t getColourProfile(char *profileName, uint8_t *colourProfile, uint32_t *colourProfileLen)
+            {
+                if(colourProfile != NULL)
+                {
+                    *colourProfileLen = 0;
+                }        
+                if(profileName != NULL)
+                {
+                    std::strcpy(profileName, "no_profile");
+                }
 
                 return AImgErrorCode::AIMG_SUCCESS;
             }
@@ -190,7 +209,8 @@ namespace AImg
                 return AImgErrorCode::AIMG_SUCCESS;
             }
 
-            virtual int32_t writeImage(void *data, int32_t width, int32_t height, int32_t inputFormat, WriteCallback writeCallback, TellCallback tellCallback, SeekCallback seekCallback, void *callbackData, void* encodingOptions)
+            virtual int32_t writeImage(void *data, int32_t width, int32_t height, int32_t inputFormat, const char *profileName, uint8_t *colourProfile, uint32_t colourProfileLen,
+                                    WriteCallback writeCallback, TellCallback tellCallback, SeekCallback seekCallback, void *callbackData, void* encodingOptions)
             {
                 AIL_UNUSED_PARAM(encodingOptions);
 

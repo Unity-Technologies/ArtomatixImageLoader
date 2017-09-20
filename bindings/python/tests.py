@@ -15,6 +15,18 @@ class TestAImg(unittest.TestCase):
         self.assertEqual(img.width, 64)
         self.assertEqual(img.height, 32)
         self.assertEqual(img.decodedImgFormat, AImg.AImgFormats["RGB32F"])
+        self.assertEqual(img.colourProfile, None)
+        self.assertEqual(img.profileName, "no_profile")
+
+    def test_read_icc(self):
+        img = AImg.AImg(imagesDir + "/png/ICC.png")
+
+        self.assertEqual(img.detectedFileFormat, AImg.AImgFileFormats["PNG_IMAGE_FORMAT"])
+        self.assertEqual(img.width, 400)
+        self.assertEqual(img.height, 400)
+        self.assertEqual(img.decodedImgFormat, AImg.AImgFormats["RGB8U"])
+        self.assertEqual(len(img.colourProfile), 560)
+        self.assertEqual(img.profileName, "ICC profile")
 
     def test_read_exr(self):
         img = AImg.AImg(imagesDir + "/exr/grad_32.exr")
@@ -32,8 +44,8 @@ class TestAImg(unittest.TestCase):
         
         outFile = io.BytesIO()
 
-        AImg.write(outFile, decoded, AImg.AImgFileFormats["EXR_IMAGE_FORMAT"])
-
+        AImg.write(outFile, decoded, AImg.AImgFileFormats["EXR_IMAGE_FORMAT"], img.profileName, img.colourProfile)
+        
         outFile.seek(0)
         img2 = AImg.AImg(outFile)
 
@@ -50,7 +62,7 @@ class TestAImg(unittest.TestCase):
         
         outFile = io.BytesIO()
 
-        AImg.write(outFile, decoded, AImg.AImgFileFormats["TGA_IMAGE_FORMAT"])
+        AImg.write(outFile, decoded, AImg.AImgFileFormats["TGA_IMAGE_FORMAT"], img.profileName, img.colourProfile)
 
         outFile.seek(0)
         img2 = AImg.AImg(outFile)
@@ -97,7 +109,7 @@ class TestAImg(unittest.TestCase):
         outFile = io.BytesIO()
         
         options = AImg.PngEncodingOptions(0, AImg.PngEncodingOptions.PNG_NO_FILTERS)
-        AImg.write(outFile, decoded, AImg.AImgFileFormats["PNG_IMAGE_FORMAT"], encodeOptions=options)
+        AImg.write(outFile, decoded, AImg.AImgFileFormats["PNG_IMAGE_FORMAT"], img.profileName, img.colourProfile, encodeOptions=options)
 
         outFile.seek(0)
         img2 = AImg.AImg(outFile)
@@ -110,6 +122,25 @@ class TestAImg(unittest.TestCase):
                     self.assertEqual(decoded2[y][x][c], decoded[y][x][c])
 
 
+    def test_icc_png(self):
+        # Read image with colour profile
+        img = AImg.AImg(imagesDir + "/png/ICC.png")
+        # Decode image
+        decoded = img.decode()
+        
+        outFile = open(imagesDir + "/png/ICC_out.png", mode='wb');
+
+        # Write image with colour profile
+        AImg.write(outFile, decoded, AImg.AImgFileFormats["PNG_IMAGE_FORMAT"], img.profileName, img.colourProfile)
+        outFile.close()
+
+        # Read the image back
+        img2 = AImg.AImg(imagesDir + "/png/ICC_out.png")
+
+        self.assertEqual(img.profileName, img2.profileName)
+        self.assertEqual(len(img.colourProfile), len(img2.colourProfile))
+        for i in range(len(img.colourProfile)):
+            self.assertEqual(img.colourProfile[i], img2.colourProfile[i])
 
 if __name__ == "__main__":
     unittest.main()

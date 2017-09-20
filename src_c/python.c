@@ -202,13 +202,34 @@ static PyObject* pyail_getInfo(PyObject* self, PyObject* args)
     if((callbackData = PyCapsule_GetPointer(callbackDataCapsule, NULL)) == NULL)
         return NULL;
 
-    int32_t width, height, numChannels, bytesPerChannel, floatOrInt, decodedImgFormat;
+    int32_t width, height, numChannels, bytesPerChannel, floatOrInt, decodedImgFormat, colorProfileLen;
 
     callbackData->threadState = PyEval_SaveThread();
-    int err = AImgGetInfo(img, &width, &height, &numChannels, &bytesPerChannel, &floatOrInt, &decodedImgFormat);
+    int err = AImgGetInfo(img, &width, &height, &numChannels, &bytesPerChannel, &floatOrInt, &decodedImgFormat, &colorProfileLen);
     PyEval_RestoreThread(callbackData->threadState);
 
-    return Py_BuildValue("(iiiiiii)", err, width, height, numChannels, bytesPerChannel, floatOrInt, decodedImgFormat);
+    return Py_BuildValue("(iiiiiiii)", err, width, height, numChannels, bytesPerChannel, floatOrInt, decodedImgFormat, colorProfileLen);
+}
+
+static PyObject* pyail_getColorProfile(PyObject* self, PyObject* args)
+{
+    PyObject* capsule;
+    PyArrayObject* colourProfileObj;
+    int colourProfileLen;
+    if (!PyArg_ParseTuple(args, "OOI", &capsule, &colourProfileObj, &colourProfileLen))
+        return NULL;
+    
+    AImgHandle* img;
+    if((img = PyCapsule_GetPointer(capsule, NULL)) == NULL)
+        return NULL;
+    
+    char profileName[30];
+    void* colourProfile = colourProfileLen <= 0 ? NULL : PyArray_DATA(colourProfileObj);
+    int err = 0;
+    
+    err = AImgGetColourProfile(img, profileName, colourProfile, &colourProfileLen);
+    
+    return Py_BuildValue("(isi)", err, profileName, colourProfileLen);
 }
 
 static PyObject* pyail_decode(PyObject* self, PyObject* args)
@@ -245,13 +266,18 @@ static PyObject* pyail_write(PyObject* self, PyObject* args)
     PyObject* fileLikeObj;
     int width, height;
     int inputFormat;
+    const char* profileName;
+    PyArrayObject* colourProfileObj;
+    int colourProfileLen;
     PyObject* encodingOptionsTuple;
-    if (!PyArg_ParseTuple(args, "iOOiiiO", &fileFormat, &sourceArrayObj, &fileLikeObj, &width, &height, &inputFormat, &encodingOptionsTuple))
+    if (!PyArg_ParseTuple(args, "iOOiiisOIO", &fileFormat, &sourceArrayObj, &fileLikeObj, &width, &height, &inputFormat, &profileName, &colourProfileObj, &colourProfileLen, &encodingOptionsTuple))
         return NULL;
 
     PyAIL_callback_data* callbackData;
     if((callbackData = pyail_getCallbackData(fileLikeObj)) == NULL)
         return NULL;
+    
+    void* colourProfile = colourProfileLen <= 0 ? NULL : PyArray_DATA(colourProfileObj);
 
     void* encodingOptions = NULL;
 
@@ -262,7 +288,7 @@ static PyObject* pyail_write(PyObject* self, PyObject* args)
 
     callbackData->threadState = PyEval_SaveThread();
 
-    int err = AImgWriteImage(wImg, PyArray_DATA(sourceArrayObj), width, height, inputFormat, pyail_WriteCallback, pyail_TellCallback, pyail_SeekCallback, callbackData, encodingOptions);
+    int err = AImgWriteImage(wImg, PyArray_DATA(sourceArrayObj), width, height, inputFormat, profileName, colourProfile, colourProfileLen, pyail_WriteCallback, pyail_TellCallback, pyail_SeekCallback, callbackData, encodingOptions);
     PyEval_RestoreThread(callbackData->threadState);
 
     pyail_destroyCallbackData(callbackData);
@@ -294,6 +320,7 @@ static PyMethodDef module_methods[] =
     {"getCallbackDataFromFileLikeObject", pyail_getCallbackDataFromFileLikeObject, METH_VARARGS, NULL},
     {"open", pyail_open, METH_VARARGS, NULL},
     {"getInfo", pyail_getInfo, METH_VARARGS, NULL},
+    {"getColourProfile", pyail_getColorProfile, METH_VARARGS, NULL},
     {"decode", pyail_decode, METH_VARARGS, NULL},
     {"write", pyail_write, METH_VARARGS, NULL},
     {"getErrorDetails", pyail_getErrorDetails, METH_VARARGS, NULL},

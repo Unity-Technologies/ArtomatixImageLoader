@@ -26,12 +26,17 @@ class AImg(object):
 
         self.detectedFileFormat = enums.AImgFileFormats[detectedFileFormat]
 
-        errCode, self.width, self.height, rawNumChannels, rawBytesPerChannel, rawFloatOrInt, decodedImgFormat = native.getInfo(self._imgCapsule, self._callbackData)
+        errCode, self.width, self.height, rawNumChannels, rawBytesPerChannel, rawFloatOrInt, decodedImgFormat, colourProfileLen = native.getInfo(self._imgCapsule, self._callbackData)
         AImgExceptions.checkErrorCode(self._imgCapsule, errCode)
         self.rawFileInfo = RawFileInfo(rawNumChannels, rawBytesPerChannel, rawFloatOrInt)
         self.decodedImgFormat = enums.AImgFormats[decodedImgFormat]
-        
         self._decodeDone = False
+
+        self.colourProfile = None
+        if colourProfileLen != 0:
+            self.colourProfile = np.zeros(colourProfileLen, dtype = np.int8, order="C")
+        
+        errCode, self.profileName, colourProfileLen = native.getColourProfile(self._imgCapsule, self.colourProfile, colourProfileLen)
 
     def decode(self, destBuffer=None, forceImageFormat=enums.AImgFormats["INVALID_FORMAT"]):
         if self._decodeDone:
@@ -69,7 +74,7 @@ class AImg(object):
         return destBuffer
 
 
-def write(io_or_path, data, fileFormat, encodeOptions=None):
+def write(io_or_path, data, fileFormat, profileName, colourProfile, encodeOptions=None):
     if not (data.flags.c_contiguous and data.flags.aligned):
             raise ValueError("data does not meet flags requirements (c_contiguous & aligned)")
 
@@ -86,6 +91,10 @@ def write(io_or_path, data, fileFormat, encodeOptions=None):
     encodeOptionsTuple = ()
     if encodeOptions:
         encodeOptionsTuple = (encodeOptions,)
+    
+    colourProfileLen = 0
+    if colourProfile is not None:
+        colourProfileLen = len(colourProfile)
 
-    errCode, imgCapsule = native.write(fileFormat.val, data, stream, width, height, fmt.val, encodeOptionsTuple)
+    errCode, imgCapsule = native.write(fileFormat.val, data, stream, width, height, fmt.val, profileName, colourProfile, colourProfileLen, encodeOptionsTuple)
     AImgExceptions.checkErrorCode(imgCapsule, errCode)

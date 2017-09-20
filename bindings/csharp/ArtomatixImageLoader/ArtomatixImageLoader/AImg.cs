@@ -7,18 +7,18 @@ namespace ArtomatixImageLoader
 {
     public class AImg : IDisposable
     {
-        IntPtr nativeHandle = IntPtr.Zero;
-        Stream stream;
-        bool doDisposeStream;
-        bool disposed = false;
+        private IntPtr nativeHandle = IntPtr.Zero;
+        private Stream stream;
+        private bool doDisposeStream;
+        private bool disposed = false;
 
-        ReadCallback readCallback;
-        TellCallback tellCallback;
-        SeekCallback seekCallback;
+        private ReadCallback readCallback;
+        private TellCallback tellCallback;
+        private SeekCallback seekCallback;
 
-        Int32 _width, _height;
-        Int32 _numChannels;
-        Int32 _bytesPerChannel;
+        private Int32 _width, _height;
+        private Int32 _numChannels;
+        private Int32 _bytesPerChannel;
 
         public int width { get { return _width; } }
         public int height { get { return _height; } }
@@ -27,6 +27,8 @@ namespace ArtomatixImageLoader
         public AImgFloatOrIntType floatOrInt { get; private set; }
         public AImgFileFormat detectedFileFormat { get; private set; }
         public AImgFormat decodedImgFormat { get; private set; }
+        public string colourProfileName { get; private set; }
+        public byte[] colourProfile { get; private set; }
 
         public AImg(AImgFileFormat fmt)
         {
@@ -37,7 +39,7 @@ namespace ArtomatixImageLoader
         /// Opens an AImg from a stream.
         /// </summary>
         /// <param name="doDisposeStream">If set to <c>true</c> stream will be disposed whne the AImg is disposed.</param>
-        public AImg(Stream stream, bool doDisposeStream = true)
+        public unsafe AImg(Stream stream, bool doDisposeStream = true)
         {
             if (!stream.CanRead || !stream.CanSeek)
                 throw new Exception("unusable stream");
@@ -53,14 +55,21 @@ namespace ArtomatixImageLoader
             Int32 errCode = ImgLoader.AImgOpen(readCallback, tellCallback, seekCallback, IntPtr.Zero, out nativeHandle, out detectedImageFormatTmp);
             AImgException.checkErrorCode(nativeHandle, errCode);
 
-
             detectedFileFormat = (AImgFileFormat)detectedImageFormatTmp;
 
             Int32 floatOrIntTmp = 0;
             Int32 decodedImgFormatTmp = 0;
-            ImgLoader.AImgGetInfo(nativeHandle, out _width, out _height, out _numChannels, out _bytesPerChannel, out floatOrIntTmp, out decodedImgFormatTmp);
+            Int32 colourProfileLen = 0;
+            ImgLoader.AImgGetInfo(nativeHandle, out _width, out _height, out _numChannels, out _bytesPerChannel, out floatOrIntTmp, out decodedImgFormatTmp, out colourProfileLen);
             floatOrInt = (AImgFloatOrIntType)floatOrIntTmp;
             decodedImgFormat = (AImgFormat)decodedImgFormatTmp;
+            colourProfile = new byte[colourProfileLen];
+            fixed (byte* array = colourProfile)
+            {
+                System.Text.StringBuilder _colourProfileName = new System.Text.StringBuilder(30);
+                ImgLoader.AImgGetColourProfile(nativeHandle, _colourProfileName, (IntPtr)array, out colourProfileLen);
+                colourProfileName = _colourProfileName.ToString();
+            }
         }
 
         /// <summary>
@@ -81,7 +90,6 @@ namespace ArtomatixImageLoader
             Int32 errCode = ImgLoader.AImgDecodeImage(nativeHandle, pointer, (Int32)forceImageFormat);
             AImgException.checkErrorCode(nativeHandle, errCode);
 
-
             pinnedArray.Free();
         }
 
@@ -90,7 +98,7 @@ namespace ArtomatixImageLoader
             return (AImgFormat)ImgLoader.AImgGetWhatFormatWillBeWrittenForData((Int32)fileFormat, (Int32)format);
         }
 
-        public void writeImage<T>(T[] data, int width, int height, AImgFormat format, Stream s, FormatEncodeOptions options = null) where T : struct
+        public unsafe void writeImage<T>(T[] data, int width, int height, AImgFormat format, Stream s, FormatEncodeOptions options = null) where T : struct
         {
             var writeCallback = ImgLoader.getWriteCallback(s);
             var tellCallback = ImgLoader.getTellCallback(s);
@@ -99,29 +107,35 @@ namespace ArtomatixImageLoader
             GCHandle pinnedArray = GCHandle.Alloc(data, GCHandleType.Pinned);
             IntPtr pointer = pinnedArray.AddrOfPinnedObject();
 
-
-            GCHandle encodeOptionsHandle = default(GCHandle);
-            IntPtr encodeOptionsPtr = IntPtr.Zero;
-
-
-            if (options != null)
+            fixed (byte* colourProfileArray = colourProfile)
             {
-                encodeOptionsHandle = GCHandle.Alloc(options, GCHandleType.Pinned);
-                encodeOptionsPtr = encodeOptionsHandle.AddrOfPinnedObject();
-            }
-            try
-            {
-                Int32 errCode = ImgLoader.AImgWriteImage(nativeHandle, pointer, width, height, (Int32)format, writeCallback, tellCallback, seekCallback, IntPtr.Zero, encodeOptionsPtr);
-                AImgException.checkErrorCode(nativeHandle, errCode);
-            }
-            finally
-            {
-                pinnedArray.Free();
+                GCHandle encodeOptionsHandle = default(GCHandle);
+                IntPtr encodeOptionsPtr = IntPtr.Zero;
 
-                if (encodeOptionsPtr != IntPtr.Zero)
-                    encodeOptionsHandle.Free();
-            }
+                if (options != null)
+                {
+                    encodeOptionsHandle = GCHandle.Alloc(options, GCHandleType.Pinned);
+                    encodeOptionsPtr = encodeOptionsHandle.AddrOfPinnedObject();
+                }
+                try
+                {
+                    int colourProfileLength = 0;
+                    if (colourProfile != null)
+                    {
+                        colourProfileLength = colourProfile.Length;
+                    }
 
+                    Int32 errCode = ImgLoader.AImgWriteImage(nativeHandle, pointer, width, height, (Int32)format, colourProfileName, (IntPtr)colourProfileArray, colourProfileLength, writeCallback, tellCallback, seekCallback, IntPtr.Zero, encodeOptionsPtr);
+                    AImgException.checkErrorCode(nativeHandle, errCode);
+                }
+                finally
+                {
+                    pinnedArray.Free();
+
+                    if (encodeOptionsPtr != IntPtr.Zero)
+                        encodeOptionsHandle.Free();
+                }
+            }
             GC.KeepAlive(writeCallback);
             GC.KeepAlive(tellCallback);
             GC.KeepAlive(seekCallback);

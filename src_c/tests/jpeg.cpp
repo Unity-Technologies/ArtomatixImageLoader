@@ -72,7 +72,7 @@ bool testReadJpegFile(const std::string& path)
     int32_t floatOrInt;
     int32_t imgFmt;
 
-    AImgGetInfo(img, &width, &height, &numChannels, &bytesPerChannel, &floatOrInt, &imgFmt);
+    AImgGetInfo(img, &width, &height, &numChannels, &bytesPerChannel, &floatOrInt, &imgFmt, NULL);
 
     std::vector<uint8_t> imgData(width*height*numChannels*bytesPerChannel, 78);
 
@@ -161,7 +161,7 @@ TEST(JPEG, TestWriteJPEG)
     int32_t floatOrInt;
     int32_t fmt;
 
-    AImgGetInfo(img, &width, &height, &numChannels, &bytesPerChannel, &floatOrInt, &fmt);
+    AImgGetInfo(img, &width, &height, &numChannels, &bytesPerChannel, &floatOrInt, &fmt, NULL);
 
     std::vector<uint8_t> imgData(width*height*numChannels * bytesPerChannel, 78);
 
@@ -175,7 +175,7 @@ TEST(JPEG, TestWriteJPEG)
     AIGetSimpleMemoryBufferCallbacks(&readCallback, &writeCallback, &tellCallback, &seekCallback, &callbackData, &fileData[0], fileData.size());
 
     AImgHandle wImg = AImgGetAImg(AImgFileFormat::JPEG_IMAGE_FORMAT);
-    AImgWriteImage(wImg, &imgData[0], width, height, fmt, writeCallback, tellCallback, seekCallback, callbackData, NULL);
+    AImgWriteImage(wImg, &imgData[0], width, height, fmt, NULL, NULL, 0, writeCallback, tellCallback, seekCallback, callbackData, NULL);
     AImgClose(wImg);
 
     seekCallback(callbackData, 0);

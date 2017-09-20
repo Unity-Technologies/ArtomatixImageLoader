@@ -113,10 +113,16 @@ EXPORT_FUNC const char* AImgGetErrorDetails(AImgHandle imgH)
     return img->getErrorDetails();
 }
 
-int32_t AImgGetInfo(AImgHandle imgH, int32_t* width, int32_t* height, int32_t* numChannels, int32_t* bytesPerChannel, int32_t* floatOrInt, int32_t* decodedImgFormat)
+int32_t AImgGetColourProfile(AImgHandle imgH, char *profileName, uint8_t *colourProfile, uint32_t *colourProfileLen)
 {
     AImg::AImgBase* img = (AImg::AImgBase*)imgH;
-    return img->getImageInfo(width, height, numChannels, bytesPerChannel, floatOrInt, decodedImgFormat);
+    return img->getColourProfile(profileName, colourProfile, colourProfileLen);
+}
+
+int32_t AImgGetInfo(AImgHandle imgH, int32_t* width, int32_t* height, int32_t* numChannels, int32_t* bytesPerChannel, int32_t* floatOrInt, int32_t* decodedImgFormat, uint32_t *colourProfileLen)
+{
+    AImg::AImgBase* img = (AImg::AImgBase*)imgH;
+    return img->getImageInfo(width, height, numChannels, bytesPerChannel, floatOrInt, decodedImgFormat, colourProfileLen);
 }
 
 int32_t AImgDecodeImage(AImgHandle imgH, void* destBuffer, int32_t forceImageFormat)
@@ -130,8 +136,8 @@ AImgHandle AImgGetAImg(int32_t fileFormat)
     return loaders[fileFormat]->getAImg();
 }
 
-int32_t AImgWriteImage(AImgHandle imgH, void* data, int32_t width, int32_t height, int32_t inputFormat, WriteCallback writeCallback,
-                   TellCallback tellCallback, SeekCallback seekCallback, void* callbackData, void* encodingOptions)
+int32_t AImgWriteImage(AImgHandle imgH, void* data, int32_t width, int32_t height, int32_t inputFormat, const char *profileName, uint8_t *colourProfile, uint32_t colourProfileLen,
+                   WriteCallback writeCallback, TellCallback tellCallback, SeekCallback seekCallback, void* callbackData, void* encodingOptions)
 {
     AImg::AImgBase* img = (AImg::AImgBase*)imgH;
 
@@ -139,9 +145,8 @@ int32_t AImgWriteImage(AImgHandle imgH, void* data, int32_t width, int32_t heigh
     if(err != AImgErrorCode::AIMG_SUCCESS)
         return err;
 
-    return img->writeImage(data, width, height, inputFormat, writeCallback, tellCallback, seekCallback, callbackData, encodingOptions);
+    return img->writeImage(data, width, height, inputFormat, profileName, colourProfile, colourProfileLen, writeCallback, tellCallback, seekCallback, callbackData, encodingOptions);
 }
-
 
 void convertToRGBA32F(void* src, std::vector<float>& dest, size_t i, int32_t inFormat)
 {

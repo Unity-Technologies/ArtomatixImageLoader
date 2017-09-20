@@ -4,6 +4,7 @@
 #include <tiffio.h>
 #include <vector>
 #include <string.h>
+#include <cstring>
 #include <math.h>
 #include <iostream>
 #include <algorithm>
@@ -149,10 +150,11 @@ namespace AImg
                 exponent += 127 - (pow(2, exponentBits - 1) - 1);
             }
         }
+
         else if (exponent == maxExponent)
         {
             exponent = 255;
-        }
+        }    
         else
         {
             exponent += 127 - (pow(2, exponentBits - 1) - 1);
@@ -165,6 +167,20 @@ namespace AImg
         float final = *((float *)&value);
 
         return final;
+    }
+            
+    virtual int32_t getColourProfile(char *profileName, uint8_t *colourProfile, uint32_t *colourProfileLen)
+    {
+        if(colourProfile != NULL)
+        {
+            *colourProfileLen = 0;
+        }        
+        if(profileName != NULL)
+        {
+            std::strcpy(profileName, "no_profile");
+        }
+
+        return AImgErrorCode::AIMG_SUCCESS;
     }
 
     class TiffFile : public AImgBase
@@ -214,11 +230,15 @@ namespace AImg
             return AImgFormat::INVALID_FORMAT;
         }
 
-        virtual int32_t getImageInfo(int32_t *width, int32_t *height, int32_t *numChannels, int32_t *bytesPerChannel, int32_t *floatOrInt, int32_t *decodedImgFormat)
+        virtual int32_t getImageInfo(int32_t *width, int32_t *height, int32_t *numChannels, int32_t *bytesPerChannel, int32_t *floatOrInt, int32_t *decodedImgFormat, uint32_t *colourProfileLen)
         {
             *width = this->width;
             *height = this->height;
             *numChannels = this->channels;
+            if(colourProfileLen != NULL)
+            {
+                *colourProfileLen = 0;
+            }
 
             if (bitsPerChannel % 8 == 0)
                 *bytesPerChannel = bitsPerChannel / 8;
@@ -514,9 +534,9 @@ namespace AImg
             return retval;
         }
 
-        int32_t writeImage(void *data, int32_t width, int32_t height, int32_t inputFormat, WriteCallback writeCallback,
-            TellCallback tellCallback, SeekCallback seekCallback, void *callbackData, void *encodingOptions)
-        {
+      int32_t writeImage(void *data, int32_t width, int32_t height, int32_t inputFormat, const char *profileName, uint8_t *colourProfile, uint32_t colourProfileLen,
+                          WriteCallback writeCallback, TellCallback tellCallback, SeekCallback seekCallback, void *callbackData, void *encodingOptions)
+      {
             AIL_UNUSED_PARAM(encodingOptions);
 
             tiffCallbackData wCallbacks;
@@ -526,6 +546,7 @@ namespace AImg
             wCallbacks.callbackData = callbackData;
             wCallbacks.startPos = tellCallback(callbackData);
             TIFF *wTiff = TIFFClientOpen("", "w", (thandle_t)&wCallbacks, tiffRead, tiff_Write, tiff_Seek, tiff_Close, tiff_Size, tiff_Map, tiff_Unmap);
+
 
             int32_t retval = AIMG_SUCCESS;
 

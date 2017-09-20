@@ -134,7 +134,8 @@ EXPORT_FUNC const char* AImgGetErrorDetails(AImgHandle img);
 EXPORT_FUNC int32_t AImgOpen(ReadCallback readCallback, TellCallback tellCallback, SeekCallback seekCallback, void* callbackData, AImgHandle* imgPtr, int32_t* detectedFileFormat);
 EXPORT_FUNC void AImgClose(AImgHandle img);
 
-EXPORT_FUNC int32_t AImgGetInfo(AImgHandle img, int32_t* width, int32_t* height, int32_t* numChannels, int32_t* bytesPerChannel, int32_t* floatOrInt, int32_t* decodedImgFormat);
+EXPORT_FUNC int32_t AImgGetInfo(AImgHandle img, int32_t* width, int32_t* height, int32_t* numChannels, int32_t* bytesPerChannel, int32_t* floatOrInt, int32_t* decodedImgFormat, uint32_t *colourProfileLen);
+EXPORT_FUNC int32_t AImgGetColourProfile(AImgHandle img, char* profileName, uint8_t* colourProfile, uint32_t *colourProfileLen);
 EXPORT_FUNC int32_t AImgDecodeImage(AImgHandle img, void* destBuffer, int32_t forceImageFormat);
 EXPORT_FUNC int32_t AImgInitialise();
 EXPORT_FUNC void AImgCleanUp();
@@ -147,8 +148,8 @@ EXPORT_FUNC int32_t AImgGetWhatFormatWillBeWrittenForData(int32_t fileFormat, in
 EXPORT_FUNC AImgHandle AImgGetAImg(int32_t fileFormat);
 
 // encodingOptions should be one of the encoding option structs detailed in the section above. It shoudl be the struct that corresponds to the image format being written.
-EXPORT_FUNC int32_t AImgWriteImage(AImgHandle imgH, void* data, int32_t width, int32_t height, int32_t inputFormat, WriteCallback writeCallback,
-								   TellCallback tellCallback, SeekCallback seekCallback, void* callbackData, void* encodingOptions);
+EXPORT_FUNC int32_t AImgWriteImage(AImgHandle imgH, void* data, int32_t width, int32_t height, int32_t inputFormat, const char *profileName, uint8_t *colourProfile, uint32_t colourProfileLen,
+                                    WriteCallback writeCallback, TellCallback tellCallback, SeekCallback seekCallback, void* callbackData, void* encodingOptions);
 
 EXPORT_FUNC void AIGetSimpleMemoryBufferCallbacks(ReadCallback* readCallback, WriteCallback* writeCallback, TellCallback* tellCallback, SeekCallback* seekCallback, void** callbackData, void* buffer, int32_t size);
 EXPORT_FUNC void AIDestroySimpleMemoryBufferCallbacks(ReadCallback readCallback, WriteCallback writeCallback, TellCallback tellCallback, SeekCallback seekCallback, void* callbackData);
