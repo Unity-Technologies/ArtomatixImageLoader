@@ -164,10 +164,7 @@ namespace AImg
 
                     numChannels++;
                 }
-                if(png_get_iCCP(png_read_ptr, png_info_ptr, &profileName, &compressionMethod, &compressedProfile, &compressedProfileLen) & PNG_INFO_iCCP)
-                {
-                }
-                else
+                if(!(png_get_iCCP(png_read_ptr, png_info_ptr, &profileName, &compressionMethod, &compressedProfile, &compressedProfileLen) & PNG_INFO_iCCP))                
                 {
                     compressedProfile = NULL;
                     profileName = NULL;
