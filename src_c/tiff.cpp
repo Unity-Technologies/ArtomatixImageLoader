@@ -445,10 +445,14 @@ namespace AImg
                 return AImgErrorCode::AIMG_LOAD_FAILED_EXTERNAL;
             }
 
-            bool hasEssentialTiffTags = TIFFGetField(tiff, TIFFTAG_SAMPLESPERPIXEL, &channels);
+            bool hasSamplesPerPixel = TIFFGetField(tiff, TIFFTAG_SAMPLESPERPIXEL, &channels);
 
             AImgErrorCode retval = AImgErrorCode::AIMG_SUCCESS;
 
+            if(!hasSamplesPerPixel)
+                channels = 1;
+            
+            bool hasEssentialTiffTags = true;
             if (channels > 0 && channels <= 4)
             {
                 int16_t bpsNotRead = -999;
@@ -464,7 +468,7 @@ namespace AImg
                     TIFFGetField(tiff, TIFFTAG_ROWSPERSTRIP, &rowsPerStrip) &&
                     TIFFGetField(tiff, TIFFTAG_PLANARCONFIG, &planarConfig) &&
                     TIFFGetField(tiff, TIFFTAG_STRIPBYTECOUNTS, &stripByteCounts);
-
+                
                 if (hasEssentialTiffTags)
                 {
                     bitsPerChannel = bitsPerSampleValues[0];
