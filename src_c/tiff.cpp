@@ -452,7 +452,6 @@ namespace AImg
             if(!hasSamplesPerPixel)
                 channels = 1;
             
-            bool hasEssentialTiffTags = true;
             if (channels > 0 && channels <= 4)
             {
                 int16_t bpsNotRead = -999;
@@ -460,7 +459,7 @@ namespace AImg
 
                 uint32_t *stripByteCounts = NULL;
 
-                hasEssentialTiffTags = hasEssentialTiffTags &&
+                bool hasEssentialTiffTags =
                     TIFFGetField(tiff, TIFFTAG_BITSPERSAMPLE, &bitsPerSampleValues[0]) &&
                     TIFFGetField(tiff, TIFFTAG_IMAGEWIDTH, &width) &&
                     TIFFGetField(tiff, TIFFTAG_IMAGELENGTH, &height) &&
@@ -486,18 +485,17 @@ namespace AImg
                         }
                     }
                 }
+                else
+                {
+                    mErrorDetails = "[AImg::TIFFImageLoader::TiffFile::openImage] Bad tiff file - missing at least one of the essential tifftags "
+                        "(BITSPERSAMPLE, SAMPLESPERPIXEL, IMAGEWIDTH, IMAGELENGTH, COMPRESSION, ROWSPERSTRIP, PLANARCONFIG, STRIPBYTECOUNTS)";
+                    return AImgErrorCode::AIMG_LOAD_FAILED_INTERNAL;
+                }
             }
             else
             {
                 mErrorDetails = "Channel count " + std::to_string(channels) + " we only support up to 4";
                 retval = AImgErrorCode::AIMG_LOAD_FAILED_UNSUPPORTED_TIFF;
-            }
-
-            if (!hasEssentialTiffTags)
-            {
-                mErrorDetails = "[AImg::TIFFImageLoader::TiffFile::openImage] Bad tiff file - missing at least one of the essential tifftags "
-                    "(BITSPERSAMPLE, SAMPLESPERPIXEL, IMAGEWIDTH, IMAGELENGTH, COMPRESSION, ROWSPERSTRIP, PLANARCONFIG, STRIPBYTECOUNTS)";
-                return AImgErrorCode::AIMG_LOAD_FAILED_INTERNAL;
             }
 
             if (!TIFFGetField(tiff, TIFFTAG_SAMPLEFORMAT, &sampleFormat))
