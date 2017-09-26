@@ -110,10 +110,13 @@ namespace ArtomatixImageLoaderTests
                 float[] data = new float[img.width * img.height * 3];
                 img.decodeImage(data, AImgFormat.RGB32F);
 
+                var colourProfileName = img.colourProfileName;
+                var colourProfile = img.colourProfile;
+
                 using (var writeStream = new MemoryStream())
                 {
                     var wImg = new AImg(AImgFileFormat.EXR_IMAGE_FORMAT);
-                    wImg.writeImage(data, img.width, img.height, AImgFormat.RGB32F, writeStream);
+                    wImg.writeImage(data, img.width, img.height, AImgFormat.RGB32F, colourProfileName, colourProfile, writeStream);
                     writeStream.Seek(0, SeekOrigin.Begin);
 
                     using (AImg img2 = new AImg(writeStream))
@@ -136,13 +139,17 @@ namespace ArtomatixImageLoaderTests
                 byte[] data = new byte[img.width * img.height * img.decodedImgFormat.numChannels() * img.decodedImgFormat.bytesPerChannel()];
                 img.decodeImage(data);
 
+
+                var colourProfileName = img.colourProfileName;
+                var colourProfile = img.colourProfile;
+                
                 using (var writeStream = new MemoryStream())
                 {
                     var wImg = new AImg(AImgFileFormat.PNG_IMAGE_FORMAT);
 
                     PngEncodingOptions options = new PngEncodingOptions(0, PngEncodingOptions.Filter.PNG_NO_FILTERS);
 
-                    wImg.writeImage(data, img.width, img.height, img.decodedImgFormat, writeStream, options);
+                    wImg.writeImage(data, img.width, img.height, img.decodedImgFormat, colourProfileName, colourProfile, writeStream, options);
                     writeStream.Seek(0, SeekOrigin.Begin);
 
                     using (AImg img2 = new AImg(writeStream))
@@ -166,11 +173,14 @@ namespace ArtomatixImageLoaderTests
 
                 float[] data = new float[img.width * img.height * img.decodedImgFormat.numChannels()];
                 img.decodeImage(data);
+                
+                var colourProfileName = img.colourProfileName;
+                var colourProfile = img.colourProfile;
 
                 using (var writeStream = new MemoryStream())
                 {
                     var wImg = new AImg(AImgFileFormat.PNG_IMAGE_FORMAT);
-                    wImg.writeImage(data, img.width, img.height, img.decodedImgFormat, writeStream);
+                    wImg.writeImage(data, img.width, img.height, img.decodedImgFormat, colourProfileName, colourProfile, writeStream);
                     writeStream.Seek(0, SeekOrigin.Begin);
 
                     using (AImg img2 = new AImg(writeStream))
@@ -231,7 +241,7 @@ namespace ArtomatixImageLoaderTests
             }
 
             using (var f = new FileStream(getImagesDir() + "/testOut", FileMode.Create))
-                img.writeImage<T>(data, width, height, format, f);
+                img.writeImage<T>(data, width, height, format, null, null, f);
 
             T[] readBackData = null;
             using (AImg f = new AImg(new FileStream(getImagesDir() + "/testOut", FileMode.Open)))
@@ -263,11 +273,14 @@ namespace ArtomatixImageLoaderTests
                 float[] data = new float[img.width * img.height * img.decodedImgFormat.numChannels()];
                 // Decode image
                 img.decodeImage(data);
+                
+                var colourProfileName = img.colourProfileName;
+                var colourProfile = img.colourProfile;
 
                 // Write image with colour profile
                 using (var dataStream = File.Open(getImagesDir() + "/png/ICC_out.png", FileMode.Create))
                 {
-                    img.writeImage(data, img.width, img.height, img.decodedImgFormat, dataStream);
+                    img.writeImage(data, img.width, img.height, img.decodedImgFormat, colourProfileName, colourProfile, dataStream);
                     dataStream.Close();
 
                     // Read the image back
@@ -280,7 +293,6 @@ namespace ArtomatixImageLoaderTests
                     }
                 }
             }
-
             try
             {
                 File.Delete(getImagesDir() + "/png/ICC_out.png");
