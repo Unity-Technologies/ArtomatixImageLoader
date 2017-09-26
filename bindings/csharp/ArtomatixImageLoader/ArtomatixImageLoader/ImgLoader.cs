@@ -25,9 +25,9 @@ namespace ArtomatixImageLoader
 
     internal delegate void AImgClose(IntPtr img);
 
-    internal delegate Int32 AImgGetInfo(IntPtr img, out Int32 width, out Int32 height, out Int32 numChannels, out Int32 bytesPerChannel, out Int32 floatOrInt, out Int32 decodedImgFormat, out Int32 colorProfileLength);
+    internal delegate Int32 AImgGetInfo(IntPtr img, out Int32 width, out Int32 height, out Int32 numChannels, out Int32 bytesPerChannel, out Int32 floatOrInt, out Int32 decodedImgFormat, out Int32 colourProfileLength);
 
-    internal delegate Int32 AImgGetColourProfile(IntPtr img, StringBuilder profileName, IntPtr colorProfile, out Int32 colorProfileLength);
+    internal delegate Int32 AImgGetColourProfile(IntPtr img, StringBuilder profileName, IntPtr colourProfile, out Int32 colourProfileLength);
 
     internal delegate Int32 AImgDecodeImage(IntPtr img, IntPtr destBuffer, Int32 forceImageFormat);
 
@@ -45,7 +45,7 @@ namespace ArtomatixImageLoader
     );
 
     internal delegate Int32 AImgWriteImage(
-        IntPtr img, IntPtr data, Int32 width, Int32 height, Int32 inputFormat, string profileName, IntPtr colorProfile, Int32 colorProfileLength,
+        IntPtr img, IntPtr data, Int32 width, Int32 height, Int32 inputFormat, string profileName, IntPtr colourProfile, Int32 colourProfileLength,
         [MarshalAs(UnmanagedType.FunctionPtr)] WriteCallback writeCallback,
         [MarshalAs(UnmanagedType.FunctionPtr)] TellCallback tellCallback,
         [MarshalAs(UnmanagedType.FunctionPtr)] SeekCallback seekCallback,
