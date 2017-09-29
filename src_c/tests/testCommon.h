@@ -47,7 +47,8 @@ bool compareForceImageFormat(const std::string& path);
 
 void writeToFile(const std::string& path, int32_t width, int32_t height, void* data, int32_t inputFormat, int32_t fileFormat, const char *profileName, uint8_t *colourProfile, uint32_t colourProfileLen);
 
-void readWriteIcc(const std::string & path, const std::string & outPath, char *profileName, uint8_t *colourProfile, uint32_t *colourProfileLen);
+void readWriteIcc(const std::string & path, const std::string & outPath, char *profileName, uint8_t **colourProfile, uint32_t *colourProfileLen);
+bool compareIccProfiles(const std::string & image1, const std::string & image2);
 
 
 #endif

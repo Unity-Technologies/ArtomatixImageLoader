@@ -205,6 +205,147 @@ bool testTiffWrite(int32_t testFormat)
     return true;
 }
 
+bool testColourProfileFromPngToTiff()
+{
+    ////////////////////////////////////////////////////// Read png (data and colour profile)
+    auto pngData = readFile<uint8_t>(getImagesDir() + "/png/ICC.png");
+
+    ReadCallback readCallback = NULL;
+    WriteCallback writeCallback = NULL;
+    TellCallback tellCallback = NULL;
+    SeekCallback seekCallback = NULL;
+    void* callbackData = NULL;
+
+    AIGetSimpleMemoryBufferCallbacks(&readCallback, &writeCallback, &tellCallback, &seekCallback, &callbackData, &pngData[0], pngData.size());
+
+    AImgHandle pngImg = NULL;
+    int32_t error = AImgOpen(readCallback, tellCallback, seekCallback, callbackData, &pngImg, NULL);
+    if (error)
+        return false;
+
+    int32_t pngWidth;
+    int32_t pngHeight;
+    int32_t pngNumChannels;
+    int32_t pngBytesPerChannel;
+    int32_t pngFloatOrInt;
+    int32_t pngImgFmt;
+    uint32_t pngColourProfileLen;
+    error = AImgGetInfo(pngImg, &pngWidth, &pngHeight, &pngNumChannels, &pngBytesPerChannel, &pngFloatOrInt, &pngImgFmt, &pngColourProfileLen);
+    if(error)
+        return false;
+    
+    char profileName[30];
+    std::vector<uint8_t> pngColourProfile(pngColourProfileLen);
+    AImgGetColourProfile(pngImg, profileName, pngColourProfile.data(), &pngColourProfileLen);
+
+    std::vector<uint8_t> pngImgData(pngWidth*pngHeight * 4, 78);
+
+    error = AImgDecodeImage(pngImg, &pngImgData[0], AImgFormat::RGBA8U);
+    if (error)
+        return false;
+
+    AImgClose(pngImg);
+    pngImg = NULL;
+    AIDestroySimpleMemoryBufferCallbacks(readCallback, writeCallback, tellCallback, seekCallback, callbackData);
+    
+    ////////////////////////////////////////////////////// Read tiff (only data)
+    auto tiffData = readFile<uint8_t>(getImagesDir() + "/tiff/ICC.tif");
+
+    AIGetSimpleMemoryBufferCallbacks(&readCallback, &writeCallback, &tellCallback, &seekCallback, &callbackData, &tiffData[0], tiffData.size());
+
+    AImgHandle tiffImg1 = NULL;
+    error = AImgOpen(readCallback, tellCallback, seekCallback, callbackData, &tiffImg1, NULL);
+    if (error)
+        return false;
+
+    int32_t tiffWidth;
+    int32_t tiffHeight;
+    int32_t tiffNumChannels;
+    int32_t tiffBytesPerChannel;
+    int32_t tiffFloatOrInt;
+    int32_t tiffImgFmt;
+  
+    error = AImgGetInfo(tiffImg1, &tiffWidth, &tiffHeight, &tiffNumChannels, &tiffBytesPerChannel, &tiffFloatOrInt, &tiffImgFmt, NULL);
+    if(error)
+        return false;
+
+    if (tiffWidth != pngWidth || tiffHeight != pngHeight)
+        return false;
+
+    std::vector<uint8_t> tiffImgData(tiffWidth*tiffHeight * 4, 78);
+
+    error = AImgDecodeImage(tiffImg1, &tiffImgData[0], AImgFormat::RGBA8U);
+    if (error)
+        return false;
+    
+    AImgClose(tiffImg1);
+    tiffImg1 = NULL;
+    AIDestroySimpleMemoryBufferCallbacks(readCallback, writeCallback, tellCallback, seekCallback, callbackData);
+    
+    ////////////////////////////////////////////////////// Write tiff (data plus png colour profile)
+    std::vector<uint8_t> fileData(pngWidth*pngHeight*pngBytesPerChannel*pngNumChannels * 10, 79); // 10x the raw data size, should be well enough space
+    AIGetSimpleMemoryBufferCallbacks(&readCallback, &writeCallback, &tellCallback, &seekCallback, &callbackData, &fileData[0], fileData.size());
+
+    AImgHandle wImg = AImgGetAImg(AImgFileFormat::TIFF_IMAGE_FORMAT);
+
+    error = AImgWriteImage(wImg, &tiffImgData[0], pngWidth, pngHeight, AImgFormat::RGBA8U, "", pngColourProfile.data(), pngColourProfileLen, writeCallback, tellCallback, seekCallback, callbackData, NULL);
+    if(error)
+        return false;
+
+    seekCallback(callbackData, 0);
+    
+    FILE* f = fopen((getImagesDir() + "/tiff/ICC_png.tif").c_str(), "wb");
+    fwrite(&fileData[0], 1, fileData.size(), f);
+    fclose(f);
+    
+    AImgClose(wImg);
+    wImg = NULL;
+    AIDestroySimpleMemoryBufferCallbacks(readCallback, writeCallback, tellCallback, seekCallback, callbackData);
+    
+    ////////////////////////////////////////////////////// Read written tiff (data and colour profile)
+    tiffData = readFile<uint8_t>(getImagesDir() + "/tiff/ICC_png.tif");
+
+    AIGetSimpleMemoryBufferCallbacks(&readCallback, &writeCallback, &tellCallback, &seekCallback, &callbackData, &tiffData[0], tiffData.size());
+
+    AImgHandle tiffImg2 = NULL;
+    error = AImgOpen(readCallback, tellCallback, seekCallback, callbackData, &tiffImg2, NULL);
+    if (error)
+        return false;
+  
+    uint32_t tifColourProfileLen;
+    error = AImgGetInfo(tiffImg2, &tiffWidth, &tiffHeight, &tiffNumChannels, &tiffBytesPerChannel, &tiffFloatOrInt, &tiffImgFmt, &tifColourProfileLen);
+    if(error)
+        return false;
+    
+    char tifProfileName[30];
+    std::vector<uint8_t> tifColourProfile(tifColourProfileLen);
+    AImgGetColourProfile(tiffImg2, tifProfileName, tifColourProfile.data(), &tifColourProfileLen);
+
+    if (tiffWidth != pngWidth || tiffHeight != pngHeight)
+        return false;
+
+    std::vector<uint8_t> tiffImgData2(tiffWidth*tiffHeight * 4, 78);
+
+    error = AImgDecodeImage(tiffImg2, &tiffImgData2[0], AImgFormat::RGBA8U);
+    if (error)
+        return false;
+    
+    AImgClose(tiffImg2);
+    tiffImg2 = NULL;
+    AIDestroySimpleMemoryBufferCallbacks(readCallback, writeCallback, tellCallback, seekCallback, callbackData);
+    
+    ////////////////////////////////////////////////////// Compare png and tiff colour profiles
+    if(pngColourProfileLen != tifColourProfileLen)
+        return false;
+    for(uint i = 0; i < pngColourProfileLen; i++)
+    {
+        if(pngColourProfile[i] != tifColourProfile[i])
+            return false;
+    }
+    
+    return true;
+}
+
 TEST(TIFF, TestDetectTIFF)
 {
     ASSERT_TRUE(detectImage("/tiff/8_bit_int.tif", TIFF_IMAGE_FORMAT));
@@ -289,6 +430,27 @@ TEST(TIFF, TestWrite16F)
 TEST(TIFF, TestWrite32F)
 {
     testTiffWrite(AImgFormat::RGBA32F);
+}
+
+TEST(TIFF, TestColourProfileFromPngToTiff)
+{
+    ASSERT_TRUE(testColourProfileFromPngToTiff());
+}
+
+TEST(TIFF, TestReadWriteICCProfile)
+{
+    // Read tif colour profile
+    char profileName[30];
+    uint8_t * tifColourProfile = NULL;
+    uint32_t tifColourProfileLen = 0;
+    readWriteIcc("/tiff/ICC.tif", "/tiff/ICC_out.tif", profileName, &tifColourProfile, &tifColourProfileLen);
+    ASSERT_EQ(tifColourProfileLen, 560u);
+    ASSERT_NE(tifColourProfile, (void*)NULL);
+}
+
+TEST(TIFF, TestCompareWithPngICCProfile)
+{    
+    ASSERT_TRUE(compareIccProfiles("/png/ICC.png", "/tiff/ICC.tif"));
 }
 
 #endif // HAVE_TIFF

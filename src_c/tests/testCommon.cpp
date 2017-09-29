@@ -170,7 +170,116 @@ void writeToFile(const std::string& path, int32_t width, int32_t height, void* d
 
 }
 
-void readWriteIcc(const std::string & path, const std::string & outPath, char *profileName, uint8_t *colourProfile, uint32_t *colourProfileLen)
+bool compareIccProfiles(const std::string & image1, const std::string & image2)
+{
+    ///////////////////// Read image 1
+    auto data1 = readFile<uint8_t>(getImagesDir() + image1);
+
+    ReadCallback readCallback = NULL;
+    WriteCallback writeCallback = NULL;
+    TellCallback tellCallback = NULL;
+    SeekCallback seekCallback = NULL;
+    void* callbackData = NULL;
+
+    AIGetSimpleMemoryBufferCallbacks(&readCallback, &writeCallback, &tellCallback, &seekCallback, &callbackData, &data1[0], data1.size());
+
+    AImgHandle img1 = NULL;
+    int32_t detectedFormat1;
+    int32_t error = AImgOpen(readCallback, tellCallback, seekCallback, callbackData, &img1, &detectedFormat1);
+    if(error != AIMG_SUCCESS)
+        return false;
+
+    int32_t width1 = 0;
+    int32_t height1 = 0;
+    int32_t numChannels1 = 0;
+    int32_t bytesPerChannel1 = 0;
+    int32_t floatOrInt1 = 0;
+    int32_t decodedImgFormat1 = 0;
+    
+    char profileName1[30];
+    uint32_t colourProfileLen1 = 0;
+    
+    error = AImgGetInfo(img1, &width1, &height1, &numChannels1, &bytesPerChannel1, &floatOrInt1, &decodedImgFormat1, &colourProfileLen1);
+    if(error != AIMG_SUCCESS)
+        return false;
+    std::vector<uint8_t> colourProfile1(colourProfileLen1);
+    error = AImgGetColourProfile(img1, profileName1, colourProfile1.data(), &colourProfileLen1);
+    if(error != AIMG_SUCCESS)
+        return false;
+    
+    std::vector<uint8_t> imgData1;
+    imgData1.resize(width1*height1*numChannels1 * bytesPerChannel1, 78);
+    error = AImgDecodeImage(img1, &imgData1[0], AImgFormat::INVALID_FORMAT);
+    if(error != AIMG_SUCCESS)
+        return false;
+    
+    AImgClose(img1);
+    img1 = NULL;
+    AIDestroySimpleMemoryBufferCallbacks(readCallback, writeCallback, tellCallback, seekCallback, callbackData);
+    readCallback = NULL; writeCallback = NULL; tellCallback = NULL, seekCallback = NULL; callbackData = NULL;
+    
+    ///////////////////// Read image 2
+    auto data2 = readFile<uint8_t>(getImagesDir() + image2);
+
+    AIGetSimpleMemoryBufferCallbacks(&readCallback, &writeCallback, &tellCallback, &seekCallback, &callbackData, &data2[0], data2.size());
+
+    AImgHandle img2 = NULL;
+    int32_t detectedFormat2;
+    error = AImgOpen(readCallback, tellCallback, seekCallback, callbackData, &img2, &detectedFormat2);
+    if(error != AIMG_SUCCESS)
+        return false;
+
+    int32_t width2 = 0;
+    int32_t height2 = 0;
+    int32_t numChannels2 = 0;
+    int32_t bytesPerChannel2 = 0;
+    int32_t floatOrInt2 = 0;
+    int32_t decodedImgFormat2 = 0;
+    
+    char profileName2[30];
+    uint32_t colourProfileLen2 = 0;
+
+    error = AImgGetInfo(img2, &width2, &height2, &numChannels2, &bytesPerChannel2, &floatOrInt2, &decodedImgFormat2, &colourProfileLen2);
+    if(error != AIMG_SUCCESS)
+        return false;
+    std::vector<uint8_t> colourProfile2(colourProfileLen2);
+    error = AImgGetColourProfile(img2, profileName2, colourProfile2.data(), &colourProfileLen2);
+    if(error != AIMG_SUCCESS)
+        return false;
+    
+    std::vector<uint8_t> imgData2;
+    imgData2.resize(width2*height2*numChannels2 * bytesPerChannel2, 78);
+    error = AImgDecodeImage(img2, &imgData2[0], AImgFormat::INVALID_FORMAT);
+    if(error != AIMG_SUCCESS)
+        return false;
+    
+    AImgClose(img2);
+    img2 = NULL;
+    AIDestroySimpleMemoryBufferCallbacks(readCallback, writeCallback, tellCallback, seekCallback, callbackData);
+    readCallback = NULL; writeCallback = NULL; tellCallback = NULL, seekCallback = NULL; callbackData = NULL;
+    
+    ///////////////////// Compare colour profiles
+    if(colourProfile1.data() ==  NULL || colourProfile2.data() == NULL)
+        return false;
+    if(colourProfileLen1 != colourProfileLen2)
+    {
+        printf("colourProfileLen mismatch. %d != %d\n", colourProfileLen1, colourProfileLen2);
+        return false;
+    }
+
+    for(uint i = 0; i < colourProfileLen1; i++)
+    {
+        if(colourProfile1.data()[i] != colourProfile2.data()[i])
+        {
+            printf("colourProfile mismatch. Bytes %d are different\n", i);
+            return false;
+        }
+    }
+    
+    return true;
+}
+
+void readWriteIcc(const std::string & path, const std::string & outPath, char *profileName, uint8_t **colourProfile, uint32_t *colourProfileLen)
 {
     // Read
     auto data = readFile<uint8_t>(getImagesDir() + path);
@@ -197,7 +306,8 @@ void readWriteIcc(const std::string & path, const std::string & outPath, char *p
     AImgGetInfo(img, &width, &height, &numChannels, &bytesPerChannel, &floatOrInt, &decodedImgFormat, colourProfileLen);
     std::vector<uint8_t> colourProfile_(*colourProfileLen);
     AImgGetColourProfile(img, profileName, colourProfile_.data(), colourProfileLen);
-    colourProfile = colourProfile_.data();
+    *colourProfile = colourProfile_.data();
+    
     
     std::vector<uint8_t> imgData;
     imgData.resize(width*height*numChannels * bytesPerChannel, 78);
@@ -215,7 +325,7 @@ void readWriteIcc(const std::string & path, const std::string & outPath, char *p
     AIGetSimpleMemoryBufferCallbacks(&readCallback, &writeCallback, &tellCallback, &seekCallback, &callbackData, &fileData[0], fileData.size());
 
     AImgHandle wImg = AImgGetAImg(detectedFormat);
-    AImgWriteImage(wImg, &imgData[0], width, height, decodedImgFormat, profileName, colourProfile, *colourProfileLen, writeCallback, tellCallback, seekCallback, callbackData, NULL);
+    AImgWriteImage(wImg, &imgData[0], width, height, decodedImgFormat, profileName, *colourProfile, *colourProfileLen, writeCallback, tellCallback, seekCallback, callbackData, NULL);
     
     FILE* f = fopen((getImagesDir() + outPath).c_str(), "wb");
     fwrite(&fileData[0], 1, fileData.size(), f);

@@ -324,10 +324,11 @@ TEST(PNG, TestReadWriteICCProfile)
     char profileName[30];
     uint8_t * colourProfile = NULL;
     uint32_t colourProfileLen = 0;
-    readWriteIcc("/png/ICC.png", "/png/ICC_out.png", profileName, colourProfile, &colourProfileLen);
+    readWriteIcc("/png/ICC.png", "/png/ICC_out.png", profileName, &colourProfile, &colourProfileLen);
     int res = std::strcmp(profileName, "ICC profile");
     ASSERT_EQ(res, 0);
     ASSERT_EQ(colourProfileLen, 560u);
+    ASSERT_NE(colourProfile, (void*)NULL);
 }
 
 TEST(PNG, TestWrite8BitPNG8)
