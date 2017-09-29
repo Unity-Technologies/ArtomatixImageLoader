@@ -301,6 +301,42 @@ namespace ArtomatixImageLoaderTests
         }
 
         [Test]
+        public static void TestICCProfileTiff()
+        {
+            // Read image with colour profile
+            using (AImg img = new AImg(File.Open(getImagesDir() + "/tiff/ICC.tif", FileMode.Open)))
+            {
+                float[] data = new float[img.width * img.height * img.decodedImgFormat.numChannels()];
+                // Decode image
+                img.decodeImage(data);
+                
+                var colourProfileName = img.colourProfileName;
+                var colourProfile = img.colourProfile;
+
+                // Write image with colour profile
+                using (var dataStream = File.Open(getImagesDir() + "/tiff/ICC_out.tif", FileMode.Create))
+                {
+                    img.writeImage(data, img.width, img.height, img.decodedImgFormat, colourProfileName, colourProfile, dataStream);
+                    dataStream.Close();
+
+                    // Read the image back
+                    using (AImg img2 = new AImg(File.Open(getImagesDir() + "/tiff/ICC_out.tif", FileMode.Open)))
+                    {
+                        Assert.AreEqual(img.colourProfileName, img2.colourProfileName);
+                        Assert.AreEqual(img.colourProfile.Length, img2.colourProfile.Length);
+                        for (int i = 0; i < img.colourProfile.Length; i++)
+                            Assert.AreEqual(img.colourProfile[i], img2.colourProfile[i]);
+                    }
+                }
+            }
+            try
+            {
+                File.Delete(getImagesDir() + "/tiff/ICC_out.tif");
+            }
+            catch { }
+        }
+
+        [Test]
         public static void TestWriteTiffs()
         {
             TestWriteIMG<float>(128, 128, AImgFormat.RGBA32F, AImgFileFormat.TIFF_IMAGE_FORMAT);
