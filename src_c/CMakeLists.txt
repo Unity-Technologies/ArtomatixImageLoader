@@ -55,7 +55,7 @@ if(UNIX)
 endif()
 target_compile_definitions(AIL PRIVATE -DIS_AIL_COMPILE)
 
-set_target_properties(AIL PROPERTIES COMPILE_FLAGS "${AIL_COMPILE_FLAGS}")
+set_target_properties(AIL PROPERTIES COMPILE_FLAGS "${AIL_COMPILE_FLAGS}" DEBUG_POSTFIX "")
 
 install (TARGETS AIL
          ARCHIVE DESTINATION lib

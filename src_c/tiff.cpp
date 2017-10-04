@@ -181,6 +181,8 @@ namespace AImg
         uint16_t compression = 0;
         uint32_t rowsPerStrip = 0;
         uint16_t planarConfig = 0;
+        uint8_t * compressedProfile = NULL;
+        uint32_t compressedProfileLen = 0;
 
     public:
         virtual ~TiffFile()
@@ -221,9 +223,9 @@ namespace AImg
             *width = this->width;
             *height = this->height;
             *numChannels = this->channels;
-            if (colourProfileLen != NULL)
-            {
-                *colourProfileLen = 0;
+            if(colourProfileLen != NULL)
+            {   
+                *colourProfileLen = this->compressedProfileLen;
             }
 
             if (bitsPerChannel % 8 == 0)
@@ -247,11 +249,15 @@ namespace AImg
         {
             if (colourProfile != NULL)
             {
-                *colourProfileLen = 0;
+                if(this->compressedProfile != NULL)
+                {
+                    memcpy(colourProfile, this->compressedProfile, this->compressedProfileLen);
+                }
+                *colourProfileLen = this->compressedProfileLen;
             }
             if (profileName != NULL)
             {
-                std::strcpy(profileName, "no_profile");
+                std::strcpy(profileName, "");
             }
 
             return AImgErrorCode::AIMG_SUCCESS;
@@ -500,6 +506,11 @@ namespace AImg
 
             if (!TIFFGetField(tiff, TIFFTAG_SAMPLEFORMAT, &sampleFormat))
                 sampleFormat = SAMPLEFORMAT_UINT; // default to uint format if no SAMPLEFORMAT tifftag is present
+            
+            if(!TIFFGetField(tiff, TIFFTAG_ICCPROFILE, &compressedProfileLen, &compressedProfile))
+            {                
+                compressedProfile = NULL;
+            }
 
             if (compression == COMPRESSION_OJPEG)
             {
@@ -539,6 +550,9 @@ namespace AImg
         int32_t writeImage(void *data, int32_t width, int32_t height, int32_t inputFormat, const char *profileName, uint8_t *colourProfile, uint32_t colourProfileLen,
             WriteCallback writeCallback, TellCallback tellCallback, SeekCallback seekCallback, void *callbackData, void *encodingOptions)
         {
+            // Suppress unused warning
+            (void)profileName;
+            
             AIL_UNUSED_PARAM(encodingOptions);
 
             tiffCallbackData wCallbacks;
@@ -571,13 +585,22 @@ namespace AImg
                 TIFFSetField(wTiff, TIFFTAG_PLANARCONFIG, PLANARCONFIG_CONTIG);
 
                 if (numChannels == 1)
+                {
                     TIFFSetField(wTiff, TIFFTAG_PHOTOMETRIC, PHOTOMETRIC_MINISBLACK);
+                }
                 else
+                {
                     TIFFSetField(wTiff, TIFFTAG_PHOTOMETRIC, PHOTOMETRIC_RGB);
+                }
 
                 tsize_t stripRows = TIFFDefaultStripSize(wTiff, 0);
 
                 TIFFSetField(wTiff, TIFFTAG_ROWSPERSTRIP, stripRows);
+
+                int proflength = colourProfileLen;
+                const void* profdata = colourProfile;
+                if (profdata)
+                  TIFFSetField(wTiff, TIFFTAG_ICCPROFILE, proflength, profdata);
 
                 for (int32_t y = 0; y < height; y++)
                 {
