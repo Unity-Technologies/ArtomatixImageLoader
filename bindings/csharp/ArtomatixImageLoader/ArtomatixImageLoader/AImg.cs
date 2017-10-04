@@ -104,6 +104,9 @@ namespace ArtomatixImageLoader
             var tellCallback = ImgLoader.getTellCallback(s);
             var seekCallback = ImgLoader.getSeekCallback(s);
 
+            if (profileName == string.Empty)
+                profileName = "empty";
+
             GCHandle pinnedArray = GCHandle.Alloc(data, GCHandleType.Pinned);
             IntPtr pointer = pinnedArray.AddrOfPinnedObject();
 
