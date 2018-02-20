@@ -1,11 +1,11 @@
 ﻿
 Microsoft Visual Studio Solution File, Format Version 12.00
 # Visual Studio 14
-VisualStudioVersion = 14.0.25123.0
+VisualStudioVersion = 14.0.25420.1
 MinimumVisualStudioVersion = 10.0.40219.1
 Project("{FAE04EC0-301F-11D3-BF4B-00C04F79EFBC}") = "ArtomatixImageLoaderTests", "ArtomatixImageLoaderTests\ArtomatixImageLoaderTests.csproj", "{8F130887-AE15-441A-81F4-5A9F39968F1F}"
 EndProject
-Project("{FAE04EC0-301F-11D3-BF4B-00C04F79EFBC}") = "ArtomatixImageLoader", "ArtomatixImageLoader\ArtomatixImageLoader.csproj", "{C0BB2915-8150-4817-9351-2B7F83D96F2A}"
+Project("{FAE04EC0-301F-11D3-BF4B-00C04F79EFBC}") = "Artomatix.ImageLoader", "ArtomatixImageLoader\Artomatix.ImageLoader.csproj", "{C0BB2915-8150-4817-9351-2B7F83D96F2A}"
 EndProject
 Global
 	GlobalSection(SolutionConfigurationPlatforms) = preSolution

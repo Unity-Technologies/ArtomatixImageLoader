@@ -1,7 +1,7 @@
 ﻿using System;
 using System.ComponentModel;
 
-namespace ArtomatixImageLoader
+namespace Artomatix.ImageLoader
 {
     public enum AImgFloatOrIntType
     {
@@ -26,24 +26,24 @@ namespace ArtomatixImageLoader
     {
         INVALID_FORMAT = -1,
 
-        R8U     = 0,
-        RG8U    = 1,
-        RGB8U   = 2,
-        RGBA8U  = 3,
+        R8U = 0,
+        RG8U = 1,
+        RGB8U = 2,
+        RGBA8U = 3,
 
-        R16U    = 4,
-        RG16U   = 5,
-        RGB16U  = 6,
+        R16U = 4,
+        RG16U = 5,
+        RGB16U = 6,
         RGBA16U = 7,
 
-        R16F    = 8,
-        RG16F   = 9,
-        RGB16F  = 10,
+        R16F = 8,
+        RG16F = 9,
+        RGB16F = 10,
         RGBA16F = 11,
 
-        R32F    = 12,
-        RG32F   = 13,
-        RGB32F  = 14,
+        R32F = 12,
+        RG32F = 13,
+        RGB32F = 14,
         RGBA32F = 15
     };
 
@@ -60,34 +60,49 @@ namespace ArtomatixImageLoader
             {
                 case AImgFormat.R8U:
                     return 1;
+
                 case AImgFormat.RG8U:
                     return 1;
+
                 case AImgFormat.RGB8U:
                     return 1;
+
                 case AImgFormat.RGBA8U:
                     return 1;
+
                 case AImgFormat.R16U:
                     return 2;
+
                 case AImgFormat.RG16U:
                     return 2;
+
                 case AImgFormat.RGB16U:
                     return 2;
+
                 case AImgFormat.RGBA16U:
                     return 2;
+
                 case AImgFormat.R16F:
                     return 2;
+
                 case AImgFormat.RG16F:
                     return 2;
+
                 case AImgFormat.RGB16F:
                     return 2;
+
                 case AImgFormat.RGBA16F:
                     return 2;
+
                 case AImgFormat.R32F:
                     return 4;
+
                 case AImgFormat.RG32F:
                     return 4;
+
                 case AImgFormat.RGB32F:
                     return 4;
+
                 case AImgFormat.RGBA32F:
                     return 4;
             }
@@ -101,34 +116,49 @@ namespace ArtomatixImageLoader
             {
                 case AImgFormat.R8U:
                     return 1;
+
                 case AImgFormat.RG8U:
                     return 2;
+
                 case AImgFormat.RGB8U:
                     return 3;
+
                 case AImgFormat.RGBA8U:
                     return 4;
+
                 case AImgFormat.R16U:
                     return 1;
+
                 case AImgFormat.RG16U:
                     return 2;
+
                 case AImgFormat.RGB16U:
                     return 3;
+
                 case AImgFormat.RGBA16U:
                     return 4;
+
                 case AImgFormat.R16F:
                     return 1;
+
                 case AImgFormat.RG16F:
                     return 2;
+
                 case AImgFormat.RGB16F:
                     return 3;
+
                 case AImgFormat.RGBA16F:
                     return 4;
+
                 case AImgFormat.R32F:
                     return 1;
+
                 case AImgFormat.RG32F:
                     return 2;
+
                 case AImgFormat.RGB32F:
                     return 3;
+
                 case AImgFormat.RGBA32F:
                     return 4;
             }
@@ -142,34 +172,49 @@ namespace ArtomatixImageLoader
             {
                 case AImgFormat.R8U:
                     return AImgFloatOrIntType.FITYPE_INT;
+
                 case AImgFormat.RG8U:
                     return AImgFloatOrIntType.FITYPE_INT;
+
                 case AImgFormat.RGB8U:
                     return AImgFloatOrIntType.FITYPE_INT;
+
                 case AImgFormat.RGBA8U:
                     return AImgFloatOrIntType.FITYPE_INT;
+
                 case AImgFormat.R16U:
                     return AImgFloatOrIntType.FITYPE_INT;
+
                 case AImgFormat.RG16U:
                     return AImgFloatOrIntType.FITYPE_INT;
+
                 case AImgFormat.RGB16U:
                     return AImgFloatOrIntType.FITYPE_INT;
+
                 case AImgFormat.RGBA16U:
                     return AImgFloatOrIntType.FITYPE_INT;
+
                 case AImgFormat.R16F:
                     return AImgFloatOrIntType.FITYPE_FLOAT;
+
                 case AImgFormat.RG16F:
                     return AImgFloatOrIntType.FITYPE_FLOAT;
+
                 case AImgFormat.RGB16F:
                     return AImgFloatOrIntType.FITYPE_FLOAT;
+
                 case AImgFormat.RGBA16F:
                     return AImgFloatOrIntType.FITYPE_FLOAT;
+
                 case AImgFormat.R32F:
                     return AImgFloatOrIntType.FITYPE_FLOAT;
+
                 case AImgFormat.RG32F:
                     return AImgFloatOrIntType.FITYPE_FLOAT;
+
                 case AImgFormat.RGB32F:
                     return AImgFloatOrIntType.FITYPE_FLOAT;
+
                 case AImgFormat.RGBA32F:
                     return AImgFloatOrIntType.FITYPE_FLOAT;
             }

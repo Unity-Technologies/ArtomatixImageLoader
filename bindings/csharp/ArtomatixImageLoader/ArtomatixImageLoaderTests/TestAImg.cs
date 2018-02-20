@@ -1,10 +1,10 @@
 ﻿using System;
 using NUnit.Framework;
-using ArtomatixImageLoader;
+using Artomatix.ImageLoader;
 using System.Reflection;
 using System.IO;
 using System.Runtime.CompilerServices;
-using ArtomatixImageLoader.ImgEncodingOptions;
+using Artomatix.ImageLoader.ImgEncodingOptions;
 
 namespace ArtomatixImageLoaderTests
 {
@@ -139,10 +139,9 @@ namespace ArtomatixImageLoaderTests
                 byte[] data = new byte[img.width * img.height * img.decodedImgFormat.numChannels() * img.decodedImgFormat.bytesPerChannel()];
                 img.decodeImage(data);
 
-
                 var colourProfileName = img.colourProfileName;
                 var colourProfile = img.colourProfile;
-                
+
                 using (var writeStream = new MemoryStream())
                 {
                     var wImg = new AImg(AImgFileFormat.PNG_IMAGE_FORMAT);
@@ -173,7 +172,7 @@ namespace ArtomatixImageLoaderTests
 
                 float[] data = new float[img.width * img.height * img.decodedImgFormat.numChannels()];
                 img.decodeImage(data);
-                
+
                 var colourProfileName = img.colourProfileName;
                 var colourProfile = img.colourProfile;
 
@@ -222,7 +221,6 @@ namespace ArtomatixImageLoaderTests
             });
         }
 
-
         public static void TestWriteIMG<T>(int width, int height, AImgFormat format, AImgFileFormat fileformat, float allowedDelta = 0, bool deleteAfterwards = true) where T : struct
         {
             var img = new AImg(fileformat);
@@ -253,7 +251,6 @@ namespace ArtomatixImageLoaderTests
             for (int i = 0; i < data.Length; i++)
                 Assert.That(data[i], Is.EqualTo(readBackData[i]).Within(allowedDelta));
 
-
             if (deleteAfterwards)
             {
                 try
@@ -273,7 +270,7 @@ namespace ArtomatixImageLoaderTests
                 float[] data = new float[img.width * img.height * img.decodedImgFormat.numChannels()];
                 // Decode image
                 img.decodeImage(data);
-                
+
                 var colourProfileName = img.colourProfileName;
                 var colourProfile = img.colourProfile;
 
@@ -309,7 +306,7 @@ namespace ArtomatixImageLoaderTests
                 float[] data = new float[img.width * img.height * img.decodedImgFormat.numChannels()];
                 // Decode image
                 img.decodeImage(data);
-                
+
                 var colourProfileName = img.colourProfileName;
                 var colourProfile = img.colourProfile;
 

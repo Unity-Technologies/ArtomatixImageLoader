@@ -7,4 +7,4 @@ NUGET
       NativeBinaryManager (0.1)
     NUnit (2.6.4)
     Stugo.Interop (0.2)
-    ZipStorer (2.38)
+    ZipStorer (2.38) - content: once

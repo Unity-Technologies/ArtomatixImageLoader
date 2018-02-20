@@ -1,9 +1,9 @@
 ﻿using System;
 using System.IO;
 using System.Runtime.InteropServices;
-using ArtomatixImageLoader.ImgEncodingOptions;
+using Artomatix.ImageLoader.ImgEncodingOptions;
 
-namespace ArtomatixImageLoader
+namespace Artomatix.ImageLoader
 {
     public class AImg : IDisposable
     {
@@ -12,9 +12,9 @@ namespace ArtomatixImageLoader
         private bool doDisposeStream;
         private bool disposed = false;
 
-        private ReadCallback readCallback;
-        private TellCallback tellCallback;
-        private SeekCallback seekCallback;
+        private ImgLoader.ReadCallback readCallback;
+        private ImgLoader.TellCallback tellCallback;
+        private ImgLoader.SeekCallback seekCallback;
 
         private Int32 _width, _height;
         private Int32 _numChannels;
@@ -32,7 +32,7 @@ namespace ArtomatixImageLoader
 
         public AImg(AImgFileFormat fmt)
         {
-            nativeHandle = ImgLoader.AImgGetAImg((Int32)fmt);
+            nativeHandle = NativeFuncs.inst.AImgGetAImg((Int32)fmt);
         }
 
         /// <summary>
@@ -52,7 +52,7 @@ namespace ArtomatixImageLoader
             seekCallback = ImgLoader.getSeekCallback(stream);
 
             Int32 detectedImageFormatTmp = 0;
-            Int32 errCode = ImgLoader.AImgOpen(readCallback, tellCallback, seekCallback, IntPtr.Zero, out nativeHandle, out detectedImageFormatTmp);
+            Int32 errCode = NativeFuncs.inst.AImgOpen(readCallback, tellCallback, seekCallback, IntPtr.Zero, out nativeHandle, out detectedImageFormatTmp);
             AImgException.checkErrorCode(nativeHandle, errCode);
 
             detectedFileFormat = (AImgFileFormat)detectedImageFormatTmp;
@@ -60,14 +60,14 @@ namespace ArtomatixImageLoader
             Int32 floatOrIntTmp = 0;
             Int32 decodedImgFormatTmp = 0;
             Int32 colourProfileLen = 0;
-            ImgLoader.AImgGetInfo(nativeHandle, out _width, out _height, out _numChannels, out _bytesPerChannel, out floatOrIntTmp, out decodedImgFormatTmp, out colourProfileLen);
+            NativeFuncs.inst.AImgGetInfo(nativeHandle, out _width, out _height, out _numChannels, out _bytesPerChannel, out floatOrIntTmp, out decodedImgFormatTmp, out colourProfileLen);
             floatOrInt = (AImgFloatOrIntType)floatOrIntTmp;
             decodedImgFormat = (AImgFormat)decodedImgFormatTmp;
             colourProfile = new byte[colourProfileLen];
             fixed (byte* array = colourProfile)
             {
                 System.Text.StringBuilder _colourProfileName = new System.Text.StringBuilder(30);
-                ImgLoader.AImgGetColourProfile(nativeHandle, _colourProfileName, (IntPtr)array, out colourProfileLen);
+                NativeFuncs.inst.AImgGetColourProfile(nativeHandle, _colourProfileName, (IntPtr)array, out colourProfileLen);
                 colourProfileName = _colourProfileName.ToString();
             }
         }
@@ -87,7 +87,7 @@ namespace ArtomatixImageLoader
             GCHandle pinnedArray = GCHandle.Alloc(destBuffer, GCHandleType.Pinned);
             IntPtr pointer = pinnedArray.AddrOfPinnedObject();
 
-            Int32 errCode = ImgLoader.AImgDecodeImage(nativeHandle, pointer, (Int32)forceImageFormat);
+            Int32 errCode = NativeFuncs.inst.AImgDecodeImage(nativeHandle, pointer, (Int32)forceImageFormat);
             AImgException.checkErrorCode(nativeHandle, errCode);
 
             pinnedArray.Free();
@@ -95,7 +95,7 @@ namespace ArtomatixImageLoader
 
         public static AImgFormat getWhatFormatWillBeWrittenForData(AImgFileFormat fileFormat, AImgFormat format)
         {
-            return (AImgFormat)ImgLoader.AImgGetWhatFormatWillBeWrittenForData((Int32)fileFormat, (Int32)format);
+            return (AImgFormat)NativeFuncs.inst.AImgGetWhatFormatWillBeWrittenForData((Int32)fileFormat, (Int32)format);
         }
 
         public unsafe void writeImage<T>(T[] data, int width, int height, AImgFormat format, string profileName, byte[] colourProfile, Stream s, FormatEncodeOptions options = null) where T : struct
@@ -128,7 +128,7 @@ namespace ArtomatixImageLoader
                         colourProfileLength = colourProfile.Length;
                     }
 
-                    Int32 errCode = ImgLoader.AImgWriteImage(nativeHandle, pointer, width, height, (Int32)format, profileName, (IntPtr)colourProfileArray, colourProfileLength, writeCallback, tellCallback, seekCallback, IntPtr.Zero, encodeOptionsPtr);
+                    Int32 errCode = NativeFuncs.inst.AImgWriteImage(nativeHandle, pointer, width, height, (Int32)format, profileName, (IntPtr)colourProfileArray, colourProfileLength, writeCallback, tellCallback, seekCallback, IntPtr.Zero, encodeOptionsPtr);
                     AImgException.checkErrorCode(nativeHandle, errCode);
                 }
                 finally
@@ -153,7 +153,7 @@ namespace ArtomatixImageLoader
                 if (disposing)
                     GC.SuppressFinalize(this);
 
-                ImgLoader.AImgClose(nativeHandle);
+                NativeFuncs.inst.AImgClose(nativeHandle);
 
                 if (doDisposeStream)
                     stream.Dispose();

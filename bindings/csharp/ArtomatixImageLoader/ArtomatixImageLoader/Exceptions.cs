@@ -1,10 +1,12 @@
 ﻿using System;
 
-namespace ArtomatixImageLoader
+namespace Artomatix.ImageLoader
 {
     public class AImgException : Exception
     {
-        protected AImgException(string msg) : base(msg) {}
+        protected AImgException(string msg) : base(msg)
+        {
+        }
 
         public static void checkErrorCode(IntPtr img, Int32 errorCode)
         {
@@ -35,7 +37,7 @@ namespace ArtomatixImageLoader
                         throw new AImgOpenFailedEmptyInputException(msg);
                     case -9:
                         throw new AImgInvalidEncodeArgsException(msg);
-                   
+
                     default:
                         throw new AImgException("Unknown error code: " + errorCode + " " + msg);
                 }
@@ -45,46 +47,64 @@ namespace ArtomatixImageLoader
 
     public class AImgUnsupportedFiletypeException : AImgException
     {
-        public AImgUnsupportedFiletypeException(string msg) : base(msg) {}
+        public AImgUnsupportedFiletypeException(string msg) : base(msg)
+        {
+        }
     }
-        
+
     public class AImgLoadFailedExternalException : AImgException
     {
-        public AImgLoadFailedExternalException(string msg) : base(msg) {}
+        public AImgLoadFailedExternalException(string msg) : base(msg)
+        {
+        }
     }
 
     public class AImgLoadFailedInternalException : AImgException
     {
-        public AImgLoadFailedInternalException(string msg) : base(msg) {}
+        public AImgLoadFailedInternalException(string msg) : base(msg)
+        {
+        }
     }
 
     public class AImgConversionFailedBadFormatException : AImgException
     {
-        public AImgConversionFailedBadFormatException(string msg) : base(msg) {}
+        public AImgConversionFailedBadFormatException(string msg) : base(msg)
+        {
+        }
     }
 
     public class AImgWriteFailedExternalException : AImgException
     {
-        public AImgWriteFailedExternalException(string msg) : base(msg) {}
+        public AImgWriteFailedExternalException(string msg) : base(msg)
+        {
+        }
     }
 
     public class AImgWriteFailedInternalException : AImgException
     {
-        public AImgWriteFailedInternalException(string msg) : base(msg) {}
+        public AImgWriteFailedInternalException(string msg) : base(msg)
+        {
+        }
     }
 
     public class AImgOpenFailedEmptyInputException : AImgException
     {
-        public AImgOpenFailedEmptyInputException(string msg) : base(msg) {}
+        public AImgOpenFailedEmptyInputException(string msg) : base(msg)
+        {
+        }
     }
 
     public class AImgLoadFailedUnsupportedTiffException : AImgException
     {
-        public AImgLoadFailedUnsupportedTiffException(string msg) : base(msg) {}
+        public AImgLoadFailedUnsupportedTiffException(string msg) : base(msg)
+        {
+        }
     }
 
     public class AImgInvalidEncodeArgsException : AImgException
     {
-        public AImgInvalidEncodeArgsException(string msg) : base(msg) {}
+        public AImgInvalidEncodeArgsException(string msg) : base(msg)
+        {
+        }
     }
 }
