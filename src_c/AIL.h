@@ -4,109 +4,120 @@
 #include <stdint.h>
 
 #ifdef __cplusplus
-extern "C" 
+extern "C"
 {
 #endif
 
 #ifdef WIN32
-    #define CALLCONV __stdcall
+#define CALLCONV __stdcall
 
-	#ifdef IS_AIL_COMPILE
-		#define EXPORT_FUNC  __declspec(dllexport)
-	#else
-		#define EXPORT_FUNC __declspec(dllimport)
-	#endif
+#ifdef IS_AIL_COMPILE
+#define EXPORT_FUNC  __declspec(dllexport)
 #else
-    #define CALLCONV
-	#define EXPORT_FUNC
+#define EXPORT_FUNC __declspec(dllimport)
+#endif
+#else
+#define CALLCONV
+#define EXPORT_FUNC
 #endif
 
-///////////////////////
-// Callback typedefs //
-///////////////////////
-typedef int32_t (CALLCONV *ReadCallback)    (void* callbackData, uint8_t* dest, int32_t count);
-typedef void    (CALLCONV *WriteCallback)   (void* callbackData, const uint8_t* src, int32_t count);
-typedef int32_t (CALLCONV *TellCallback)    (void* callbackData);
-typedef void    (CALLCONV *SeekCallback)    (void* callbackData, int32_t pos);
+    ///////////////////////
+    // Callback typedefs //
+    ///////////////////////
+    typedef int32_t(CALLCONV *ReadCallback)    (void* callbackData, uint8_t* dest, int32_t count);
+    typedef void    (CALLCONV *WriteCallback)   (void* callbackData, const uint8_t* src, int32_t count);
+    typedef int32_t(CALLCONV *TellCallback)    (void* callbackData);
+    typedef void    (CALLCONV *SeekCallback)    (void* callbackData, int32_t pos);
 
+    ////////////////
+    // Core enums //
+    ////////////////
 
-////////////////
-// Core enums //
-////////////////
+    // format is [channels][bits per channel][U/F]
+    // U means unsigned normalised, so eg 8U maps integer vals 0-255 to float range 0-1, F means a normal float value
+    enum AImgFormat
+    {
+        INVALID_FORMAT = -1,
 
-// format is [channels][bits per channel][U/F]
-// U means unsigned normalised, so eg 8U maps integer vals 0-255 to float range 0-1, F means a normal float value
-enum AImgFormat
-{
-    INVALID_FORMAT = -1,
+        _8BITS = 1 << 0,
+        _16BITS = 1 << 5,
+        _32BITS = 1 << 6,
 
-    R8U     = 0,
-    RG8U    = 1,
-    RGB8U   = 2,
-    RGBA8U  = 3,
-    
-    R16U    = 4,
-    RG16U   = 5,
-    RGB16U  = 6,
-    RGBA16U = 7,
+        R = 1 << 1,
+        RG = 1 << 2,
+        RGB = 1 << 3,
+        RGBA = 1 << 4,
 
-    R16F    = 8,
-    RG16F   = 9,
-    RGB16F  = 10,
-    RGBA16F = 11,
+        FLOAT_FORMAT = 1 << 7,
 
-    R32F    = 12,
-    RG32F   = 13,
-    RGB32F  = 14,
-    RGBA32F = 15
-};
+        R8U = R | _8BITS,
+        RG8U = RG | _8BITS,
+        RGB8U = RGB | _8BITS,
+        RGBA8U = RGBA | _8BITS,
 
-enum AImgErrorCode
-{
-    AIMG_SUCCESS = 0,
-    AIMG_UNSUPPORTED_FILETYPE = -1,
-    AIMG_LOAD_FAILED_EXTERNAL = -2, // load failed in an external library
-    AIMG_LOAD_FAILED_INTERNAL = -3, // load failed inside ArtomatixImageLoader
-    AIMG_CONVERSION_FAILED_BAD_FORMAT = -4,
-    AIMG_WRITE_FAILED_EXTERNAL = -5,
-    AIMG_WRITE_FAILED_INTERNAL = -6,
-    AIMG_LOAD_FAILED_UNSUPPORTED_TIFF = -7,
-    AIMG_OPEN_FAILED_EMPTY_INPUT = -8,
-    AIMG_INVALID_ENCODE_ARGS = -9
-};
+        R16U = R | _16BITS,
+        RG16U = RG | _16BITS,
+        RGB16U = RGB | _16BITS,
+        RGBA16U = RGBA | _16BITS,
 
-enum AImgFileFormat
-{
-    UNKNOWN_IMAGE_FORMAT = -1,
-    EXR_IMAGE_FORMAT = 1,
-    PNG_IMAGE_FORMAT = 2,
-    JPEG_IMAGE_FORMAT = 3,
-    TGA_IMAGE_FORMAT = 4,
-    TIFF_IMAGE_FORMAT = 5
-};
+        R16F = R | _16BITS | FLOAT_FORMAT,
+        RG16F = RG | _16BITS | FLOAT_FORMAT,
+        RGB16F = RGB | _16BITS | FLOAT_FORMAT,
+        RGBA16F = RGBA | _16BITS | FLOAT_FORMAT,
 
-enum AImgFloatOrIntType
-{
-    FITYPE_UNKNOWN = -1,
-    FITYPE_FLOAT = 0,
-    FITYPE_INT = 1
-};
+        R32F = R | _32BITS | FLOAT_FORMAT,
+        RG32F = RG | _32BITS | FLOAT_FORMAT,
+        RGB32F = RGB | _32BITS | FLOAT_FORMAT,
+        RGBA32F = RGBA | _32BITS | FLOAT_FORMAT
+    };
 
-/////////////////////////////
-// Encoding option structs //
-/////////////////////////////
-//                         //
-// - All option structs    //
-// will have an int32 as   //
-// their first member,     //
-// which shall be required //
-// to be set to the        //
-// AImgFileFormat code for //
-// that file format.       //
-/////////////////////////////
+    enum AImgErrorCode
+    {
+        AIMG_SUCCESS = 0,
+        AIMG_UNSUPPORTED_FILETYPE = -1,
+        AIMG_LOAD_FAILED_EXTERNAL = -2, // load failed in an external library
+        AIMG_LOAD_FAILED_INTERNAL = -3, // load failed inside ArtomatixImageLoader
+        AIMG_CONVERSION_FAILED_BAD_FORMAT = -4,
+        AIMG_WRITE_FAILED_EXTERNAL = -5,
+        AIMG_WRITE_FAILED_INTERNAL = -6,
+        AIMG_LOAD_FAILED_UNSUPPORTED_TIFF = -7,
+        AIMG_OPEN_FAILED_EMPTY_INPUT = -8,
+        AIMG_INVALID_ENCODE_ARGS = -9,
+        AIMG_WRITE_NOT_SUPPORTED_FOR_FORMAT = -10
+    };
 
+    enum AImgFileFormat
+    {
+        UNKNOWN_IMAGE_FORMAT = -1,
+        EXR_IMAGE_FORMAT = 1,
+        PNG_IMAGE_FORMAT = 2,
+        JPEG_IMAGE_FORMAT = 3,
+        TGA_IMAGE_FORMAT = 4,
+        TIFF_IMAGE_FORMAT = 5,
+        HDR_IMAGE_FORMAT = 6
+    };
 
-// These defines copied from libpng's png.h
+    enum AImgFloatOrIntType
+    {
+        FITYPE_UNKNOWN = -1,
+        FITYPE_FLOAT = 0,
+        FITYPE_INT = 1
+    };
+
+    /////////////////////////////
+    // Encoding option structs //
+    /////////////////////////////
+    //                         //
+    // - All option structs    //
+    // will have an int32 as   //
+    // their first member,     //
+    // which shall be required //
+    // to be set to the        //
+    // AImgFileFormat code for //
+    // that file format.       //
+    /////////////////////////////
+
+    // These defines copied from libpng's png.h
 #define AIL_PNG_NO_FILTERS   0x00
 #define AIL_PNG_FILTER_NONE  0x08
 #define AIL_PNG_FILTER_SUB   0x10
@@ -115,53 +126,56 @@ enum AImgFloatOrIntType
 #define AIL_PNG_FILTER_PAETH 0x80
 #define AIL_PNG_ALL_FILTERS  (AIL_PNG_FILTER_NONE | AIL_PNG_FILTER_SUB | AIL_PNG_FILTER_UP | AIL_PNG_FILTER_AVG | AIL_PNG_FILTER_PAETH)
 
-struct PngEncodingOptions
-{
-    int32_t type;
-    int32_t compressionLevel; // Used with png_set_compression_level()
-    int32_t filter; // Used with png_set_filter(), set to some combination of AIL_PNG_ flag defines from above.
-};
+    struct PngEncodingOptions
+    {
+        int32_t type;
+        int32_t compressionLevel; // Used with png_set_compression_level()
+        int32_t filter; // Used with png_set_filter(), set to some combination of AIL_PNG_ flag defines from above.
+    };
 
-//////////////////////////
-// Public API functions //
-//////////////////////////
+    //////////////////////////
+    // Public API functions //
+    //////////////////////////
 
-typedef void* AImgHandle;
+    typedef void* AImgHandle;
 
-EXPORT_FUNC const char* AImgGetErrorDetails(AImgHandle img);
+    EXPORT_FUNC const char* AImgGetErrorDetails(AImgHandle img);
 
-// detectedFileFormat will be set to a member from AImgFileFormat if non-null, otherwise it is ignored.
-EXPORT_FUNC int32_t AImgOpen(ReadCallback readCallback, TellCallback tellCallback, SeekCallback seekCallback, void* callbackData, AImgHandle* imgPtr, int32_t* detectedFileFormat);
-EXPORT_FUNC void AImgClose(AImgHandle img);
+    // detectedFileFormat will be set to a member from AImgFileFormat if non-null, otherwise it is ignored.
+    EXPORT_FUNC int32_t AImgOpen(ReadCallback readCallback, TellCallback tellCallback, SeekCallback seekCallback, void* callbackData, AImgHandle* imgPtr, int32_t* detectedFileFormat);
+    EXPORT_FUNC void AImgClose(AImgHandle img);
 
-EXPORT_FUNC int32_t AImgGetInfo(AImgHandle img, int32_t* width, int32_t* height, int32_t* numChannels, int32_t* bytesPerChannel, int32_t* floatOrInt, int32_t* decodedImgFormat, uint32_t *colourProfileLen);
-EXPORT_FUNC int32_t AImgGetColourProfile(AImgHandle img, char* profileName, uint8_t* colourProfile, uint32_t *colourProfileLen);
-EXPORT_FUNC int32_t AImgDecodeImage(AImgHandle img, void* destBuffer, int32_t forceImageFormat);
-EXPORT_FUNC int32_t AImgInitialise();
-EXPORT_FUNC void AImgCleanUp();
+    EXPORT_FUNC int32_t AImgGetInfo(AImgHandle img, int32_t* width, int32_t* height, int32_t* numChannels, int32_t* bytesPerChannel, int32_t* floatOrInt, int32_t* decodedImgFormat, uint32_t *colourProfileLen);
+    EXPORT_FUNC int32_t AImgGetColourProfile(AImgHandle img, char* profileName, uint8_t* colourProfile, uint32_t *colourProfileLen);
+    EXPORT_FUNC int32_t AImgDecodeImage(AImgHandle img, void* destBuffer, int32_t forceImageFormat);
+    EXPORT_FUNC int32_t AImgInitialise();
+    EXPORT_FUNC void AImgCleanUp();
 
-EXPORT_FUNC void AIGetFormatDetails(int32_t format, int32_t* numChannels, int32_t* bytesPerChannel, int32_t* floatOrInt);
-EXPORT_FUNC int32_t AImgConvertFormat(void* src, void* dest, int32_t width, int32_t height, int32_t inFormat, int32_t outFormat);
+    EXPORT_FUNC int32_t AIGetBitDepth(int32_t format);
+    EXPORT_FUNC int32_t AIChangeBitDepth(int32_t format, int32_t newBitDepth);
+    EXPORT_FUNC void AIGetFormatDetails(int32_t format, int32_t* numChannels, int32_t* bytesPerChannel, int32_t* floatOrInt);
+    EXPORT_FUNC int32_t AImgConvertFormat(void* src, void* dest, int32_t width, int32_t height, int32_t inFormat, int32_t outFormat);
 
-EXPORT_FUNC int32_t AImgGetWhatFormatWillBeWrittenForData(int32_t fileFormat, int32_t inputFormat);
+    EXPORT_FUNC bool AImgIsFormatSupported(int32_t fileFormat, int32_t outputFormat);
 
-EXPORT_FUNC AImgHandle AImgGetAImg(int32_t fileFormat);
+    EXPORT_FUNC int32_t AImgGetWhatFormatWillBeWrittenForData(int32_t fileFormat, int32_t inputFormat, int32_t outputFormat);
 
-// encodingOptions should be one of the encoding option structs detailed in the section above. It shoudl be the struct that corresponds to the image format being written.
-EXPORT_FUNC int32_t AImgWriteImage(AImgHandle imgH, void* data, int32_t width, int32_t height, int32_t inputFormat, const char *profileName, uint8_t *colourProfile, uint32_t colourProfileLen,
-                                    WriteCallback writeCallback, TellCallback tellCallback, SeekCallback seekCallback, void* callbackData, void* encodingOptions);
+    EXPORT_FUNC AImgHandle AImgGetAImg(int32_t fileFormat);
 
-EXPORT_FUNC void AIGetSimpleMemoryBufferCallbacks(ReadCallback* readCallback, WriteCallback* writeCallback, TellCallback* tellCallback, SeekCallback* seekCallback, void** callbackData, void* buffer, int32_t size);
-EXPORT_FUNC void AIDestroySimpleMemoryBufferCallbacks(ReadCallback readCallback, WriteCallback writeCallback, TellCallback tellCallback, SeekCallback seekCallback, void* callbackData);
+    // encodingOptions should be one of the encoding option structs detailed in the section above. It shoudl be the struct that corresponds to the image format being written.
+    EXPORT_FUNC int32_t AImgWriteImage(AImgHandle imgH, void* data, int32_t width, int32_t height, int32_t inputFormat, int32_t outputFormat, const char *profileName, uint8_t *colourProfile, uint32_t colourProfileLen,
+        WriteCallback writeCallback, TellCallback tellCallback, SeekCallback seekCallback, void* callbackData, void* encodingOptions);
 
+    EXPORT_FUNC void AIGetSimpleMemoryBufferCallbacks(ReadCallback* readCallback, WriteCallback* writeCallback, TellCallback* tellCallback, SeekCallback* seekCallback, void** callbackData, void* buffer, int32_t size);
+    EXPORT_FUNC void AIDestroySimpleMemoryBufferCallbacks(ReadCallback readCallback, WriteCallback writeCallback, TellCallback tellCallback, SeekCallback seekCallback, void* callbackData);
 
 #ifdef __cplusplus
 }
 #endif
 
 #ifdef __cplusplus
-    #include <vector>
-    EXPORT_FUNC void AIGetResizableMemoryBufferCallbacks(ReadCallback* readCallback, WriteCallback* writeCallback, TellCallback* tellCallback, SeekCallback* seekCallback, void** callbackData, std::vector<uint8_t>* vec);
+#include <vector>
+EXPORT_FUNC void AIGetResizableMemoryBufferCallbacks(ReadCallback* readCallback, WriteCallback* writeCallback, TellCallback* tellCallback, SeekCallback* seekCallback, void** callbackData, std::vector<uint8_t>* vec);
 #endif
 
 #endif //ARTOMATIX_AIL_H

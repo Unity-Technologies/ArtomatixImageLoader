@@ -98,8 +98,32 @@ namespace ArtomatixImageLoaderTests
         [Test]
         public static void TestGetWhatFormatWIllBeWritten()
         {
-            AImgFormat res = AImg.getWhatFormatWillBeWrittenForData(AImgFileFormat.EXR_IMAGE_FORMAT, AImgFormat.RGBA32F);
+            AImgFormat res = AImg.getWhatFormatWillBeWrittenForData(AImgFileFormat.EXR_IMAGE_FORMAT, AImgFormat.RGBA32F, AImgFormat.INVALID_FORMAT);
             Assert.AreEqual(AImgFormat.RGBA32F, res);
+        }
+
+        [Test]
+        public static void TestSupportedFormat()
+        {
+            Assert.True(AImg.IsFormatSupported(AImgFileFormat.TIFF_IMAGE_FORMAT, AImgFormat._8BITS));
+            Assert.True(AImg.IsFormatSupported(AImgFileFormat.TIFF_IMAGE_FORMAT, AImgFormat._16BITS));
+            Assert.True(AImg.IsFormatSupported(AImgFileFormat.TIFF_IMAGE_FORMAT, AImgFormat._32BITS));
+
+            Assert.False(AImg.IsFormatSupported(AImgFileFormat.EXR_IMAGE_FORMAT, AImgFormat._8BITS));
+            Assert.True(AImg.IsFormatSupported(AImgFileFormat.EXR_IMAGE_FORMAT, AImgFormat._16BITS));
+            Assert.True(AImg.IsFormatSupported(AImgFileFormat.EXR_IMAGE_FORMAT, AImgFormat._32BITS));
+
+            Assert.True(AImg.IsFormatSupported(AImgFileFormat.JPEG_IMAGE_FORMAT, AImgFormat._8BITS));
+            Assert.False(AImg.IsFormatSupported(AImgFileFormat.JPEG_IMAGE_FORMAT, AImgFormat._16BITS));
+            Assert.False(AImg.IsFormatSupported(AImgFileFormat.JPEG_IMAGE_FORMAT, AImgFormat._32BITS));
+
+            Assert.True(AImg.IsFormatSupported(AImgFileFormat.PNG_IMAGE_FORMAT, AImgFormat._8BITS));
+            Assert.True(AImg.IsFormatSupported(AImgFileFormat.PNG_IMAGE_FORMAT, AImgFormat._16BITS));
+            Assert.False(AImg.IsFormatSupported(AImgFileFormat.PNG_IMAGE_FORMAT, AImgFormat._32BITS));
+
+            Assert.True(AImg.IsFormatSupported(AImgFileFormat.TGA_IMAGE_FORMAT, AImgFormat._8BITS));
+            Assert.False(AImg.IsFormatSupported(AImgFileFormat.TGA_IMAGE_FORMAT, AImgFormat._16BITS));
+            Assert.False(AImg.IsFormatSupported(AImgFileFormat.TGA_IMAGE_FORMAT, AImgFormat._32BITS));
         }
 
         [Test]

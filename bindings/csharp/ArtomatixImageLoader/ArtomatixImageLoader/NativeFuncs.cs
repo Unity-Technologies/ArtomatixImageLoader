@@ -13,7 +13,7 @@ namespace Artomatix.ImageLoader
     {
         private static NativeFuncs initNative()
         {
-            var dllPath = Path.GetFullPath("AIMG.dll");
+            var dllPath = Path.GetFullPath($"{AppDomain.CurrentDomain.BaseDirectory}/AIMG.dll");
 #if DEBUG
             var zipStream = System.Reflection.Assembly.GetExecutingAssembly().GetManifestResourceStream("Artomatix.ImageLoader.embedded_files.binaries.zip");
             NativeBinaryManager.NativeBinaryManager.ExtractNativeBinary(zipStream, dllPath);
@@ -69,7 +69,22 @@ namespace Artomatix.ImageLoader
         [EntryPoint("AImgCleanUp")]
         public AImgCleanUp_t AImgCleanUp;
 
-        public delegate Int32 AImgGetWhatFormatWillBeWrittenForData_t(Int32 fileFormat, Int32 inputFormat);
+        public delegate Int32 AIChangeBitDepth_t(Int32 format, Int32 newBitDepth);
+
+        [EntryPoint("AIChangeBitDepth")]
+        public AIChangeBitDepth_t AIChangeBitDepth;
+
+        public delegate Int32 AIGetBitDepth_t(Int32 format);
+
+        [EntryPoint("AIGetBitDepth")]
+        public AIGetBitDepth_t AIGetBitDepth;
+
+        public delegate bool AImgIsFormatSupported_t(Int32 fileFormat, Int32 outputFormat);
+
+        [EntryPoint("AImgIsFormatSupported")]
+        public AImgIsFormatSupported_t AImgIsFormatSupported;
+
+        public delegate Int32 AImgGetWhatFormatWillBeWrittenForData_t(Int32 fileFormat, Int32 inputFormat, Int32 outputFormat);
 
         [EntryPoint("AImgGetWhatFormatWillBeWrittenForData")]
         public AImgGetWhatFormatWillBeWrittenForData_t AImgGetWhatFormatWillBeWrittenForData;
@@ -87,7 +102,8 @@ namespace Artomatix.ImageLoader
         public AImgOpen_t AImgOpen;
 
         public delegate Int32 AImgWriteImage_t(
-            IntPtr img, IntPtr data, Int32 width, Int32 height, Int32 inputFormat, string profileName, IntPtr colourProfile, Int32 colourProfileLength,
+            IntPtr img, IntPtr data, Int32 width, Int32 height, Int32 inputFormat, Int32 outputFormat,
+            string profileName, IntPtr colourProfile, Int32 colourProfileLength,
             [MarshalAs(UnmanagedType.FunctionPtr)] ImgLoader.WriteCallback writeCallback,
             [MarshalAs(UnmanagedType.FunctionPtr)] ImgLoader.TellCallback tellCallback,
             [MarshalAs(UnmanagedType.FunctionPtr)] ImgLoader.SeekCallback seekCallback,

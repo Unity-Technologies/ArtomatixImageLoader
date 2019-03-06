@@ -107,7 +107,7 @@
     <When Condition="$(TargetFrameworkIdentifier) == '.NETFramework' And $(TargetFrameworkVersion) == 'v4.6'">
       <ItemGroup>
         <Reference Include="ZipStorer">
-          <HintPath>..\..\..\..\packages\ZipStorer\lib\net20\ZipStorer.dll</HintPath>
+          <HintPath>..\..\..\..\packages\ZipStorer\lib\net452\ZipStorer.dll</HintPath>
           <Private>True</Private>
           <Paket>True</Paket>
         </Reference>

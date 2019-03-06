@@ -11,7 +11,6 @@
 
 namespace AImg
 {
-
     int32_t PNGImageLoader::initialise()
     {
         return AImgErrorCode::AIMG_SUCCESS;
@@ -25,7 +24,7 @@ namespace AImg
 
         seekCallback(callbackData, startingPosition);
 
-        uint8_t png_signature[8] = {137, 80, 78, 71, 13, 10, 26, 10};
+        uint8_t png_signature[8] = { 137, 80, 78, 71, 13, 10, 26, 10 };
 
         return ((int32_t)(memcmp(&header[0], &png_signature[0], 8))) == 0;
     }
@@ -34,14 +33,14 @@ namespace AImg
     {
         CallbackData callbackData = *((CallbackData *)png_get_io_ptr(png_ptr));
 
-        callbackData.readCallback(callbackData.callbackData, data, length);
+        callbackData.readCallback(callbackData.callbackData, data, (int32_t)length);
     }
 
     void png_custom_write_data(png_struct* png_ptr, png_byte* data, png_size_t length)
     {
         CallbackData callbackData = *((CallbackData *)png_get_io_ptr(png_ptr));
 
-        callbackData.writeCallback(callbackData.callbackData, data, length);
+        callbackData.writeCallback(callbackData.callbackData, data, (int32_t)length);
     }
 
     std::string PNGImageLoader::getFileExtension()
@@ -59,25 +58,50 @@ namespace AImg
         AIL_UNUSED_PARAM(png_ptr);
     }
 
-
-    AImgFormat getWhatFormatWillBeWrittenForDataPNG(int32_t inputFormat)
+    bool isFormatSupportedByPng(int32_t format)
     {
+        bool isNotFloatFormat = !(format & AImgFormat::FLOAT_FORMAT);
+        bool is8Or16Bit = (format & AImgFormat::_8BITS || format & AImgFormat::_16BITS);
+        bool isNotRG8U = format != AImgFormat::RG8U;
+        bool isNotRG16U = format != AImgFormat::RG16U;
+        bool isSupported = isNotFloatFormat
+            && is8Or16Bit
+            && isNotRG8U
+            && isNotRG16U;
+
+        return isSupported;
+    }
+
+    AImgFormat getWhatFormatWillBeWrittenForDataPNG(int32_t inputFormat, int32_t outputFormat)
+    {
+        if (isFormatSupportedByPng(outputFormat))
+        {
+            return (AImgFormat)outputFormat;
+        }
+
         int32_t numChannels, bytesPerChannel, floatOrInt;
         AIGetFormatDetails(inputFormat, &numChannels, &bytesPerChannel, &floatOrInt);
 
-        if(floatOrInt == AImgFloatOrIntType::FITYPE_FLOAT)
-            return (AImgFormat) (AImgFormat::R16U + numChannels - 1); // convert to 16U version with same channelNum
+        if (floatOrInt == AImgFloatOrIntType::FITYPE_FLOAT)
+        {
+            AImgFormat outFormat = (AImgFormat)(AImgFormat::_16BITS | (AImgFormat::R << (numChannels - 1))); // convert to 16U version with same channelNum
+
+            if (outFormat == AImgFormat::RG16U)
+                return AImgFormat::RGB16U;
+
+            return outFormat;
+        }
 
         if (inputFormat == AImgFormat::RG8U)
+            return AImgFormat::RGB8U;
+
+        if (inputFormat == AImgFormat::RG16U)
             return AImgFormat::RGB16U;
 
-        if (inputFormat == AImgFormat::RG8U)
-            return AImgFormat::RGB16U;
-
-        if(inputFormat >= AImgFormat::R8U && inputFormat <= AImgFormat::RGBA8U)
+        if(inputFormat & AImgFormat::_8BITS)
             return (AImgFormat)inputFormat;
 
-        if(inputFormat >= AImgFormat::R16U && inputFormat <= AImgFormat::RGBA16U)
+        if(inputFormat & AImgFormat::_16BITS)
             return (AImgFormat)inputFormat;
 
         return AImgFormat::INVALID_FORMAT;
@@ -150,24 +174,38 @@ namespace AImg
                     png_set_expand(png_read_ptr);
                     bit_depth = 8;
                 }
-                if (png_get_valid(png_read_ptr, png_info_ptr, PNG_INFO_tRNS))
+
+                bool hasTransparency = png_get_valid(png_read_ptr, png_info_ptr, PNG_INFO_tRNS);
+                bool isGrayWithAlpha = colour_type == PNG_COLOR_TYPE_GRAY_ALPHA;
+
+                bool numChannelsChanged = false;
+
+                if (hasTransparency)
                 {
                     png_set_expand(png_read_ptr);
 
-                    if (colour_type == PNG_COLOR_TYPE_GRAY || colour_type == PNG_COLOR_TYPE_GRAY_ALPHA)
-                    {
-                        // expand grayscale images with transparency to 4-channel RGBA because if we don't then we end up
-                        // with gray in R and alpha in G, and converting that up to RGBA will not yield the correct results
-                        png_set_gray_to_rgb(png_read_ptr);
-                        numChannels = 3;
-                    }
-
                     numChannels++;
                 }
-                if(!(png_get_iCCP(png_read_ptr, png_info_ptr, &profileName, &compressionMethod, &compressedProfile, &compressedProfileLen) & PNG_INFO_iCCP))                
+
+                if ((hasTransparency && colour_type == PNG_COLOR_TYPE_GRAY) || isGrayWithAlpha)
                 {
-                    compressedProfile = NULL;
-                    profileName = NULL;
+                    // expand grayscale images with transparency to 4-channel RGBA because if we don't then we end up
+                    // with gray in R and alpha in G, and converting that up to RGBA will not yield the correct results
+                    png_set_gray_to_rgb(png_read_ptr);
+
+                    numChannels = 4;
+                    numChannelsChanged = true;
+                }
+
+                if (!numChannelsChanged)
+                {
+                    // Don't load color profile if the number of color channels changes. It would be invalid
+
+                    if (!(png_get_iCCP(png_read_ptr, png_info_ptr, &profileName, &compressionMethod, &compressedProfile, &compressedProfileLen) & PNG_INFO_iCCP))
+                    {
+                        compressedProfile = NULL;
+                        profileName = NULL;
+                    }
                 }
 
                 return AImgErrorCode::AIMG_SUCCESS;
@@ -295,7 +333,9 @@ namespace AImg
                 return AImgErrorCode::AIMG_SUCCESS;
             }
 
-            int32_t writeImage(void *data, int32_t width, int32_t height, int32_t inputFormat, const char *profileName, uint8_t *colourProfile, uint32_t colourProfileLen, WriteCallback writeCallback, TellCallback tellCallback, SeekCallback seekCallback, void *callbackData, void* encodingOptions)
+            int32_t writeImage(void *data, int32_t width, int32_t height, int32_t inputFormat, int32_t outputFormat,
+                const char *profileName, uint8_t *colourProfile, uint32_t colourProfileLen,
+                WriteCallback writeCallback, TellCallback tellCallback, SeekCallback seekCallback, void *callbackData, void* encodingOptions)
             {
                 AIL_UNUSED_PARAM(tellCallback);
                 AIL_UNUSED_PARAM(seekCallback);
@@ -319,7 +359,7 @@ namespace AImg
 
                 png_set_write_fn(png_write_ptr, (void *)callbackDataStruct, png_custom_write_data, flush_data_noop_func);
 
-                int32_t writeFormat = getWhatFormatWillBeWrittenForDataPNG(inputFormat);
+                int32_t writeFormat = getWhatFormatWillBeWrittenForDataPNG(inputFormat, outputFormat);
 
                 std::vector<uint8_t> convertBuffer(0);
 
@@ -334,6 +374,17 @@ namespace AImg
                     if (convertError != AImgErrorCode::AIMG_SUCCESS)
                         return convertError;
                     data = &convertBuffer[0];
+
+                    int outChannels = numChannels;
+                    AIGetFormatDetails(inputFormat, &numChannels, &bytesPerChannel, &floatOrInt);
+
+                    if (numChannels != outChannels
+                        && (numChannels != 4 || outChannels != 3)
+                        && (numChannels != 3 || outChannels != 4))
+                    {
+                        // Don't save color profile if the number of color channels changed
+                        colourProfile = NULL;
+                    }
                 }
 
                 png_byte colour_type;
@@ -357,7 +408,6 @@ namespace AImg
                         colour_type = PNG_COLOR_TYPE_RGB_ALPHA;
                         bit_depth = 8;
                         break;
-
                     case R16U:
                         colour_type = PNG_COLOR_TYPE_GRAY;
                         bit_depth = 16;
@@ -385,10 +435,15 @@ namespace AImg
                 int32_t numChannels, bytesPerChannel, floatOrInt;
                 AIGetFormatDetails(writeFormat, &numChannels, &bytesPerChannel, &floatOrInt);
 
-                void ** ptrs = (void **)malloc(sizeof(size_t) * height);
+                size_t step = width * numChannels * bytesPerChannel;
 
-                for (int32_t y=0; y < height; y++)
-                    ptrs[y] = (void *)((size_t)data + y*width * numChannels * bytesPerChannel);
+                png_bytepp ptrs = (png_bytepp)malloc(sizeof(png_bytep) * height);
+
+                ptrs[0] = (png_bytep)data;
+                for (int32_t y = 1; y < height; y++)
+                {
+                    ptrs[y] = ptrs[y - 1] + step;
+                }
 
                 png_set_IHDR(png_write_ptr, png_info_ptr, width, height, bit_depth, colour_type, PNG_INTERLACE_NONE, PNG_COMPRESSION_TYPE_DEFAULT, PNG_FILTER_TYPE_DEFAULT);
 
@@ -455,9 +510,14 @@ namespace AImg
     };
 
 
-    AImgFormat PNGImageLoader::getWhatFormatWillBeWrittenForData(int32_t inputFormat)
+    AImgFormat PNGImageLoader::getWhatFormatWillBeWrittenForData(int32_t inputFormat, int32_t outputFormat)
     {
-        return getWhatFormatWillBeWrittenForDataPNG(inputFormat);
+        return getWhatFormatWillBeWrittenForDataPNG(inputFormat, outputFormat);
+    }
+
+    bool PNGImageLoader::isFormatSupported(int32_t format)
+    {
+        return isFormatSupportedByPng(format);
     }
 
     AImgBase* PNGImageLoader::getAImg()

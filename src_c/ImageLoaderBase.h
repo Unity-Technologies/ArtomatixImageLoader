@@ -17,8 +17,9 @@ namespace AImg
             virtual int32_t getColourProfile(char* profileName, uint8_t* colourProfile, uint32_t *colourProfileLen) = 0;
             virtual int32_t decodeImage(void* destBuffer, int32_t forceImageFormat) = 0;
 
-            virtual int32_t writeImage(void* data, int32_t width, int32_t height, int32_t inputFormat, const char *profileName, uint8_t *colourProfile, uint32_t colourProfileLen,
-                                       WriteCallback writeCallback, TellCallback tellCallback, SeekCallback seekCallback, void* callbackData, void* encodingOptions) = 0;
+            virtual int32_t writeImage(void* data, int32_t width, int32_t height, int32_t inputFormat, int32_t outputFormat,
+                                        const char *profileName, uint8_t *colourProfile, uint32_t colourProfileLen,
+                                        WriteCallback writeCallback, TellCallback tellCallback, SeekCallback seekCallback, void* callbackData, void* encodingOptions) = 0;
 
             const char* getErrorDetails()
             {
@@ -52,7 +53,9 @@ namespace AImg
             virtual std::string getFileExtension() = 0;
             virtual int32_t getAImgFileFormatValue() = 0;
 
-            virtual AImgFormat getWhatFormatWillBeWrittenForData(int32_t inputFormat) = 0;
+            virtual bool isFormatSupported(int32_t format) = 0;
+
+            virtual AImgFormat getWhatFormatWillBeWrittenForData(int32_t inputFormat, int32_t outputFormat) = 0;
     };
 }
 

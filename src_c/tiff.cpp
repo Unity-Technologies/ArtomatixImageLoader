@@ -15,13 +15,21 @@
 
 namespace AImg
 {
-    AImgFormat getWriteFormatTiff(int32_t inputFormat)
+    AImgFormat getWriteFormatTiff(int32_t inputFormat, int32_t outputFormat)
     {
         // Tiff can write all currently supported formats. Here we are just future-proofing in case we add some more formats later that tiff can't do
-        if (inputFormat > AImgFormat::INVALID_FORMAT && inputFormat <= AImgFormat::RGBA32F)
+        if (inputFormat <= AImgFormat::INVALID_FORMAT || inputFormat > AImgFormat::RGBA32F)
+            return AImgFormat::INVALID_FORMAT;
+
+        if(inputFormat == outputFormat || outputFormat == AImgFormat::INVALID_FORMAT)
             return (AImgFormat)inputFormat;
 
-        return AImgFormat::INVALID_FORMAT;
+        int32_t outDepth = AIGetBitDepth(outputFormat);
+
+        if(outDepth == AImgFormat::INVALID_FORMAT)
+            return (AImgFormat)inputFormat;
+
+        return (AImgFormat)AIChangeBitDepth(inputFormat, outDepth);
     }
 
     struct tiffCallbackData
@@ -40,7 +48,7 @@ namespace AImg
     {
         tiffCallbackData *callbacks = (tiffCallbackData *)st;
 
-        return callbacks->mReadCallback(callbacks->callbackData, (uint8_t *)buffer, size);
+        return callbacks->mReadCallback(callbacks->callbackData, (uint8_t *)buffer, (int32_t)size);
     }
 
     tsize_t tiff_Write(thandle_t st, tdata_t buffer, tsize_t size)
@@ -48,7 +56,7 @@ namespace AImg
         tiffCallbackData *callbacks = (tiffCallbackData *)st;
 
         int32_t start = callbacks->mTellCallback(callbacks->callbackData);
-        callbacks->mWriteCallback(callbacks->callbackData, (uint8_t *)buffer, size);
+        callbacks->mWriteCallback(callbacks->callbackData, (uint8_t *)buffer, (int32_t)size);
         int32_t end = callbacks->mTellCallback(callbacks->callbackData);
 
         if (end > callbacks->furthestPositionWritten)
@@ -104,7 +112,7 @@ namespace AImg
         }
         }
 
-        callbacks->mSeekCallback(callbacks->callbackData, finalPos);
+        callbacks->mSeekCallback(callbacks->callbackData, (int32_t)finalPos);
 
         return callbacks->mTellCallback(callbacks->callbackData);
     }
@@ -128,26 +136,26 @@ namespace AImg
     {
         int mantissaBits = 16;
         int exponentBits = 7;
-        int maxExponent = pow(2, exponentBits) - 1;
+        int maxExponent = (int)(1 << exponentBits) - 1;
 
         int v = *((int *)src);
         int sign = v >> 23;
-        int exponent = (v >> mantissaBits) & (int)(pow(2, exponentBits) - 1);
-        int mantissa = v & (int)(pow(2, mantissaBits) - 1);
+        int exponent = (v >> mantissaBits) & ((int)(1 << exponentBits) - 1);
+        int mantissa = v & ((int)(1 << mantissaBits) - 1);
 
         if (exponent == 0)
         {
             if (mantissa != 0)
             {
-                while ((mantissa & (int)pow(2, mantissaBits)) == 0)
+                while ((mantissa & (int)(1 << mantissaBits)) == 0)
                 {
                     mantissa <<= 1;
                     exponent--;
                 }
 
                 exponent++;
-                mantissa &= (int)(pow(2, mantissaBits) - 1);
-                exponent += 127 - (pow(2, exponentBits - 1) - 1);
+                mantissa &= ((int)(1 << mantissaBits) - 1);
+                exponent += 127 - (int)((1 << (exponentBits - 1)) - 1);
             }
         }
 
@@ -157,7 +165,7 @@ namespace AImg
         }
         else
         {
-            exponent += 127 - (pow(2, exponentBits - 1) - 1);
+            exponent += 127 - (int)((1 << (exponentBits - 1)) - 1);
         }
 
         mantissa <<= (23 - mantissaBits);
@@ -197,21 +205,21 @@ namespace AImg
             {
                 // handle 24-bit float (lolwtf)
                 if (bitsPerChannel == 24 && sampleFormat == SAMPLEFORMAT_IEEEFP)
-                    return ((int32_t)AImgFormat::R32F) - 1 + channels;
+                    return AImgFormat::_32BITS | AImgFormat::FLOAT_FORMAT | (AImgFormat::R << (channels - 1));
 
                 if (sampleFormat == SAMPLEFORMAT_IEEEFP)
                 {
                     if (bitsPerChannel == 16)
-                        return ((int32_t)AImgFormat::R16F) - 1 + channels;
+                        return AImgFormat::_16BITS | AImgFormat::FLOAT_FORMAT | (AImgFormat::R << (channels - 1));
                     else if (bitsPerChannel == 32)
-                        return ((int32_t)AImgFormat::R32F) - 1 + channels;
+                        return AImgFormat::_32BITS | AImgFormat::FLOAT_FORMAT | (AImgFormat::R << (channels - 1));
                 }
                 else if (sampleFormat == SAMPLEFORMAT_UINT || sampleFormat == SAMPLEFORMAT_INT)
                 {
                     if (bitsPerChannel == 8)
-                        return ((int32_t)AImgFormat::R8U) - 1 + channels;
+                        return AImgFormat::_8BITS | (AImgFormat::R << (channels - 1));
                     else if (bitsPerChannel == 16)
-                        return ((int32_t)AImgFormat::R16U) - 1 + channels;
+                        return AImgFormat::_16BITS | (AImgFormat::R << (channels - 1));
                 }
             }
 
@@ -279,7 +287,7 @@ namespace AImg
                 destBuffer = &convertTmpBuffer[0];
             }
 
-            uint32 stripsize = TIFFStripSize(tiff);
+            uint32 stripsize = (uint32)TIFFStripSize(tiff);
             int32_t bytesPerChannel = bitsPerChannel / 8;
 
             std::vector<char> stripBuffer(stripsize);
@@ -451,7 +459,7 @@ namespace AImg
                 return AImgErrorCode::AIMG_LOAD_FAILED_EXTERNAL;
             }
 
-            bool hasSamplesPerPixel = TIFFGetField(tiff, TIFFTAG_SAMPLESPERPIXEL, &channels);
+            bool hasSamplesPerPixel = TIFFGetField(tiff, TIFFTAG_SAMPLESPERPIXEL, &channels) != 0;
 
             AImgErrorCode retval = AImgErrorCode::AIMG_SUCCESS;
 
@@ -547,7 +555,7 @@ namespace AImg
             return retval;
         }
 
-        int32_t writeImage(void *data, int32_t width, int32_t height, int32_t inputFormat, const char *profileName, uint8_t *colourProfile, uint32_t colourProfileLen,
+        int32_t writeImage(void *data, int32_t width, int32_t height, int32_t inputFormat, int32_t outputFormat, const char *profileName, uint8_t *colourProfile, uint32_t colourProfileLen,
             WriteCallback writeCallback, TellCallback tellCallback, SeekCallback seekCallback, void *callbackData, void *encodingOptions)
         {
             // Suppress unused warning
@@ -565,7 +573,7 @@ namespace AImg
 
             int32_t retval = AIMG_SUCCESS;
 
-            int32_t wFormat = getWriteFormatTiff(inputFormat);
+            int32_t wFormat = getWriteFormatTiff(inputFormat, outputFormat);
             if (wFormat == AImgFormat::INVALID_FORMAT)
             {
                 mErrorDetails = "[AImg::TIFFImageLoader::TiffFile::writeImage] Cannot write this format to tiff."; // developers: see comment in getWriteFormatTiff
@@ -575,6 +583,19 @@ namespace AImg
             {
                 int32_t numChannels, bytesPerChannel, floatOrInt;
                 AIGetFormatDetails(wFormat, &numChannels, &bytesPerChannel, &floatOrInt);
+
+                // Convert
+                std::vector<uint8_t> convertBuffer(0);
+                if (wFormat != inputFormat)
+                {
+                    convertBuffer.resize(width * height * numChannels * bytesPerChannel);
+
+                    int32_t convertError = AImgConvertFormat(data, &convertBuffer[0], width, height, inputFormat, wFormat);
+
+                    if (convertError != AImgErrorCode::AIMG_SUCCESS)
+                        return convertError;
+                    data = &convertBuffer[0];
+                }
 
                 TIFFSetField(wTiff, TIFFTAG_IMAGEWIDTH, width);
                 TIFFSetField(wTiff, TIFFTAG_IMAGELENGTH, height);
@@ -615,7 +636,7 @@ namespace AImg
 
             TIFFClose(wTiff);
 
-            // Leave the pointer at the end of the file, libtiff does NOT do this by default.
+            // Leave the pointer at the end of the file, because libtiff doesn't... because it's a fantastic piece of software
             wCallbacks.mSeekCallback(wCallbacks.callbackData, wCallbacks.furthestPositionWritten);
 
             return retval;
@@ -661,9 +682,16 @@ namespace AImg
         return AImgFileFormat::TIFF_IMAGE_FORMAT;
     }
 
-    AImgFormat TIFFImageLoader::getWhatFormatWillBeWrittenForData(int32_t inputFormat)
+    AImgFormat TIFFImageLoader::getWhatFormatWillBeWrittenForData(int32_t inputFormat, int32_t outputFormat)
     {
-        return getWriteFormatTiff(inputFormat);
+        return getWriteFormatTiff(inputFormat, outputFormat);
+    }
+
+    bool TIFFImageLoader::isFormatSupported(int32_t format)
+    {
+        AIL_UNUSED_PARAM(format);
+
+        return true;
     }
 }
 

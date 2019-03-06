@@ -12,7 +12,7 @@ bool detectImage(const std::string& path, int32_t format)
     SeekCallback seekCallback = NULL;
     void* callbackData = NULL;
 
-    AIGetSimpleMemoryBufferCallbacks(&readCallback, &writeCallback, &tellCallback, &seekCallback, &callbackData, &data[0], data.size());
+    AIGetSimpleMemoryBufferCallbacks(&readCallback, &writeCallback, &tellCallback, &seekCallback, &callbackData, &data[0], (int32_t)data.size());
 
     AImgHandle img = NULL;
     int32_t fileFormat = UNKNOWN_IMAGE_FORMAT;
@@ -39,7 +39,7 @@ bool validateImageHeaders(const std::string & path, int32_t expectedWidth, int32
     SeekCallback seekCallback = NULL;
     void* callbackData = NULL;
 
-    AIGetSimpleMemoryBufferCallbacks(&readCallback, &writeCallback, &tellCallback, &seekCallback, &callbackData, &data[0], data.size());
+    AIGetSimpleMemoryBufferCallbacks(&readCallback, &writeCallback, &tellCallback, &seekCallback, &callbackData, &data[0], (int32_t)data.size());
 
     AImgHandle img = NULL;
     AImgOpen(readCallback, tellCallback, seekCallback, callbackData, &img, NULL);
@@ -72,7 +72,7 @@ bool compareForceImageFormat(const std::string& path)
     SeekCallback seekCallback = NULL;
     void* callbackData = NULL;
 
-    AIGetSimpleMemoryBufferCallbacks(&readCallback, &writeCallback, &tellCallback, &seekCallback, &callbackData, &data[0], data.size());
+    AIGetSimpleMemoryBufferCallbacks(&readCallback, &writeCallback, &tellCallback, &seekCallback, &callbackData, &data[0], (int32_t)data.size());
 
     int32_t err = AIMG_SUCCESS;
 
@@ -145,7 +145,8 @@ bool compareForceImageFormat(const std::string& path)
     return true;
 }
 
-void writeToFile(const std::string& path, int32_t width, int32_t height, void* data, int32_t inputFormat, int32_t fileFormat, const char *profileName, uint8_t *colourProfile, uint32_t colourProfileLen)
+void writeToFile(const std::string& path, int32_t width, int32_t height, void* data, int32_t inputFormat, int32_t outputFormat, int32_t fileFormat,
+    const char *profileName, uint8_t *colourProfile, uint32_t colourProfileLen)
 {
     ReadCallback readCallback = NULL;
     WriteCallback writeCallback = NULL;
@@ -153,13 +154,14 @@ void writeToFile(const std::string& path, int32_t width, int32_t height, void* d
     SeekCallback seekCallback = NULL;
     void* callbackData = NULL;
 
-    std::vector<uint8_t> fData;
+    std::vector<uint8_t> fData(1);
 
     AIGetResizableMemoryBufferCallbacks(&readCallback, &writeCallback, &tellCallback, &seekCallback, &callbackData, &fData);
 
     AImgHandle wImg = AImgGetAImg(fileFormat);
 
-    AImgWriteImage(wImg, data, width, height, inputFormat, profileName, colourProfile, colourProfileLen, writeCallback, tellCallback, seekCallback, callbackData, NULL);
+    AImgWriteImage(wImg, data, width, height, inputFormat, outputFormat, profileName, colourProfile, colourProfileLen,
+        writeCallback, tellCallback, seekCallback, callbackData, NULL);
 
     FILE* f = fopen(path.c_str(), "wb");
     fwrite(&fData[0], 1, fData.size(), f);
@@ -180,7 +182,7 @@ bool compareIccProfiles(const std::string & image1, const std::string & image2)
     SeekCallback seekCallback = NULL;
     void* callbackData = NULL;
 
-    AIGetSimpleMemoryBufferCallbacks(&readCallback, &writeCallback, &tellCallback, &seekCallback, &callbackData, &data1[0], data1.size());
+    AIGetSimpleMemoryBufferCallbacks(&readCallback, &writeCallback, &tellCallback, &seekCallback, &callbackData, &data1[0], (int32_t)data1.size());
 
     AImgHandle img1 = NULL;
     int32_t detectedFormat1;
@@ -220,7 +222,7 @@ bool compareIccProfiles(const std::string & image1, const std::string & image2)
     ///////////////////// Read image 2
     auto data2 = readFile<uint8_t>(getImagesDir() + image2);
 
-    AIGetSimpleMemoryBufferCallbacks(&readCallback, &writeCallback, &tellCallback, &seekCallback, &callbackData, &data2[0], data2.size());
+    AIGetSimpleMemoryBufferCallbacks(&readCallback, &writeCallback, &tellCallback, &seekCallback, &callbackData, &data2[0], (int32_t)data2.size());
 
     AImgHandle img2 = NULL;
     int32_t detectedFormat2;
@@ -278,7 +280,7 @@ bool compareIccProfiles(const std::string & image1, const std::string & image2)
     return true;
 }
 
-void readWriteIcc(const std::string & path, const std::string & outPath, char *profileName, uint8_t **colourProfile, uint32_t *colourProfileLen)
+void readWriteIcc(const std::string & path, const std::string & outPath, char *profileName, uint8_t **colourProfile, uint32_t *colourProfileLenPtr)
 {
     // Read
     auto data = readFile<uint8_t>(getImagesDir() + path);
@@ -289,7 +291,7 @@ void readWriteIcc(const std::string & path, const std::string & outPath, char *p
     SeekCallback seekCallback = NULL;
     void* callbackData = NULL;
 
-    AIGetSimpleMemoryBufferCallbacks(&readCallback, &writeCallback, &tellCallback, &seekCallback, &callbackData, &data[0], data.size());
+    AIGetSimpleMemoryBufferCallbacks(&readCallback, &writeCallback, &tellCallback, &seekCallback, &callbackData, &data[0], (int32_t)data.size());
 
     AImgHandle img = NULL;
     int32_t detectedFormat;
@@ -302,9 +304,9 @@ void readWriteIcc(const std::string & path, const std::string & outPath, char *p
     int32_t floatOrInt = 0;
     int32_t decodedImgFormat = 0;
 
-    AImgGetInfo(img, &width, &height, &numChannels, &bytesPerChannel, &floatOrInt, &decodedImgFormat, colourProfileLen);
-    std::vector<uint8_t> colourProfile_(*colourProfileLen);
-    AImgGetColourProfile(img, profileName, colourProfile_.data(), colourProfileLen);
+    AImgGetInfo(img, &width, &height, &numChannels, &bytesPerChannel, &floatOrInt, &decodedImgFormat, colourProfileLenPtr);
+    std::vector<uint8_t> colourProfile_(*colourProfileLenPtr);
+    AImgGetColourProfile(img, profileName, colourProfile_.data(), colourProfileLenPtr);
     *colourProfile = colourProfile_.data();
 
     std::vector<uint8_t> imgData;
@@ -320,10 +322,25 @@ void readWriteIcc(const std::string & path, const std::string & outPath, char *p
     std::vector<uint8_t> fileData;
 
     fileData.resize(width * height * numChannels * bytesPerChannel * 5);
-    AIGetSimpleMemoryBufferCallbacks(&readCallback, &writeCallback, &tellCallback, &seekCallback, &callbackData, &fileData[0], fileData.size());
+    AIGetSimpleMemoryBufferCallbacks(&readCallback, &writeCallback, &tellCallback, &seekCallback, &callbackData, &fileData[0], (int32_t)fileData.size());
 
     AImgHandle wImg = AImgGetAImg(detectedFormat);
-    AImgWriteImage(wImg, &imgData[0], width, height, decodedImgFormat, profileName, *colourProfile, *colourProfileLen, writeCallback, tellCallback, seekCallback, callbackData, NULL);
+
+    uint8_t * colourProfilePtr = NULL;
+    uint32_t colourProfileLen = 0;
+
+    if (colourProfile != NULL)
+    {
+        colourProfilePtr = *colourProfile;
+    }
+
+    if (colourProfileLenPtr != NULL)
+    {
+        colourProfileLen = *colourProfileLenPtr;
+    }
+
+    AImgWriteImage(wImg, &imgData[0], width, height, decodedImgFormat, decodedImgFormat,
+        profileName, colourProfilePtr, colourProfileLen, writeCallback, tellCallback, seekCallback, callbackData, NULL);
 
     FILE* f = fopen((getImagesDir() + outPath).c_str(), "wb");
     fwrite(&fileData[0], 1, fileData.size(), f);

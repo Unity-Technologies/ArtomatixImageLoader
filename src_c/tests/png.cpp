@@ -126,7 +126,8 @@ failed:
     return isEq;
 }
 
-bool validateWritePNGFile(const std::string& path, void* encodeOptions, int32_t& err, std::vector<char>& fileData)
+bool validateWritePNGFile(const std::string& path, void* encodeOptions, int32_t& err, std::vector<char>& fileData,
+    AImgFormat decodeFormat = AImgFormat::INVALID_FORMAT, AImgFormat writeFormat = AImgFormat::INVALID_FORMAT, AImgFormat expectedWrittenFormat = AImgFormat::INVALID_FORMAT)
 {
     err = AImgErrorCode::AIMG_SUCCESS;
 
@@ -158,6 +159,22 @@ bool validateWritePNGFile(const std::string& path, void* encodeOptions, int32_t&
         uint32_t colourProfileLen;
 
         err = AImgGetInfo(img, &width, &height, &numChannels, &bytesPerChannel, &floatOrInt, &fmt, &colourProfileLen);
+
+        if (decodeFormat < 0)
+        {
+            decodeFormat = (AImgFormat)fmt;
+        }
+        if (writeFormat < 0)
+        {
+            writeFormat = decodeFormat;
+        }
+        if (expectedWrittenFormat < 0)
+        {
+            expectedWrittenFormat = writeFormat;
+        }
+
+        AIGetFormatDetails(decodeFormat, &numChannels, &bytesPerChannel, &floatOrInt);
+
         char profileName[30];
         std::vector<uint8_t> colourProfile(colourProfileLen);
         AImgGetColourProfile(img, profileName, colourProfile.data(), &colourProfileLen);
@@ -165,7 +182,7 @@ bool validateWritePNGFile(const std::string& path, void* encodeOptions, int32_t&
         {
             imgData.resize(width*height*numChannels * bytesPerChannel, 78);
 
-            err = AImgDecodeImage(img, &imgData[0], AImgFormat::INVALID_FORMAT);
+            err = AImgDecodeImage(img, &imgData[0], decodeFormat);
             if(err == AImgErrorCode::AIMG_SUCCESS)
             {
                 AImgClose(img);
@@ -177,7 +194,8 @@ bool validateWritePNGFile(const std::string& path, void* encodeOptions, int32_t&
                 AIGetSimpleMemoryBufferCallbacks(&readCallback, &writeCallback, &tellCallback, &seekCallback, &callbackData, &fileData[0], fileData.size());
 
                 wImg = AImgGetAImg(AImgFileFormat::PNG_IMAGE_FORMAT);
-                err = AImgWriteImage(wImg, &imgData[0], width, height, fmt, profileName, colourProfile.data(), colourProfileLen, writeCallback, tellCallback, seekCallback, callbackData, encodeOptions);
+                err = AImgWriteImage(wImg, &imgData[0], width, height, decodeFormat, writeFormat, profileName, colourProfile.data(), colourProfileLen, writeCallback, tellCallback, seekCallback, callbackData, encodeOptions);
+
                 if(err == AImgErrorCode::AIMG_SUCCESS)
                 {
                     fileData.resize(tellCallback(callbackData));
@@ -196,9 +214,14 @@ bool validateWritePNGFile(const std::string& path, void* encodeOptions, int32_t&
                     {
 
                         imgData2.resize(width*height*numChannels*bytesPerChannel, 0);
-                        err = AImgDecodeImage(img, &imgData2[0], AImgFormat::INVALID_FORMAT);
+                        err = AImgDecodeImage(img, &imgData2[0], decodeFormat);
                         if(err == AImgErrorCode::AIMG_SUCCESS)
                         {
+                            int32_t _, writtenFormat;
+                            AImgGetInfo(img, &_, &_, &_, &_, &_, &writtenFormat, NULL);
+                            if (writtenFormat != expectedWrittenFormat)
+                                return false;
+
                             AImgClose(img);
                             img = NULL;
                             AIDestroySimpleMemoryBufferCallbacks(readCallback, writeCallback, tellCallback, seekCallback, callbackData);
@@ -546,7 +569,7 @@ TEST(Png, TestWriteFrom32Bit)
     AIGetSimpleMemoryBufferCallbacks(&readCallback, &writeCallback, &tellCallback, &seekCallback, &callbackData, &fileData[0], fileData.size());
 
     AImgHandle wImg = AImgGetAImg(AImgFileFormat::PNG_IMAGE_FORMAT);
-    AImgWriteImage(wImg, &fData[0], width, height, AImgFormat::RGBA32F, NULL, NULL, 0, writeCallback, tellCallback, seekCallback, callbackData, NULL);
+    AImgWriteImage(wImg, &fData[0], width, height, AImgFormat::RGBA32F, AImgFormat::INVALID_FORMAT, NULL, NULL, 0, writeCallback, tellCallback, seekCallback, callbackData, NULL);
     AImgClose(wImg);
 
     seekCallback(callbackData, 0);
@@ -598,7 +621,7 @@ TEST(Png, TestWriteFrom16BitFloat)
     AIGetSimpleMemoryBufferCallbacks(&readCallback, &writeCallback, &tellCallback, &seekCallback, &callbackData, &fileData[0], fileData.size());
 
     AImgHandle wImg = AImgGetAImg(AImgFileFormat::PNG_IMAGE_FORMAT);
-    AImgWriteImage(wImg, &fData[0], width, height, AImgFormat::RGBA16F, NULL, NULL, 0, writeCallback, tellCallback, seekCallback, callbackData, NULL);
+    AImgWriteImage(wImg, &fData[0], width, height, AImgFormat::RGBA16F, AImgFormat::INVALID_FORMAT, NULL, NULL, 0, writeCallback, tellCallback, seekCallback, callbackData, NULL);
     AImgClose(wImg);
 
     seekCallback(callbackData, 0);
@@ -618,6 +641,31 @@ TEST(Png, TestWriteFrom16BitFloat)
 
     AImgClose(img);
     AIDestroySimpleMemoryBufferCallbacks(readCallback, writeCallback, tellCallback, seekCallback, callbackData);
+}
+
+TEST(PNG, TestWriteConvert16)
+{
+    int32_t err;
+    std::vector<char> fileData;
+    ASSERT_TRUE(validateWritePNGFile("/png/8-bit.png", NULL, err, fileData,
+        AImgFormat::INVALID_FORMAT, AImgFormat::RGB16U));
+    ASSERT_EQ(err, AImgErrorCode::AIMG_SUCCESS);
+}
+
+TEST(PNG, TestWriteConvert8)
+{
+    int32_t err;
+    std::vector<char> fileData;
+    ASSERT_TRUE(validateWritePNGFile("/png/16-bit.png", NULL, err, fileData,
+        AImgFormat::RGB32F, AImgFormat::RGBA16U));
+    ASSERT_EQ(err, AImgErrorCode::AIMG_SUCCESS);
+}
+
+TEST(PNG, TestSupportedFormat)
+{
+    ASSERT_TRUE(AImgIsFormatSupported(AImgFileFormat::PNG_IMAGE_FORMAT, AImgFormat::_8BITS));
+    ASSERT_TRUE(AImgIsFormatSupported(AImgFileFormat::PNG_IMAGE_FORMAT, AImgFormat::_16BITS));
+    ASSERT_FALSE(AImgIsFormatSupported(AImgFileFormat::PNG_IMAGE_FORMAT, AImgFormat::_32BITS));
 }
 
 #endif // HAVE_PNG

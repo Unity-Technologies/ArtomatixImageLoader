@@ -21,7 +21,7 @@ bool compareTiffToPng(const std::string& name, bool convertSrgb = false)
     SeekCallback seekCallback = NULL;
     void* callbackData = NULL;
 
-    AIGetSimpleMemoryBufferCallbacks(&readCallback, &writeCallback, &tellCallback, &seekCallback, &callbackData, &pngData[0], pngData.size());
+    AIGetSimpleMemoryBufferCallbacks(&readCallback, &writeCallback, &tellCallback, &seekCallback, &callbackData, &pngData[0], (int32_t)pngData.size());
 
     AImgHandle img = NULL;
     int32_t error = AImgOpen(readCallback, tellCallback, seekCallback, callbackData, &img, NULL);
@@ -52,7 +52,7 @@ bool compareTiffToPng(const std::string& name, bool convertSrgb = false)
 
     auto tiffData = readFile<uint8_t>(getImagesDir() + "/tiff/" + name);
 
-    AIGetSimpleMemoryBufferCallbacks(&readCallback, &writeCallback, &tellCallback, &seekCallback, &callbackData, &tiffData[0], tiffData.size());
+    AIGetSimpleMemoryBufferCallbacks(&readCallback, &writeCallback, &tellCallback, &seekCallback, &callbackData, &tiffData[0], (int32_t)tiffData.size());
 
     error = AImgOpen(readCallback, tellCallback, seekCallback, callbackData, &img, NULL);
     if (error)
@@ -96,10 +96,10 @@ bool compareTiffToPng(const std::string& name, bool convertSrgb = false)
             if (convertSrgb)
             {
                 float f;
-                f = pngR / 255.0f; pngR = std::pow(f, 2.2f) * 255.0f;
-                f = pngG / 255.0f; pngG = std::pow(f, 2.2f) * 255.0f;
-                f = pngB / 255.0f; pngB = std::pow(f, 2.2f) * 255.0f;
-                f = pngA / 255.0f; pngA = std::pow(f, 2.2f) * 255.0f;
+                f = pngR / 255.0f; pngR = (uint8_t)(std::pow(f, 2.2f) * 255.0f);
+                f = pngG / 255.0f; pngG = (uint8_t)(std::pow(f, 2.2f) * 255.0f);
+                f = pngB / 255.0f; pngB = (uint8_t)(std::pow(f, 2.2f) * 255.0f);
+                f = pngA / 255.0f; pngA = (uint8_t)(std::pow(f, 2.2f) * 255.0f);
             }
 
             uint8_t tiffR = tiffImgData[(x + y*pngWidth) * 4 + 0];
@@ -121,8 +121,13 @@ bool compareTiffToPng(const std::string& name, bool convertSrgb = false)
     return true;
 }
 
-bool testTiffWrite(int32_t testFormat)
+bool testTiffWrite(int32_t testFormat, int32_t outputFormat = -1)
 {
+    if (outputFormat < 0)
+    {
+        outputFormat = testFormat;
+    }
+
     auto pngData = readFile<uint8_t>(getImagesDir() + "/tiff/8_bit_png.png");
 
     ReadCallback readCallback = NULL;
@@ -131,7 +136,7 @@ bool testTiffWrite(int32_t testFormat)
     SeekCallback seekCallback = NULL;
     void* callbackData = NULL;
 
-    AIGetSimpleMemoryBufferCallbacks(&readCallback, &writeCallback, &tellCallback, &seekCallback, &callbackData, &pngData[0], pngData.size());
+    AIGetSimpleMemoryBufferCallbacks(&readCallback, &writeCallback, &tellCallback, &seekCallback, &callbackData, &pngData[0], (int32_t)pngData.size());
 
     AImgHandle img = NULL;
     int32_t error = AImgOpen(readCallback, tellCallback, seekCallback, callbackData, &img, NULL);
@@ -162,12 +167,15 @@ bool testTiffWrite(int32_t testFormat)
 
     ///////////
 
-    std::vector<uint8_t> fileData(pngWidth*pngHeight*bytesPerChannel*numChannels * 10, 79); // 10x the raw data size, should be well enough space
-    AIGetSimpleMemoryBufferCallbacks(&readCallback, &writeCallback, &tellCallback, &seekCallback, &callbackData, &fileData[0], fileData.size());
+    int32_t numChannels_out, bytesPerChannel_out, floatOrInt_out;
+    AIGetFormatDetails(outputFormat, &numChannels_out, &bytesPerChannel_out, &floatOrInt_out);
+
+    std::vector<uint8_t> fileData(pngWidth*pngHeight*bytesPerChannel_out*numChannels_out * 10, 79); // 10x the raw data size, should be well enough space
+    AIGetSimpleMemoryBufferCallbacks(&readCallback, &writeCallback, &tellCallback, &seekCallback, &callbackData, &fileData[0], (int32_t)fileData.size());
 
     AImgHandle wImg = AImgGetAImg(AImgFileFormat::TIFF_IMAGE_FORMAT);
 
-    error = AImgWriteImage(wImg, &pngImgData[0], pngWidth, pngHeight, testFormat, NULL, NULL, 0, writeCallback, tellCallback, seekCallback, callbackData, NULL);
+    error = AImgWriteImage(wImg, &pngImgData[0], pngWidth, pngHeight, testFormat, outputFormat, NULL, NULL, 0, writeCallback, tellCallback, seekCallback, callbackData, NULL);
     if (error)
         return false;
 
@@ -183,7 +191,7 @@ bool testTiffWrite(int32_t testFormat)
     if (error)
         return false;
 
-    if (tiffImgFmt != testFormat)
+    if (tiffImgFmt != outputFormat)
         return false;
 
     if (tiffWidth != pngWidth || tiffHeight != pngHeight)
@@ -191,7 +199,7 @@ bool testTiffWrite(int32_t testFormat)
 
     std::vector<uint8_t> tiffImgData(pngWidth*pngHeight*numChannels*bytesPerChannel, 78);
 
-    error = AImgDecodeImage(img, &tiffImgData[0], AImgFormat::INVALID_FORMAT);
+    error = AImgDecodeImage(img, &tiffImgData[0], testFormat);
     if (error)
         return false;
 
@@ -215,7 +223,7 @@ bool testColourProfileFromPngToTiff()
     SeekCallback seekCallback = NULL;
     void* callbackData = NULL;
 
-    AIGetSimpleMemoryBufferCallbacks(&readCallback, &writeCallback, &tellCallback, &seekCallback, &callbackData, &pngData[0], pngData.size());
+    AIGetSimpleMemoryBufferCallbacks(&readCallback, &writeCallback, &tellCallback, &seekCallback, &callbackData, &pngData[0], (int32_t)pngData.size());
 
     AImgHandle pngImg = NULL;
     int32_t error = AImgOpen(readCallback, tellCallback, seekCallback, callbackData, &pngImg, NULL);
@@ -250,7 +258,7 @@ bool testColourProfileFromPngToTiff()
     ////////////////////////////////////////////////////// Read tiff (only data)
     auto tiffData = readFile<uint8_t>(getImagesDir() + "/tiff/ICC.tif");
 
-    AIGetSimpleMemoryBufferCallbacks(&readCallback, &writeCallback, &tellCallback, &seekCallback, &callbackData, &tiffData[0], tiffData.size());
+    AIGetSimpleMemoryBufferCallbacks(&readCallback, &writeCallback, &tellCallback, &seekCallback, &callbackData, &tiffData[0], (int32_t)tiffData.size());
 
     AImgHandle tiffImg1 = NULL;
     error = AImgOpen(readCallback, tellCallback, seekCallback, callbackData, &tiffImg1, NULL);
@@ -283,11 +291,11 @@ bool testColourProfileFromPngToTiff()
 
     ////////////////////////////////////////////////////// Write tiff (data plus png colour profile)
     std::vector<uint8_t> fileData(pngWidth*pngHeight*pngBytesPerChannel*pngNumChannels * 10, 79); // 10x the raw data size, should be well enough space
-    AIGetSimpleMemoryBufferCallbacks(&readCallback, &writeCallback, &tellCallback, &seekCallback, &callbackData, &fileData[0], fileData.size());
+    AIGetSimpleMemoryBufferCallbacks(&readCallback, &writeCallback, &tellCallback, &seekCallback, &callbackData, &fileData[0], (int32_t)fileData.size());
 
     AImgHandle wImg = AImgGetAImg(AImgFileFormat::TIFF_IMAGE_FORMAT);
 
-    error = AImgWriteImage(wImg, &tiffImgData[0], pngWidth, pngHeight, AImgFormat::RGBA8U, "", pngColourProfile.data(), pngColourProfileLen, writeCallback, tellCallback, seekCallback, callbackData, NULL);
+    error = AImgWriteImage(wImg, &tiffImgData[0], pngWidth, pngHeight, AImgFormat::RGBA8U, AImgFormat::INVALID_FORMAT, "", pngColourProfile.data(), pngColourProfileLen, writeCallback, tellCallback, seekCallback, callbackData, NULL);
     if (error)
         return false;
 
@@ -304,7 +312,7 @@ bool testColourProfileFromPngToTiff()
     ////////////////////////////////////////////////////// Read written tiff (data and colour profile)
     tiffData = readFile<uint8_t>(getImagesDir() + "/tiff/ICC_png.tif");
 
-    AIGetSimpleMemoryBufferCallbacks(&readCallback, &writeCallback, &tellCallback, &seekCallback, &callbackData, &tiffData[0], tiffData.size());
+    AIGetSimpleMemoryBufferCallbacks(&readCallback, &writeCallback, &tellCallback, &seekCallback, &callbackData, &tiffData[0], (int32_t)tiffData.size());
 
     AImgHandle tiffImg2 = NULL;
     error = AImgOpen(readCallback, tellCallback, seekCallback, callbackData, &tiffImg2, NULL);
@@ -418,17 +426,37 @@ TEST(TIFF, TestWrite8U)
 
 TEST(TIFF, TestWrite16U)
 {
-    testTiffWrite(AImgFormat::RGBA16U);
+    ASSERT_TRUE(testTiffWrite(AImgFormat::RGBA16U));
 }
 
 TEST(TIFF, TestWrite16F)
 {
-    testTiffWrite(AImgFormat::RGBA16F);
+    ASSERT_TRUE(testTiffWrite(AImgFormat::RGBA16F));
 }
 
 TEST(TIFF, TestWrite32F)
 {
-    testTiffWrite(AImgFormat::RGBA32F);
+    ASSERT_TRUE(testTiffWrite(AImgFormat::RGBA32F));
+}
+
+
+///
+/// Read the png image in its current format,
+/// save tiff image in the test format
+///
+TEST(TIFF, TestWrite8Bits)
+{
+    ASSERT_TRUE(testTiffWrite(AImgFormat::RGB8U, AImgFormat::RGB8U));
+}
+
+TEST(TIFF, TestWrite16Bits)
+{
+    ASSERT_TRUE(testTiffWrite(AImgFormat::RGB8U, AImgFormat::RGB16U));
+}
+
+TEST(TIFF, TestWrite32bits)
+{
+    ASSERT_TRUE(testTiffWrite(AImgFormat::RGB8U, AImgFormat::RGB32F));
 }
 
 TEST(TIFF, TestColourProfileFromPngToTiff)
@@ -450,6 +478,13 @@ TEST(TIFF, TestReadWriteICCProfile)
 TEST(TIFF, TestCompareWithPngICCProfile)
 {
     ASSERT_TRUE(compareIccProfiles("/png/ICC.png", "/tiff/ICC.tif"));
+}
+
+TEST(TIFF, TestSupportedFormat)
+{
+    ASSERT_TRUE(AImgIsFormatSupported(AImgFileFormat::TIFF_IMAGE_FORMAT, AImgFormat::_8BITS));
+    ASSERT_TRUE(AImgIsFormatSupported(AImgFileFormat::TIFF_IMAGE_FORMAT, AImgFormat::_16BITS));
+    ASSERT_TRUE(AImgIsFormatSupported(AImgFileFormat::TIFF_IMAGE_FORMAT, AImgFormat::_32BITS));
 }
 
 #endif // HAVE_TIFF
