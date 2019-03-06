@@ -1,17 +1,18 @@
-#ifndef ARTOMATIX_JPEG_H
-#define ARTOMATIX_JPEG_H
+#ifndef ARTOMATIX_HDR_H
+#define ARTOMATIX_HDR_H
 
 #include "ImageLoaderBase.h"
 
+#include <string>
 namespace AImg
 {
-    class JPEGImageLoader : public ImageLoaderBase
+    class HDRImageLoader : public ImageLoaderBase
     {
-        public:
+    public:
 
-        virtual AImgBase* getAImg();
-
+        virtual AImgBase * getAImg();
         virtual int32_t initialise();
+
         virtual bool canLoadImage(ReadCallback readCallback, TellCallback tellCallback, SeekCallback seekCallback, void* callbackData);
         virtual std::string getFileExtension();
         virtual int32_t getAImgFileFormatValue();
@@ -22,4 +23,4 @@ namespace AImg
     };
 }
 
-#endif //ARTOMATIX_JPEG_H
+#endif

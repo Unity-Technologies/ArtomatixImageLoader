@@ -7,6 +7,64 @@
 
 #include <half.h>
 
+void WriteImageTest(AImgFormat decodeFormat, AImgFormat writeFormat, AImgFormat expectedWritten = AImgFormat::INVALID_FORMAT)
+{
+    if (expectedWritten < 0)
+    {
+        expectedWritten = writeFormat;
+    }
+
+    auto data = readFile<uint8_t>(getImagesDir() + "/exr/grad_32.exr");
+
+    ReadCallback readCallback = NULL;
+    WriteCallback writeCallback = NULL;
+    TellCallback tellCallback = NULL;
+    SeekCallback seekCallback = NULL;
+    void* callbackData = NULL;
+
+    AIGetSimpleMemoryBufferCallbacks(&readCallback, &writeCallback, &tellCallback, &seekCallback, &callbackData, &data[0], (int32_t)data.size());
+
+    AImgHandle img = NULL;
+    AImgOpen(readCallback, tellCallback, seekCallback, callbackData, &img, NULL);
+
+    int32_t width = 64;
+    int32_t height = 32;
+
+    int32_t numChannels, bytesPerChannel, floatOrInt;
+    AIGetFormatDetails(decodeFormat, &numChannels, &bytesPerChannel, &floatOrInt);
+
+    int32_t fileSize = width*height*numChannels*bytesPerChannel;
+
+    std::vector<uint8_t> imgData(fileSize, 0);
+
+    AImgDecodeImage(img, &imgData[0], decodeFormat);
+    AImgClose(img);
+    AIDestroySimpleMemoryBufferCallbacks(readCallback, writeCallback, tellCallback, seekCallback, callbackData);
+
+    std::vector<uint8_t> fileData(fileSize);
+    AIGetSimpleMemoryBufferCallbacks(&readCallback, &writeCallback, &tellCallback, &seekCallback, &callbackData, &fileData[0], (int32_t)fileData.size());
+
+    AImgHandle wImg = AImgGetAImg(AImgFileFormat::EXR_IMAGE_FORMAT);
+    AImgWriteImage(wImg, &imgData[0], width, height, decodeFormat, writeFormat, NULL, NULL, 0, writeCallback, tellCallback, seekCallback, callbackData, NULL);
+    AImgClose(wImg);
+
+    seekCallback(callbackData, 0);
+
+    AImgOpen(readCallback, tellCallback, seekCallback, callbackData, &img, NULL);
+
+    int32_t _, writtenFormat;
+    AImgGetInfo(img, &_, &_, &_, &_, &_, &writtenFormat, NULL);
+    ASSERT_EQ(writtenFormat, expectedWritten);
+
+    std::vector<uint8_t> imgData2(fileSize, 0);
+    AImgDecodeImage(img, &imgData2[0], decodeFormat);
+    AImgClose(img);
+    AIDestroySimpleMemoryBufferCallbacks(readCallback, writeCallback, tellCallback, seekCallback, callbackData);
+
+    for (uint32_t i = 0; i < imgData2.size(); i++)
+        ASSERT_LE(abs(imgData[i] - imgData2[i]), 1);
+}
+
 TEST(Exr, TestDetectExr)
 {
     ASSERT_TRUE(detectImage("/exr/grad_32.exr", EXR_IMAGE_FORMAT));
@@ -33,7 +91,7 @@ TEST(Exr, TestMemoryCallbacksRead)
 {
     std::vector<uint8_t> data(10);
     for(size_t i = 0; i < data.size(); i++)
-        data[i] = i;
+        data[i] = (uint8_t)i;
 
     ReadCallback readCallback = NULL;
     WriteCallback writeCallback = NULL;
@@ -41,7 +99,7 @@ TEST(Exr, TestMemoryCallbacksRead)
     SeekCallback seekCallback = NULL;
     void* callbackData = NULL;
 
-    AIGetSimpleMemoryBufferCallbacks(&readCallback, &writeCallback, &tellCallback, &seekCallback, &callbackData, &data[0], data.size());
+    AIGetSimpleMemoryBufferCallbacks(&readCallback, &writeCallback, &tellCallback, &seekCallback, &callbackData, &data[0], (int32_t)data.size());
 
     std::vector<uint8_t> readBuf(data.size());
     std::fill(readBuf.begin(), readBuf.end(), 100);
@@ -87,7 +145,7 @@ TEST(Exr, TestReadExr)
     SeekCallback seekCallback = NULL;
     void* callbackData = NULL;
 
-    AIGetSimpleMemoryBufferCallbacks(&readCallback, &writeCallback, &tellCallback, &seekCallback, &callbackData, &data[0], data.size());
+    AIGetSimpleMemoryBufferCallbacks(&readCallback, &writeCallback, &tellCallback, &seekCallback, &callbackData, &data[0], (int32_t)data.size());
 
     AImgHandle img = NULL;
     AImgOpen(readCallback, tellCallback, seekCallback, callbackData, &img, NULL);
@@ -123,7 +181,7 @@ TEST(Exr, TestWriteExr)
     SeekCallback seekCallback = NULL;
     void* callbackData = NULL;
 
-    AIGetSimpleMemoryBufferCallbacks(&readCallback, &writeCallback, &tellCallback, &seekCallback, &callbackData, &data[0], data.size());
+    AIGetSimpleMemoryBufferCallbacks(&readCallback, &writeCallback, &tellCallback, &seekCallback, &callbackData, &data[0], (int32_t)data.size());
 
     AImgHandle img = NULL;
     AImgOpen(readCallback, tellCallback, seekCallback, callbackData, &img, NULL);
@@ -138,10 +196,10 @@ TEST(Exr, TestWriteExr)
     AIDestroySimpleMemoryBufferCallbacks(readCallback, writeCallback, tellCallback, seekCallback, callbackData);
 
     std::vector<char> fileData(4096); // fixed size buffer for a file write, not the best but it'll do for this test
-    AIGetSimpleMemoryBufferCallbacks(&readCallback, &writeCallback, &tellCallback, &seekCallback, &callbackData, &fileData[0], fileData.size());
+    AIGetSimpleMemoryBufferCallbacks(&readCallback, &writeCallback, &tellCallback, &seekCallback, &callbackData, &fileData[0], (int32_t)fileData.size());
 
     AImgHandle wImg = AImgGetAImg(AImgFileFormat::EXR_IMAGE_FORMAT);
-    AImgWriteImage(wImg, &imgData[0], width, height, AImgFormat::RGB32F, NULL, NULL, 0, writeCallback, tellCallback, seekCallback, callbackData, NULL);
+    AImgWriteImage(wImg, &imgData[0], width, height, AImgFormat::RGB32F, AImgFormat::INVALID_FORMAT, NULL, NULL, 0, writeCallback, tellCallback, seekCallback, callbackData, NULL);
     AImgClose(wImg);
 
     seekCallback(callbackData, 0);
@@ -209,7 +267,7 @@ TEST(Exr, TestOpenBadImage)
     SeekCallback seekCallback = NULL;
     void* callbackData = NULL;
 
-    AIGetSimpleMemoryBufferCallbacks(&readCallback, &writeCallback, &tellCallback, &seekCallback, &callbackData, &data[0], data.size());
+    AIGetSimpleMemoryBufferCallbacks(&readCallback, &writeCallback, &tellCallback, &seekCallback, &callbackData, &data[0], (int32_t)data.size());
 
     AImgHandle img = NULL;
     int32_t err = AImgOpen(readCallback, tellCallback, seekCallback, callbackData, &img, NULL);
@@ -237,51 +295,32 @@ TEST(Exr, TestOpenEmptyStream)
 
 TEST(Exr, TestWriteExr16)
 {
-    auto data = readFile<uint8_t>(getImagesDir() + "/exr/grad_32.exr");
+    WriteImageTest(AImgFormat::RGB16F, AImgFormat::RGB16F);
+}
 
-    ReadCallback readCallback = NULL;
-    WriteCallback writeCallback = NULL;
-    TellCallback tellCallback = NULL;
-    SeekCallback seekCallback = NULL;
-    void* callbackData = NULL;
+TEST(Exr, TestWriteConvert32To16bits)
+{
+    WriteImageTest(AImgFormat::RGB32F, AImgFormat::RGB16F);
+}
+TEST(Exr, TestWriteConvert16To32bits)
+{
+    WriteImageTest(AImgFormat::RGB16F, AImgFormat::RGB32F);
+}
 
-    AIGetSimpleMemoryBufferCallbacks(&readCallback, &writeCallback, &tellCallback, &seekCallback, &callbackData, &data[0], data.size());
+TEST(Exr, TestWrite8bits)
+{
+    WriteImageTest(AImgFormat::RGB8U, AImgFormat::INVALID_FORMAT, AImgFormat::RGB16F);
+}
+TEST(Exr, TestWrite16bitsU)
+{
+    WriteImageTest(AImgFormat::R16U, AImgFormat::R16U, AImgFormat::R16F);
+}
 
-    AImgHandle img = NULL;
-    AImgOpen(readCallback, tellCallback, seekCallback, callbackData, &img, NULL);
-
-    int32_t width = 64;
-    int32_t height = 32;
-
-    std::vector<half> imgData(width*height*3, 0.0f);
-
-    AImgDecodeImage(img, &imgData[0], AImgFormat::RGB16F);
-    AImgClose(img);
-    AIDestroySimpleMemoryBufferCallbacks(readCallback, writeCallback, tellCallback, seekCallback, callbackData);
-
-    std::vector<char> fileData(8192); // fixed size buffer for a file write, not the best but it'll do for this test
-    AIGetSimpleMemoryBufferCallbacks(&readCallback, &writeCallback, &tellCallback, &seekCallback, &callbackData, &fileData[0], fileData.size());
-
-    AImgHandle wImg = AImgGetAImg(AImgFileFormat::EXR_IMAGE_FORMAT);
-    AImgWriteImage(wImg, &imgData[0], width, height, AImgFormat::RGB16F, NULL, NULL, 0, writeCallback, tellCallback, seekCallback, callbackData, NULL);
-    AImgClose(wImg);
-
-    seekCallback(callbackData, 0);
-
-
-    AImgOpen(readCallback, tellCallback, seekCallback, callbackData, &img, NULL);
-
-    int32_t _, writtenFormat;
-    AImgGetInfo(img, &_, &_, &_, &_, &_, &writtenFormat, NULL);
-    ASSERT_EQ(writtenFormat, AImgFormat::RGB16F);
-
-    std::vector<half> imgData2(width*height*3, 0.0f);
-    AImgDecodeImage(img, &imgData2[0], AImgFormat::INVALID_FORMAT);
-    AImgClose(img);
-    AIDestroySimpleMemoryBufferCallbacks(readCallback, writeCallback, tellCallback, seekCallback, callbackData);
-
-    for(uint32_t i = 0; i < imgData2.size(); i++)
-        ASSERT_EQ(imgData[i], imgData2[i]);
+TEST(Exr, TestSupportedFormat)
+{
+    ASSERT_FALSE(AImgIsFormatSupported(AImgFileFormat::EXR_IMAGE_FORMAT, AImgFormat::_8BITS));
+    ASSERT_TRUE(AImgIsFormatSupported(AImgFileFormat::EXR_IMAGE_FORMAT, AImgFormat::_16BITS | AImgFormat::FLOAT_FORMAT));
+    ASSERT_TRUE(AImgIsFormatSupported(AImgFileFormat::EXR_IMAGE_FORMAT, AImgFormat::_32BITS | AImgFormat::FLOAT_FORMAT));
 }
 
 #endif

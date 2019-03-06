@@ -30,6 +30,78 @@ std::vector<uint8_t> decodeTGAFile(const std::string & path)
     return data;
 }
 
+void TestWriteTga(AImgFormat decodeFormat = AImgFormat::INVALID_FORMAT, AImgFormat writeFormat = AImgFormat::INVALID_FORMAT, AImgFormat expectedOutputFormat = AImgFormat::INVALID_FORMAT)
+{
+    auto data = readFile<uint8_t>(getImagesDir() + "/tga/test.tga");
+
+    ReadCallback readCallback = NULL;
+    WriteCallback writeCallback = NULL;
+    TellCallback tellCallback = NULL;
+    SeekCallback seekCallback = NULL;
+    void* callbackData = NULL;
+
+    AIGetSimpleMemoryBufferCallbacks(&readCallback, &writeCallback, &tellCallback, &seekCallback, &callbackData, &data[0], data.size());
+
+    AImgHandle img = NULL;
+    AImgOpen(readCallback, tellCallback, seekCallback, callbackData, &img, NULL);
+
+    int32_t width;
+    int32_t height;
+    int32_t numChannels;
+    int32_t bytesPerChannel;
+    int32_t floatOrInt;
+    int32_t fmt;
+
+    AImgGetInfo(img, &width, &height, &numChannels, &bytesPerChannel, &floatOrInt, &fmt, NULL);
+
+    if (decodeFormat < 0)
+    {
+        decodeFormat = (AImgFormat)fmt;
+    }
+    if (writeFormat < 0)
+    {
+        writeFormat = decodeFormat;
+    }
+    if (expectedOutputFormat < 0)
+    {
+        expectedOutputFormat = writeFormat;
+    }
+
+    AIGetFormatDetails(decodeFormat, &numChannels, &bytesPerChannel, &floatOrInt);
+
+    std::vector<uint8_t> imgData(width*height*numChannels * bytesPerChannel, 78);
+
+    AImgDecodeImage(img, &imgData[0], decodeFormat);
+
+    AImgClose(img);
+    AIDestroySimpleMemoryBufferCallbacks(readCallback, writeCallback, tellCallback, seekCallback, callbackData);
+
+    std::vector<char> fileData(width * height * numChannels * bytesPerChannel * 5);
+    AIGetSimpleMemoryBufferCallbacks(&readCallback, &writeCallback, &tellCallback, &seekCallback, &callbackData, &fileData[0], fileData.size());
+
+    AImgHandle wImg = AImgGetAImg(AImgFileFormat::TGA_IMAGE_FORMAT);
+    auto err = AImgWriteImage(wImg, &imgData[0], width, height, decodeFormat, writeFormat, NULL, NULL, 0, writeCallback, tellCallback, seekCallback, callbackData, NULL);
+    ASSERT_EQ(err, AImgErrorCode::AIMG_SUCCESS);
+    AImgClose(wImg);
+
+    seekCallback(callbackData, 0);
+
+    AImgOpen(readCallback, tellCallback, seekCallback, callbackData, &img, NULL);
+
+    std::vector<uint8_t> imgData2(width*height*numChannels*bytesPerChannel, 0);
+    AImgDecodeImage(img, &imgData2[0], decodeFormat);
+
+    int32_t _, writtenFormat;
+    AImgGetInfo(img, &_, &_, &_, &_, &_, &writtenFormat, NULL);
+    ASSERT_EQ(writtenFormat, expectedOutputFormat);
+
+    AImgClose(img);
+    AIDestroySimpleMemoryBufferCallbacks(readCallback, writeCallback, tellCallback, seekCallback, callbackData);
+
+    for (uint32_t i = 0; i < imgData2.size(); i++)
+        ASSERT_EQ(imgData[i], imgData2[i]);
+}
+
 TEST(TGA, TestDetectTGA)
 {
     ASSERT_TRUE(detectImage("/tga/test.tga", TGA_IMAGE_FORMAT));
@@ -166,54 +238,7 @@ TEST(TGA, TestReadTGAFile)
 
 TEST(TGA, TestWriteTGAFile)
 {
-    auto data = readFile<uint8_t>(getImagesDir() + "/tga/test.tga");
-
-    ReadCallback readCallback = NULL;
-    WriteCallback writeCallback = NULL;
-    TellCallback tellCallback = NULL;
-    SeekCallback seekCallback = NULL;
-    void* callbackData = NULL;
-
-    AIGetSimpleMemoryBufferCallbacks(&readCallback, &writeCallback, &tellCallback, &seekCallback, &callbackData, &data[0], data.size());
-
-    AImgHandle img = NULL;
-    AImgOpen(readCallback, tellCallback, seekCallback, callbackData, &img, NULL);
-
-    int32_t width;
-    int32_t height;
-    int32_t numChannels;
-    int32_t bytesPerChannel;
-    int32_t floatOrInt;
-    int32_t fmt;
-
-    AImgGetInfo(img, &width, &height, &numChannels, &bytesPerChannel, &floatOrInt, &fmt, NULL);
-
-    std::vector<uint8_t> imgData(width*height*numChannels * bytesPerChannel, 78);
-
-    AImgDecodeImage(img, &imgData[0], AImgFormat::INVALID_FORMAT);
-
-    AImgClose(img);
-    AIDestroySimpleMemoryBufferCallbacks(readCallback, writeCallback, tellCallback, seekCallback, callbackData);
-
-    std::vector<char> fileData(width * height * numChannels * bytesPerChannel * 5);
-    AIGetSimpleMemoryBufferCallbacks(&readCallback, &writeCallback, &tellCallback, &seekCallback, &callbackData, &fileData[0], fileData.size());
-
-    AImgHandle wImg = AImgGetAImg(AImgFileFormat::TGA_IMAGE_FORMAT);
-    auto err = AImgWriteImage(wImg, &imgData[0], width, height, fmt, NULL, NULL, 0, writeCallback, tellCallback, seekCallback, callbackData, NULL);
-    ASSERT_EQ(err, AImgErrorCode::AIMG_SUCCESS);
-    AImgClose(wImg);
-
-    seekCallback(callbackData, 0);
-
-    AImgOpen(readCallback, tellCallback, seekCallback, callbackData, &img, NULL);
-
-    std::vector<uint8_t> imgData2(width*height*numChannels*bytesPerChannel, 0);
-    AImgDecodeImage(img, &imgData2[0], AImgFormat::INVALID_FORMAT);
-    AImgClose(img);
-    AIDestroySimpleMemoryBufferCallbacks(readCallback, writeCallback, tellCallback, seekCallback, callbackData);
-
-    for(uint32_t i = 0; i < imgData2.size(); i++)
-       ASSERT_EQ(imgData[i], imgData2[i]);
+    TestWriteTga();
 }
 
 TEST(TGA, TestForceImageFormat)
@@ -260,6 +285,19 @@ TEST(TGA, TestForceImageFormat)
 
 }
 
+TEST(TGA, TestWriteConvert)
+{
+    TestWriteTga(AImgFormat::RGB16U, AImgFormat::INVALID_FORMAT, AImgFormat::RGB8U);
+
+    TestWriteTga(AImgFormat::RGB16U, AImgFormat::RGB8U);
+}
+
+TEST(TGA, TestSupportedFormat)
+{
+    ASSERT_TRUE(AImgIsFormatSupported(AImgFileFormat::TGA_IMAGE_FORMAT, AImgFormat::_8BITS));
+    ASSERT_FALSE(AImgIsFormatSupported(AImgFileFormat::TGA_IMAGE_FORMAT, AImgFormat::_16BITS));
+    ASSERT_FALSE(AImgIsFormatSupported(AImgFileFormat::TGA_IMAGE_FORMAT, AImgFormat::_32BITS));
+}
 
 int main(int argc, char **argv)
 {

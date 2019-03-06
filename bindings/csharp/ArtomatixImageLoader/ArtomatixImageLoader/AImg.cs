@@ -93,12 +93,48 @@ namespace Artomatix.ImageLoader
             pinnedArray.Free();
         }
 
-        public static AImgFormat getWhatFormatWillBeWrittenForData(AImgFileFormat fileFormat, AImgFormat format)
+        public static bool IsFormatSupported(AImgFileFormat fileFormat, AImgFormat outputFormat)
         {
-            return (AImgFormat)NativeFuncs.inst.AImgGetWhatFormatWillBeWrittenForData((Int32)fileFormat, (Int32)format);
+            return NativeFuncs.inst.AImgIsFormatSupported((Int32)fileFormat, (Int32)outputFormat);
         }
 
-        public unsafe void writeImage<T>(T[] data, int width, int height, AImgFormat format, string profileName, byte[] colourProfile, Stream s, FormatEncodeOptions options = null) where T : struct
+        public static AImgFormat getWhatFormatWillBeWrittenForData(AImgFileFormat fileFormat, AImgFormat inputFormat, AImgFormat outputFormat)
+        {
+            return (AImgFormat)NativeFuncs.inst.AImgGetWhatFormatWillBeWrittenForData((Int32)fileFormat, (Int32)inputFormat, (Int32)outputFormat);
+        }
+
+        public static AImgFormat ChangeFormatBitDepth(AImgFormat format, AImgFormat newBitDepth)
+        {
+            return (AImgFormat)NativeFuncs.inst.AIChangeBitDepth((Int32)format, (Int32)newBitDepth);
+        }
+
+        public static AImgFormat GetBitDepth(AImgFormat format)
+        {
+            return (AImgFormat)NativeFuncs.inst.AIGetBitDepth((Int32)format);
+        }
+
+        public unsafe void writeImage<T>(T[] data,
+            int width,
+            int height,
+            AImgFormat inputFormat,
+            string profileName, byte[] colourProfile,
+            Stream s,
+            FormatEncodeOptions options = null) where T : struct
+        {
+            writeImage(data, width, height,
+                inputFormat, inputFormat,
+               profileName, colourProfile,
+               s, options);
+        }
+
+        public unsafe void writeImage<T>(T[] data,
+            int width,
+            int height,
+            AImgFormat inputFormat,
+            AImgFormat outputFormat,
+            string profileName, byte[] colourProfile,
+            Stream s,
+            FormatEncodeOptions options = null) where T : struct
         {
             var writeCallback = ImgLoader.getWriteCallback(s);
             var tellCallback = ImgLoader.getTellCallback(s);
@@ -128,7 +164,10 @@ namespace Artomatix.ImageLoader
                         colourProfileLength = colourProfile.Length;
                     }
 
-                    Int32 errCode = NativeFuncs.inst.AImgWriteImage(nativeHandle, pointer, width, height, (Int32)format, profileName, (IntPtr)colourProfileArray, colourProfileLength, writeCallback, tellCallback, seekCallback, IntPtr.Zero, encodeOptionsPtr);
+                    Int32 errCode = NativeFuncs.inst.AImgWriteImage(nativeHandle, pointer, width, height,
+                        (Int32)inputFormat, (Int32)outputFormat,
+                        profileName, (IntPtr)colourProfileArray, colourProfileLength,
+                        writeCallback, tellCallback, seekCallback, IntPtr.Zero, encodeOptionsPtr);
                     AImgException.checkErrorCode(nativeHandle, errCode);
                 }
                 finally

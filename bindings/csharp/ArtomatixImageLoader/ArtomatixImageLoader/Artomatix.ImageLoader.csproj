@@ -1,5 +1,6 @@
 ﻿<?xml version="1.0" encoding="utf-8"?>
 <Project DefaultTargets="Build" ToolsVersion="12.0" xmlns="http://schemas.microsoft.com/developer/msbuild/2003">
+  <Import Project="$(MSBuildExtensionsPath)\$(MSBuildToolsVersion)\Microsoft.Common.props" Condition="Exists('$(MSBuildExtensionsPath)\$(MSBuildToolsVersion)\Microsoft.Common.props')" />
   <PropertyGroup>
     <Configuration Condition=" '$(Configuration)' == '' ">Debug</Configuration>
     <Platform Condition=" '$(Platform)' == '' ">x64</Platform>
@@ -8,10 +9,7 @@
     <RootNamespace>Artomatix.ImageLoader</RootNamespace>
     <AssemblyName>Artomatix.ImageLoader</AssemblyName>
     <TargetFrameworkVersion>v4.6</TargetFrameworkVersion>
-    <ProductVersion>12.0.0</ProductVersion>
-    <SchemaVersion>2.0</SchemaVersion>
-    <NuGetPackageImportStamp>
-    </NuGetPackageImportStamp>
+    <FileAlignment>512</FileAlignment>
     <TargetFrameworkProfile />
   </PropertyGroup>
   <PropertyGroup Condition="'$(Configuration)|$(Platform)' == 'Debug|x64'">
@@ -36,28 +34,6 @@
     <CodeAnalysisRuleSet>MinimumRecommendedRules.ruleset</CodeAnalysisRuleSet>
     <WarningLevel>4</WarningLevel>
   </PropertyGroup>
-  <PropertyGroup Condition="'$(Configuration)|$(Platform)' == 'Debug|x86'">
-    <DebugSymbols>true</DebugSymbols>
-    <OutputPath>bin\x86\Debug\</OutputPath>
-    <DefineConstants>DEBUG;</DefineConstants>
-    <AllowUnsafeBlocks>true</AllowUnsafeBlocks>
-    <DebugType>full</DebugType>
-    <PlatformTarget>x86</PlatformTarget>
-    <ErrorReport>prompt</ErrorReport>
-    <CodeAnalysisRuleSet>MinimumRecommendedRules.ruleset</CodeAnalysisRuleSet>
-    <WarningLevel>4</WarningLevel>
-    <Optimize>false</Optimize>
-  </PropertyGroup>
-  <PropertyGroup Condition="'$(Configuration)|$(Platform)' == 'Release|x86'">
-    <OutputPath>bin\x86\Release\</OutputPath>
-    <AllowUnsafeBlocks>true</AllowUnsafeBlocks>
-    <Optimize>true</Optimize>
-    <DebugType>full</DebugType>
-    <PlatformTarget>x86</PlatformTarget>
-    <ErrorReport>prompt</ErrorReport>
-    <CodeAnalysisRuleSet>MinimumRecommendedRules.ruleset</CodeAnalysisRuleSet>
-    <WarningLevel>4</WarningLevel>
-  </PropertyGroup>
   <ItemGroup>
     <Reference Include="System" />
     <Reference Include="System.IO.Compression" />
@@ -73,16 +49,14 @@
   </ItemGroup>
   <Import Project="$(MSBuildBinPath)\Microsoft.CSharp.targets" />
   <ItemGroup>
-    <None Include="native_code_setting.txt" />
-  </ItemGroup>
-  <PropertyGroup>
-    <DisableFastUpToDateCheck>true</DisableFastUpToDateCheck>
-  </PropertyGroup>
-  <ItemGroup>
     <EmbeddedResource Include="embedded_files\binaries.zip" />
   </ItemGroup>
   <Import Project="..\..\..\..\packages\NativeCodeBuilder\build\NativeCodeBuilder.targets" Condition="Exists('..\..\..\..\packages\NativeCodeBuilder\build\NativeCodeBuilder.targets')" />
-  <Import Project="..\..\..\..\.paket\paket.targets" />
+  <Target Name="AfterBuild">
+    <Exec Command="mkdir $(SolutionDir)../TempDLLs; cp $(ProjectDir)embedded_files/native_code_linux_x64 $(SolutionDir)../TempDLLs/AIMG.dll" Condition="$(OS) != 'Windows_NT'" />
+    <Exec Command="mkdir $(SolutionDir)..\TempDLLs" Condition="$(OS) == 'Windows_NT' And !Exists('$(SolutionDir)..\TempDLLs')" />
+    <Exec Command="copy /y $(ProjectDir)embedded_files\native_code_windows_x64 $(SolutionDir)..\TempDLLs\AIMG.dll" Condition="$(OS) == 'Windows_NT'" />
+  </Target>
   <Choose>
     <When Condition="$(TargetFrameworkIdentifier) == '.NETFramework' And $(TargetFrameworkVersion) == 'v4.6'">
       <ItemGroup>
@@ -120,7 +94,7 @@
     <When Condition="$(TargetFrameworkIdentifier) == '.NETFramework' And $(TargetFrameworkVersion) == 'v4.6'">
       <ItemGroup>
         <Reference Include="ZipStorer">
-          <HintPath>..\..\..\..\packages\ZipStorer\lib\net20\ZipStorer.dll</HintPath>
+          <HintPath>..\..\..\..\packages\ZipStorer\lib\net452\ZipStorer.dll</HintPath>
           <Private>True</Private>
           <Paket>True</Paket>
         </Reference>

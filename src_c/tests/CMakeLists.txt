@@ -17,14 +17,10 @@ if(AIMG_TESTS_ENABLED)
         set(GTEST_MAINLIB  "optimized;${GTEST_LOCATION}/Release/${LIBPREFIX}gtest_main${LIBSUFFIX};debug;${GTEST_LOCATION}/Debug/${LIBPREFIX}gtest_main${LIBSUFFIX}")
         set(GTEST_CMAKE_ARGS "-Dgtest_force_shared_crt=ON")
     endif()
+
+    hunter_add_package(GTest)
+    find_package(GTest CONFIG REQUIRED)
     
-    include(ExternalProject)
-    ExternalProject_Add(gtest
-      URL https://github.com/google/googletest/archive/release-1.7.0.zip
-      PREFIX ${CMAKE_CURRENT_BINARY_DIR}/gtest
-      CMAKE_ARGS "${GTEST_CMAKE_ARGS}"
-      INSTALL_COMMAND ""
-    )
 
     find_package(Threads)
     
@@ -34,9 +30,9 @@ if(AIMG_TESTS_ENABLED)
         add_executable("test_${test_name}" "${test_name}.cpp" "testCommon.cpp" "testCommon.h")
 
         add_dependencies("test_${test_name}" gtest)
-        target_include_directories("test_${test_name}" PRIVATE ${GTEST_INCLUDES})
+        target_include_directories("test_${test_name}" PRIVATE GTest::main)
         target_compile_definitions("test_${test_name}" PRIVATE TEST_DIR="${CMAKE_CURRENT_SOURCE_DIR}")
-        target_link_libraries("test_${test_name}" ${GTEST_LIBRARY} ${GTEST_MAINLIB} ${link_libs} ${CMAKE_THREAD_LIBS_INIT})
+        target_link_libraries("test_${test_name}" GTest::main ${link_libs} ${CMAKE_THREAD_LIBS_INIT})
        
         set_target_properties("test_${test_name}" PROPERTIES COMPILE_FLAGS "${AIL_COMPILE_FLAGS}")
 
@@ -66,6 +62,10 @@ if(AIMG_TESTS_ENABLED)
     if(TIFF_ENABLED)
         ail_add_test(tiff "AIL" Yes)
     endif()
+
+	if(HDR_ENABLED)
+		ail_add_test(hdr "AIL" Yes)
+	endif()
 
     add_custom_target(aitest ${all_tests})
     set_target_properties(aitest PROPERTIES EXCLUDE_FROM_ALL 1 EXCLUDE_FROM_DEFAULT_BUILD 1)

@@ -16,7 +16,9 @@ namespace AImg
         virtual std::string getFileExtension();
         virtual int32_t getAImgFileFormatValue();
 
-        virtual AImgFormat getWhatFormatWillBeWrittenForData(int32_t inputFormat);
+        virtual bool isFormatSupported(int32_t format);
+
+        virtual AImgFormat getWhatFormatWillBeWrittenForData(int32_t inputFormat, int32_t outputFormat);
     };
 }
 

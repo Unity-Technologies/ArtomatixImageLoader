@@ -2,8 +2,8 @@ CMAKE_MINIMUM_REQUIRED(VERSION 2.8)
 
 include("cmake/HunterGate.cmake")
 HunterGate(
-    URL "https://github.com/Artomatix/hunter/archive/OpenEXR-test-2.tar.gz"
-    SHA1 "c86e9e6fde6b96fc57ac2184692baeb4d71e9fd6"
+    URL "https://github.com/Artomatix/hunter/archive/v43-OpenEXR.tar.gz"
+    SHA1 "faefc63600c5e431a59d406bbd0db743a659f1a9"
     LOCAL
 )
 
@@ -20,23 +20,21 @@ set(PNG_ENABLED ON CACHE BOOL "enable loading PNG files")
 set(JPEG_ENABLED ON CACHE BOOL "enable loading JPEG files")
 set(TIFF_ENABLED ON CACHE BOOL "enable loading TIFF files")
 set(TGA_ENABLED ON CACHE BOOL "enable loading TGA files")
+set(HDR_ENABLED ON CACHE BOOL "enable loading HDR files")
 
 set(BUILD_SHARE_TYPE SHARED CACHE STRING "set build type, valid values: SHARED|STATIC")
 
 set(CMAKE_POSITION_INDEPENDENT_CODE YES)
 add_library(AIL ${BUILD_SHARE_TYPE}
-    exr.cpp
-    exr.h
-    png.h
-    png.cpp
-    jpeg.h
-    jpeg.cpp
-    tga.h
-    tga.cpp
-    tiff.h
-    tiff.cpp
-    AIL.cpp
-    AIL.h
+    
+    exr.cpp exr.h
+    png.h png.cpp
+    jpeg.h jpeg.cpp
+    tga.h tga.cpp
+    tiff.h tiff.cpp
+    AIL.h AIL.cpp
+    hdr.h hdr.cpp
+
     AIL_internal.h
     ImageLoaderBase.h
     extern/stb_image.h
@@ -109,6 +107,10 @@ if(TIFF_ENABLED)
     find_package(TIFF CONFIG REQUIRED)
     target_link_libraries(AIL TIFF::libtiff)
     add_definitions(-DHAVE_TIFF)
+endif()
+
+if (HDR_ENABLED)
+    add_definitions(-DHAVE_HDR)
 endif()
 
 SET(CMAKE_DEBUG_POSTFIX "")

@@ -25,9 +25,9 @@ std::vector<uint8_t> decodeJPEGFile(const std::string & path)
 
     std::vector<uint8_t> Vbuffer(row_stride*cinfo.output_height);
 
-    uint8_t * rowBuffer =  &Vbuffer[0];
+    uint8_t * rowBuffer = &Vbuffer[0];
     JSAMPARRAY buffer = (JSAMPARRAY)malloc(sizeof(JSAMPROW));
-    buffer[0] = (JSAMPROW) malloc(row_stride * sizeof(JSAMPLE));
+    buffer[0] = (JSAMPROW)malloc(row_stride * sizeof(JSAMPLE));
     while (cinfo.output_scanline < cinfo.output_height)
     {
         jpeg_read_scanlines(&cinfo, buffer, 1);
@@ -64,7 +64,6 @@ bool testReadJpegFile(const std::string& path)
         return false;
     }
 
-
     int32_t width;
     int32_t height;
     int32_t numChannels;
@@ -86,11 +85,11 @@ bool testReadJpegFile(const std::string& path)
 
     auto knownData = decodeJPEGFile(getImagesDir() + path);
 
-    for(int32_t y = 0; y < height; y++)
+    for (int32_t y = 0; y < height; y++)
     {
-        for(int32_t x = 0; x < width; x++)
+        for (int32_t x = 0; x < width; x++)
         {
-            if(knownData[x + width*y] != imgData[(x + width*y)])
+            if (knownData[x + width*y] != imgData[(x + width*y)])
                 return false;
         }
     }
@@ -101,45 +100,7 @@ bool testReadJpegFile(const std::string& path)
     return true;
 }
 
-
-TEST(JPEG, TestDetectJPEG)
-{
-    ASSERT_TRUE(detectImage("/jpeg/test.jpeg", JPEG_IMAGE_FORMAT));
-}
-
-TEST(JPEG, TestReadJPEGAttrs)
-{
-    ASSERT_TRUE(validateImageHeaders("/jpeg/test.jpeg", 640, 400, 3, 1, AImgFloatOrIntType::FITYPE_INT, AImgFormat::RGB8U));
-}
-
-TEST(JPEG, TestReadJPEGAttrsGreyscale)
-{
-    ASSERT_TRUE(validateImageHeaders("/jpeg/greyscale.jpeg", 2048, 2048, 1, 1, AImgFloatOrIntType::FITYPE_INT, AImgFormat::R8U));
-}
-
-
-TEST(JPEG, TestCompareForceImageFormat1)
-{
-    ASSERT_TRUE(compareForceImageFormat("/jpeg/test.jpeg"));
-}
-
-TEST(JPEG, TestReadJPEGFile1)
-{
-    ASSERT_TRUE(testReadJpegFile("/jpeg/test.jpeg"));
-}
-
-TEST(JPEG, TestReadJPEGFile2)
-{
-    ASSERT_TRUE(testReadJpegFile("/jpeg/karl.jpeg"));
-}
-
-TEST(JPEG, TestReadJPEGFile3)
-{
-    ASSERT_TRUE(testReadJpegFile("/jpeg/karl_comment.jpeg"));
-}
-
-
-TEST(JPEG, TestWriteJPEG)
+void TestWriteJpeg(AImgFormat decodeFormat, AImgFormat writeFormat, AImgFormat expectedWritten = AImgFormat::INVALID_FORMAT)
 {
     auto data = readFile<uint8_t>(getImagesDir() + "/jpeg/test.jpeg");
 
@@ -163,19 +124,34 @@ TEST(JPEG, TestWriteJPEG)
 
     AImgGetInfo(img, &width, &height, &numChannels, &bytesPerChannel, &floatOrInt, &fmt, NULL);
 
+    if (decodeFormat < 0)
+    {
+        decodeFormat = (AImgFormat)fmt;
+    }
+    if (writeFormat < 0)
+    {
+        writeFormat = decodeFormat;
+    }
+    if (expectedWritten < 0)
+    {
+        expectedWritten = writeFormat;
+    }
+
+    AIGetFormatDetails(decodeFormat, &numChannels, &bytesPerChannel, &floatOrInt);
+
     std::vector<uint8_t> imgData(width*height*numChannels * bytesPerChannel, 78);
 
-    AImgDecodeImage(img, &imgData[0], AImgFormat::INVALID_FORMAT);
+    AImgDecodeImage(img, &imgData[0], decodeFormat);
 
     AImgClose(img);
     AIDestroySimpleMemoryBufferCallbacks(readCallback, writeCallback, tellCallback, seekCallback, callbackData);
 
-    std::vector<char> fileData(width * height * numChannels * bytesPerChannel * 5);
+    std::vector<uint8_t> fileData(width * height * numChannels * bytesPerChannel * 5);
 
     AIGetSimpleMemoryBufferCallbacks(&readCallback, &writeCallback, &tellCallback, &seekCallback, &callbackData, &fileData[0], fileData.size());
 
     AImgHandle wImg = AImgGetAImg(AImgFileFormat::JPEG_IMAGE_FORMAT);
-    AImgWriteImage(wImg, &imgData[0], width, height, fmt, NULL, NULL, 0, writeCallback, tellCallback, seekCallback, callbackData, NULL);
+    AImgWriteImage(wImg, &imgData[0], width, height, decodeFormat, writeFormat, NULL, NULL, 0, writeCallback, tellCallback, seekCallback, callbackData, NULL);
     AImgClose(wImg);
 
     seekCallback(callbackData, 0);
@@ -183,17 +159,76 @@ TEST(JPEG, TestWriteJPEG)
     AImgOpen(readCallback, tellCallback, seekCallback, callbackData, &img, NULL);
 
     std::vector<uint8_t> imgData2(width*height*numChannels*bytesPerChannel, 0);
-    AImgDecodeImage(img, &imgData2[0], AImgFormat::INVALID_FORMAT);
+    AImgDecodeImage(img, &imgData2[0], decodeFormat);
+
+    int32_t _, writtenFormat;
+    AImgGetInfo(img, &_, &_, &_, &_, &_, &writtenFormat, NULL);
+    ASSERT_EQ(writtenFormat, expectedWritten);
+
     AImgClose(img);
     AIDestroySimpleMemoryBufferCallbacks(readCallback, writeCallback, tellCallback, seekCallback, callbackData);
 
-    for(uint32_t i = 0; i < imgData2.size(); i++)
+    for (uint32_t i = 0; i < imgData2.size(); i++)
     {
         uint8_t diff = abs(imgData[i] - imgData2[i]);
 
         double percent = diff / 255.0;
         ASSERT_LT(percent, 0.04);
     }
+}
+
+TEST(JPEG, TestDetectJPEG)
+{
+    ASSERT_TRUE(detectImage("/jpeg/test.jpeg", JPEG_IMAGE_FORMAT));
+}
+
+TEST(JPEG, TestReadJPEGAttrs)
+{
+    ASSERT_TRUE(validateImageHeaders("/jpeg/test.jpeg", 640, 400, 3, 1, AImgFloatOrIntType::FITYPE_INT, AImgFormat::RGB8U));
+}
+
+TEST(JPEG, TestReadJPEGAttrsGreyscale)
+{
+    ASSERT_TRUE(validateImageHeaders("/jpeg/greyscale.jpeg", 2048, 2048, 1, 1, AImgFloatOrIntType::FITYPE_INT, AImgFormat::R8U));
+}
+
+TEST(JPEG, TestCompareForceImageFormat1)
+{
+    ASSERT_TRUE(compareForceImageFormat("/jpeg/test.jpeg"));
+}
+
+TEST(JPEG, TestReadJPEGFile1)
+{
+    ASSERT_TRUE(testReadJpegFile("/jpeg/test.jpeg"));
+}
+
+TEST(JPEG, TestReadJPEGFile2)
+{
+    ASSERT_TRUE(testReadJpegFile("/jpeg/karl.jpeg"));
+}
+
+TEST(JPEG, TestReadJPEGFile3)
+{
+    ASSERT_TRUE(testReadJpegFile("/jpeg/karl_comment.jpeg"));
+}
+
+TEST(JPEG, TestWriteJPEG)
+{
+    TestWriteJpeg(AImgFormat::INVALID_FORMAT, AImgFormat::INVALID_FORMAT);
+}
+
+TEST(JPEG, TestWriteConvert)
+{
+    TestWriteJpeg(AImgFormat::RGB16U, AImgFormat::INVALID_FORMAT, AImgFormat::RGB8U);
+
+    TestWriteJpeg(AImgFormat::RGB16U, AImgFormat::RGB8U);
+}
+
+TEST(JPEG, TestSupportedFormat)
+{
+    ASSERT_TRUE(AImgIsFormatSupported(AImgFileFormat::JPEG_IMAGE_FORMAT, AImgFormat::_8BITS | AImgFormat::RGB));
+    ASSERT_FALSE(AImgIsFormatSupported(AImgFileFormat::JPEG_IMAGE_FORMAT, AImgFormat::_16BITS));
+    ASSERT_FALSE(AImgIsFormatSupported(AImgFileFormat::JPEG_IMAGE_FORMAT, AImgFormat::_32BITS));
 }
 
 int main(int argc, char **argv)

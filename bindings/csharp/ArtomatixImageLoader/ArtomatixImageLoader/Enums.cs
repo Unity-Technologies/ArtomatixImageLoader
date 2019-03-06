@@ -17,34 +17,48 @@ namespace Artomatix.ImageLoader
         PNG_IMAGE_FORMAT = 2,
         JPEG_IMAGE_FORMAT = 3,
         TGA_IMAGE_FORMAT = 4,
-        TIFF_IMAGE_FORMAT = 5
+        TIFF_IMAGE_FORMAT = 5,
+        HDR_IMAGE_FORMAT = 6
     };
 
     // format is [channels][bits per channel][U/F]
     // U means unsigned normalised, so eg 8U maps integer vals 0-255 to float range 0-1, F means an normal float value
+
+    [Flags]
     public enum AImgFormat
     {
         INVALID_FORMAT = -1,
 
-        R8U = 0,
-        RG8U = 1,
-        RGB8U = 2,
-        RGBA8U = 3,
+        _8BITS = 1 << 0,
+        _16BITS = 1 << 5,
+        _32BITS = 1 << 6,
 
-        R16U = 4,
-        RG16U = 5,
-        RGB16U = 6,
-        RGBA16U = 7,
+        R = 1 << 1,
+        RG = 1 << 2,
+        RGB = 1 << 3,
+        RGBA = 1 << 4,
 
-        R16F = 8,
-        RG16F = 9,
-        RGB16F = 10,
-        RGBA16F = 11,
+        FLOAT_FORMAT = 1 << 7,
 
-        R32F = 12,
-        RG32F = 13,
-        RGB32F = 14,
-        RGBA32F = 15
+        R8U = R | _8BITS,
+        RG8U = RG | _8BITS,
+        RGB8U = RGB | _8BITS,
+        RGBA8U = RGBA | _8BITS,
+
+        R16U = R | _16BITS,
+        RG16U = RG | _16BITS,
+        RGB16U = RGB | _16BITS,
+        RGBA16U = RGBA | _16BITS,
+
+        R16F = R | _16BITS | FLOAT_FORMAT,
+        RG16F = RG | _16BITS | FLOAT_FORMAT,
+        RGB16F = RGB | _16BITS | FLOAT_FORMAT,
+        RGBA16F = RGBA | _16BITS | FLOAT_FORMAT,
+
+        R32F = R | _32BITS | FLOAT_FORMAT,
+        RG32F = RG | _32BITS | FLOAT_FORMAT,
+        RGB32F = RGB | _32BITS | FLOAT_FORMAT,
+        RGBA32F = RGBA | _32BITS | FLOAT_FORMAT
     };
 
     public static class AImgFormatExtension

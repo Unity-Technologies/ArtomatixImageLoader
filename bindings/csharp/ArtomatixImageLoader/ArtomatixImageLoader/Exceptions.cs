@@ -1,4 +1,5 @@
 ﻿using System;
+using System.Runtime.Serialization;
 
 namespace Artomatix.ImageLoader
 {
@@ -37,11 +38,20 @@ namespace Artomatix.ImageLoader
                         throw new AImgOpenFailedEmptyInputException(msg);
                     case -9:
                         throw new AImgInvalidEncodeArgsException(msg);
+                    case -10:
+                        throw new AImgWriteNotSupportedForFormat(msg);
 
                     default:
                         throw new AImgException("Unknown error code: " + errorCode + " " + msg);
                 }
             }
+        }
+    }
+
+    internal class AImgWriteNotSupportedForFormat : Exception
+    {
+        public AImgWriteNotSupportedForFormat(string message) : base(message)
+        {
         }
     }
 
