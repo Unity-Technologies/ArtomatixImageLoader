@@ -156,7 +156,7 @@ extern "C"
     EXPORT_FUNC void AIGetFormatDetails(int32_t format, int32_t* numChannels, int32_t* bytesPerChannel, int32_t* floatOrInt);
     EXPORT_FUNC int32_t AImgConvertFormat(void* src, void* dest, int32_t width, int32_t height, int32_t inFormat, int32_t outFormat);
 
-    EXPORT_FUNC bool AImgIsFormatSupported(int32_t fileFormat, int32_t outputFormat);
+    EXPORT_FUNC int32_t AImgIsFormatSupported(int32_t fileFormat, int32_t outputFormat);
 
     EXPORT_FUNC int32_t AImgGetWhatFormatWillBeWrittenForData(int32_t fileFormat, int32_t inputFormat, int32_t outputFormat);
 

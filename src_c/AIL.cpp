@@ -774,7 +774,7 @@ int32_t AImgConvertFormat(void* src, void* dest, int32_t width, int32_t height, 
     return AImgErrorCode::AIMG_SUCCESS;
 }
 
-bool AImgIsFormatSupported(int32_t fileFormat, int32_t outputFormat)
+int32_t AImgIsFormatSupported(int32_t fileFormat, int32_t outputFormat)
 {
     return loaders[fileFormat]->isFormatSupported(outputFormat);
 }
