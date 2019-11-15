@@ -140,6 +140,21 @@ namespace AImg
             return AImgErrorCode::AIMG_SUCCESS;
         }
 
+        virtual bool SupportsExif() const noexcept override
+        {
+            return false;
+        }
+
+        virtual std::shared_ptr<IExifHandler> GetExifData(int32_t * error) override
+        {
+            if (error != nullptr)
+            {
+                *error = AIMG_EXIF_DATA_NOT_SUPPORTED;
+            }
+
+            return std::shared_ptr<IExifHandler>();
+        }
+
     private:
         CallbackData data;
         int32_t numChannels, width, height;

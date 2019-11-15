@@ -1,10 +1,11 @@
-FRAMEWORK: NET46
+RESTRICTION: == net46
 NUGET
   remote: https://api.nuget.org/v3/index.json
     NativeBinaryManager (0.1) - content: once
       ZipStorer (>= 2.38)
-    NativeCodeBuilder (0.3.1) - content: once, framework: >= net45
-      NativeBinaryManager (0.1)
     NUnit (2.6.4)
     Stugo.Interop (0.2)
-    ZipStorer (3.4) - content: once
+    ZipStorer (3.6) - content: once
+  remote: ./LocalNugetPackages
+    NativeCodeBuilder (0.3.2) - content: once
+      NativeBinaryManager (0.1)

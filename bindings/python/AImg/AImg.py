@@ -96,5 +96,5 @@ def write(io_or_path, data, fileFormat, profileName, colourProfile, encodeOption
     if colourProfile is not None:
         colourProfileLen = len(colourProfile)
 
-    errCode, imgCapsule = native.write(fileFormat.val, data, stream, width, height, fmt.val, fmt.val, profileName, colourProfile, colourProfileLen, encodeOptionsTuple)
+    errCode, imgCapsule = native.write(fileFormat.val, data, stream, width, height, fmt.val, profileName, colourProfile, colourProfileLen, encodeOptionsTuple)
     AImgExceptions.checkErrorCode(imgCapsule, errCode)

@@ -1,11 +1,8 @@
 ﻿using Stugo.Interop;
 using System;
-using System.Collections.Generic;
 using System.IO;
-using System.Linq;
 using System.Runtime.InteropServices;
 using System.Text;
-using System.Threading.Tasks;
 
 namespace Artomatix.ImageLoader
 {
@@ -30,6 +27,8 @@ namespace Artomatix.ImageLoader
 
         // native code delegates
         public delegate Int32 AImgInitialise_t();
+
+#pragma warning disable CS0649
 
         [EntryPoint("AImgInitialise")]
         public AImgInitialise_t AImgInitialise;
@@ -111,12 +110,14 @@ namespace Artomatix.ImageLoader
             IntPtr encodeOptions
         );
 
+        [EntryPoint("AImgWriteImage")]
+        public AImgWriteImage_t AImgWriteImage;
+
+#pragma warning restore CS0649
+
         ~NativeFuncs()
         {
             NativeFuncs.inst.AImgCleanUp();
         }
-
-        [EntryPoint("AImgWriteImage")]
-        public AImgWriteImage_t AImgWriteImage;
     }
 }

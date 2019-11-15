@@ -5,7 +5,7 @@
 #include <stdio.h>
 #include <vector>
 #include <iostream>
-#include "../AIL.h"
+#include "../AIL_internal.h"
 inline std::string getImagesDir()
 {
     std::string thisFile = __FILE__;
@@ -27,8 +27,9 @@ std::vector<T> readFile(const std::string& path)
 {
     FILE* f = fopen(path.c_str(), "rb");
     if (f == NULL)
-        std::cout << "Could not open file: " << path << std::endl;
-
+    {
+        throw std::runtime_error("Could not open file: " + path);
+    }
     fseek(f, 0, SEEK_END);
     size_t size = ftell(f);
     fseek(f, 0, SEEK_SET);
@@ -41,6 +42,8 @@ std::vector<T> readFile(const std::string& path)
     return retval;
 }
 
+AImgHandle GetJpegImageForReading(const std::vector<uint8_t>& path, CallbackData* callbacks, int16_t * error);
+
 bool detectImage(const std::string& path, int32_t format);
 bool validateImageHeaders(const std::string & path, int32_t expectedWidth, int32_t expectedHeight, int32_t expectedNumChannels, int32_t expectedBytesPerChannel, int32_t expectedFloatOrInt, int32_t expectedFormat);
 bool compareForceImageFormat(const std::string& path);
@@ -50,6 +53,5 @@ void writeToFile(const std::string& path, int32_t width, int32_t height, void* d
 
 void readWriteIcc(const std::string & path, const std::string & outPath, char *profileName, uint8_t **colourProfile, uint32_t *colourProfileLen);
 bool compareIccProfiles(const std::string & image1, const std::string & image2);
-
 
 #endif
