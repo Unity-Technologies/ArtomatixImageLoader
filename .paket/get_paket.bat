@@ -1,3 +1,3 @@
 SET mypath=%~dp0
 
-"%mypath%paket.bootstrapper.exe" "4.5.0"
+"%mypath%paket.bootstrapper.exe" "5.198.0"

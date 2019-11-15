@@ -1,7 +1,7 @@
-﻿using System;
+﻿using Artomatix.ImageLoader.ImgEncodingOptions;
+using System;
 using System.IO;
 using System.Runtime.InteropServices;
-using Artomatix.ImageLoader.ImgEncodingOptions;
 
 namespace Artomatix.ImageLoader
 {
@@ -38,6 +38,7 @@ namespace Artomatix.ImageLoader
         /// <summary>
         /// Opens an AImg from a stream.
         /// </summary>
+        /// <param name="stream">Stream to create the <see cref="AImg"/> from</param>
         /// <param name="doDisposeStream">If set to <c>true</c> stream will be disposed whne the AImg is disposed.</param>
         public unsafe AImg(Stream stream, bool doDisposeStream = true)
         {
@@ -47,9 +48,9 @@ namespace Artomatix.ImageLoader
             this.stream = stream;
             this.doDisposeStream = doDisposeStream;
 
-            readCallback = ImgLoader.getReadCallback(stream);
-            tellCallback = ImgLoader.getTellCallback(stream);
-            seekCallback = ImgLoader.getSeekCallback(stream);
+            readCallback = ImgLoader.GetReadCallback(stream);
+            tellCallback = ImgLoader.GetTellCallback(stream);
+            seekCallback = ImgLoader.GetSeekCallback(stream);
 
             Int32 detectedImageFormatTmp = 0;
             Int32 errCode = NativeFuncs.inst.AImgOpen(readCallback, tellCallback, seekCallback, IntPtr.Zero, out nativeHandle, out detectedImageFormatTmp);
@@ -75,8 +76,12 @@ namespace Artomatix.ImageLoader
         /// <summary>
         /// Decodes the image into a user-specified buffer.
         /// </summary>
-        /// <param name="destBuffer">This buffer can be of any struct type, so for example for an RGBA8 image, you might use a byte array,
-        /// or a custom struct with byte fields for the r, g, b, and a components. A custom struct would need the [StructLayout(LayoutKind.Sequential), Serializable] attribute.</param>
+        /// <param name="destBuffer">This buffer can be of any
+        /// struct type, so for example for an RGBA8 image, you might use a byte array,
+        /// or a custom struct with byte fields for the r, g, b, and a components.
+        /// A custom struct would need the <see cref="StructLayoutAttribute"/> with <see cref="LayoutKind.Sequential"/> </param>
+        /// <param name="forceImageFormat">The format that is expected to be read into <paramref name="destBuffer"/></param>
+        ///
         public void decodeImage<T>(T[] destBuffer, AImgFormat forceImageFormat = AImgFormat.INVALID_FORMAT) where T : struct
         {
             uint size = (uint)(Marshal.SizeOf(default(T)));
@@ -119,37 +124,39 @@ namespace Artomatix.ImageLoader
             AImgFormat inputFormat,
             string profileName, byte[] colourProfile,
             Stream s,
-            FormatEncodeOptions options = null) where T : struct
+            IFormatEncodeOptions options = null) where T : struct
         {
-            writeImage(data, width, height,
+            WriteImage(data, width, height,
                 inputFormat, inputFormat,
                profileName, colourProfile,
                s, options);
         }
 
-        public unsafe void writeImage<T>(T[] data,
+        public unsafe void WriteImage<T>(T[] data,
             int width,
             int height,
             AImgFormat inputFormat,
             AImgFormat outputFormat,
             string profileName, byte[] colourProfile,
-            Stream s,
-            FormatEncodeOptions options = null) where T : struct
+            Stream stream,
+            IFormatEncodeOptions options = null) where T : struct
         {
-            var writeCallback = ImgLoader.getWriteCallback(s);
-            var tellCallback = ImgLoader.getTellCallback(s);
-            var seekCallback = ImgLoader.getSeekCallback(s);
+            var writeCallback = ImgLoader.GetWriteCallback(stream);
+            var tellCallback = ImgLoader.GetTellCallback(stream);
+            var seekCallback = ImgLoader.GetSeekCallback(stream);
 
             if (profileName == string.Empty)
+            {
                 profileName = "empty";
+            }
 
-            GCHandle pinnedArray = GCHandle.Alloc(data, GCHandleType.Pinned);
-            IntPtr pointer = pinnedArray.AddrOfPinnedObject();
+            var pinnedArray = GCHandle.Alloc(data, GCHandleType.Pinned);
+            var pointer = pinnedArray.AddrOfPinnedObject();
 
             fixed (byte* colourProfileArray = colourProfile)
             {
-                GCHandle encodeOptionsHandle = default(GCHandle);
-                IntPtr encodeOptionsPtr = IntPtr.Zero;
+                var encodeOptionsHandle = default(GCHandle);
+                var encodeOptionsPtr = IntPtr.Zero;
 
                 if (options != null)
                 {
@@ -164,7 +171,7 @@ namespace Artomatix.ImageLoader
                         colourProfileLength = colourProfile.Length;
                     }
 
-                    Int32 errCode = NativeFuncs.inst.AImgWriteImage(nativeHandle, pointer, width, height,
+                    var errCode = NativeFuncs.inst.AImgWriteImage(nativeHandle, pointer, width, height,
                         (Int32)inputFormat, (Int32)outputFormat,
                         profileName, (IntPtr)colourProfileArray, colourProfileLength,
                         writeCallback, tellCallback, seekCallback, IntPtr.Zero, encodeOptionsPtr);

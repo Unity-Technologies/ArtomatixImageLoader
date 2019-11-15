@@ -52,6 +52,7 @@ namespace AImg
             return AImgFormat::RG8U;
 
         case 3:
+        case 4:
             return AImgFormat::RGB8U;
 
         default:
@@ -262,6 +263,21 @@ namespace AImg
                 mErrorDetails = "[AImg::TGAImageLoader::TGAFile::writeImage] stbi_write_tga_to_func failed!";
                 return AImgErrorCode::AIMG_WRITE_FAILED_EXTERNAL;
             }
+        }
+
+        virtual bool SupportsExif() const noexcept override
+        {
+            return false;
+        }
+
+        virtual std::shared_ptr<IExifHandler> GetExifData(int32_t * error) override
+        {
+            if (error != nullptr)
+            {
+                *error = AIMG_EXIF_DATA_NOT_SUPPORTED;
+            }
+
+            return std::shared_ptr<IExifHandler>();
         }
     };
 

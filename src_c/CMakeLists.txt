@@ -25,8 +25,8 @@ set(HDR_ENABLED ON CACHE BOOL "enable loading HDR files")
 set(BUILD_SHARE_TYPE SHARED CACHE STRING "set build type, valid values: SHARED|STATIC")
 
 set(CMAKE_POSITION_INDEPENDENT_CODE YES)
+
 add_library(AIL ${BUILD_SHARE_TYPE}
-    
     exr.cpp exr.h
     png.h png.cpp
     jpeg.h jpeg.cpp
@@ -34,7 +34,8 @@ add_library(AIL ${BUILD_SHARE_TYPE}
     tiff.h tiff.cpp
     AIL.h AIL.cpp
     hdr.h hdr.cpp
-
+    IExifHandler.hpp
+    JpegExifHandler.hpp JpegExifHandler.cpp
     AIL_internal.h
     ImageLoaderBase.h
     extern/stb_image.h

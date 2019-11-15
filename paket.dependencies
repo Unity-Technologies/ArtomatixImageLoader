@@ -2,6 +2,9 @@ framework: net46
 
 source https://api.nuget.org/v3/index.json
 source ./built_packages
-nuget NativeCodeBuilder 0.3.1 framework: >= net45, content: once
+source ./LocalNugetPackages
+
+
+nuget NativeCodeBuilder 0.3.2 framework: >= net45, content: once
 nuget NUnit == 2.6.4
 nuget Stugo.Interop == 0.2

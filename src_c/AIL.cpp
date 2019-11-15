@@ -85,13 +85,13 @@ int32_t AImgOpen(ReadCallback readCallback, TellCallback tellCallback, SeekCallb
     int32_t fileFormat = UNKNOWN_IMAGE_FORMAT;
     int32_t retval = AIMG_UNSUPPORTED_FILETYPE;
 
-    for (auto it = loaders.begin(); it != loaders.end(); ++it)
+    for (const auto loader : loaders)
     {
-        if (it->second->canLoadImage(readCallback, tellCallback, seekCallback, callbackData))
+        if (loader.second->canLoadImage(readCallback, tellCallback, seekCallback, callbackData))
         {
-            fileFormat = it->second->getAImgFileFormatValue();
+            fileFormat = loader.second->getAImgFileFormatValue();
 
-            AImg::AImgBase* img = it->second->getAImg();
+            AImg::AImgBase* img = loader.second->getAImg();
             *imgH = img;
 
             retval = img->openImage(readCallback, tellCallback, seekCallback, callbackData);
@@ -774,7 +774,73 @@ int32_t AImgConvertFormat(void* src, void* dest, int32_t width, int32_t height, 
     return AImgErrorCode::AIMG_SUCCESS;
 }
 
-int32_t AImgIsFormatSupported(int32_t fileFormat, int32_t outputFormat)
+bool IsMachineBigEndian()
+{
+    uint32_t x = 1;
+
+    return ((int8_t*)&x)[0] == 0;
+}
+
+int32_t AImgConvertOrientation(void* src, void* dest, int32_t width, int32_t height, int32_t inFormat, int32_t outFormat, int32_t orientationFlag)
+{
+#if defined(HAVE_JPEG) || defined(HAVE_TIFF)
+
+    std::vector<float> scratch(4);
+    int32_t size = width * height;
+
+    for (int32_t i = 0; i < size; i++)
+    {
+        convertToRGBA32F(src, scratch, i, inFormat);
+
+        int source_x = i % width;
+        int source_y = (int)(i / width);
+
+        int transform = i;
+
+        int target_x = source_x;
+        int target_y = source_y;
+        int stride = width;
+        switch (orientationFlag)
+        {
+        case 2: // flip horizontal
+            target_x = width - 1 - source_x;
+            break;
+        case 3: // rotate 180
+            target_x = width - 1 - source_x;
+            target_y = height - 1 - source_y;
+            break;
+        case 4: // flip vertical
+            target_y = height - 1 - source_y;
+            break;
+        case 5: // transpose
+            target_x = source_y;
+            target_y = source_x;
+            stride = height;
+            break;
+        case 6: // rotate 270
+            target_x = height - 1 - source_y;
+            target_y = source_x;
+            stride = height;
+            break;
+        case 7: // transverse
+            target_x = height - 1 - source_y;
+            target_y = width - 1 - source_x;
+            stride = height;
+            break;
+        case 8: // rotate 90
+            target_x = source_y;
+            target_y = width - 1 - source_x;
+            stride = height;
+            break;
+        }
+        transform = target_x + target_y * stride;
+        convertFromRGBA32F(scratch, dest, transform, outFormat);
+    }
+#endif
+    return AImgErrorCode::AIMG_SUCCESS;
+}
+
+bool AImgIsFormatSupported(int32_t fileFormat, int32_t outputFormat)
 {
     return loaders[fileFormat]->isFormatSupported(outputFormat);
 }

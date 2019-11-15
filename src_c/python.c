@@ -266,12 +266,11 @@ static PyObject* pyail_write(PyObject* self, PyObject* args)
     PyObject* fileLikeObj;
     int width, height;
     int inputFormat;
-    int outputFormat;
     const char* profileName;
     PyArrayObject* colourProfileObj;
     int colourProfileLen;
     PyObject* encodingOptionsTuple;
-    if (!PyArg_ParseTuple(args, "iOOiiiisOIO", &fileFormat, &sourceArrayObj, &fileLikeObj, &width, &height, &inputFormat, &outputFormat, &profileName, &colourProfileObj, &colourProfileLen, &encodingOptionsTuple))
+    if (!PyArg_ParseTuple(args, "iOOiiisOIO", &fileFormat, &sourceArrayObj, &fileLikeObj, &width, &height, &inputFormat, &profileName, &colourProfileObj, &colourProfileLen, &encodingOptionsTuple))
         return NULL;
 
     PyAIL_callback_data* callbackData;
@@ -289,7 +288,7 @@ static PyObject* pyail_write(PyObject* self, PyObject* args)
 
     callbackData->threadState = PyEval_SaveThread();
 
-    int err = AImgWriteImage(wImg, PyArray_DATA(sourceArrayObj), width, height, inputFormat, outputFormat, profileName, colourProfile, colourProfileLen, pyail_WriteCallback, pyail_TellCallback, pyail_SeekCallback, callbackData, encodingOptions);
+    int err = AImgWriteImage(wImg, PyArray_DATA(sourceArrayObj), width, height, inputFormat, profileName, colourProfile, colourProfileLen, pyail_WriteCallback, pyail_TellCallback, pyail_SeekCallback, callbackData, encodingOptions);
     PyEval_RestoreThread(callbackData->threadState);
 
     pyail_destroyCallbackData(callbackData);

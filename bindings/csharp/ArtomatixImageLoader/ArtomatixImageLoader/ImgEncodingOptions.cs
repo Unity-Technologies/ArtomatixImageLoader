@@ -3,10 +3,10 @@ using System.Runtime.InteropServices;
 
 namespace Artomatix.ImageLoader.ImgEncodingOptions
 {
-    public interface FormatEncodeOptions { }
+    public interface IFormatEncodeOptions { }
 
     [StructLayout(LayoutKind.Sequential)]
-    public struct PngEncodingOptions : FormatEncodeOptions
+    public struct PngEncodingOptions : IFormatEncodeOptions
     {
         private Int32 _type;
         private Int32 _compressionLevel;

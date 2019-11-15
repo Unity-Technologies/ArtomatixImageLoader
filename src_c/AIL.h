@@ -1,3 +1,22 @@
+/*
+ * Copyright 2016-2019 Artomatix LTD
+ *
+ * Permission is hereby granted, free of charge, to any person obtaining a copy of this software
+ * and associated documentation files (the "Software"), to deal in the Software without restriction,
+ * including without limitation the rights to use, copy, modify, merge, publish, distribute, sublicense,
+ * and/or sell copies of the Software, and to permit persons to whom the Software is furnished to do so,
+ * subject to the following conditions:
+ *
+ * The above copyright notice and this permission notice shall be included in all copies or substantial
+ * portions of the Software.
+ *
+ * THE SOFTWARE IS PROVIDED "AS IS", WITHOUT WARRANTY OF ANY KIND, EXPRESS OR IMPLIED, INCLUDING BUT NOT
+ * LIMITED TO THE WARRANTIES OF MERCHANTABILITY, FITNESS FOR A PARTICULAR PURPOSE AND NONINFRINGEMENT.
+ * IN NO EVENT SHALL THE AUTHORS OR COPYRIGHT HOLDERS BE LIABLE FOR ANY CLAIM, DAMAGES OR OTHER LIABILITY,
+ * WHETHER IN AN ACTION OF CONTRACT, TORT OR OTHERWISE, ARISING FROM, OUT OF OR IN CONNECTION WITH THE
+ * SOFTWARE OR THE USE OR OTHER DEALINGS IN THE SOFTWARE.
+ */
+
 #ifndef ARTOMATIX_AIL_H
 #define ARTOMATIX_AIL_H
 
@@ -83,7 +102,10 @@ extern "C"
         AIMG_LOAD_FAILED_UNSUPPORTED_TIFF = -7,
         AIMG_OPEN_FAILED_EMPTY_INPUT = -8,
         AIMG_INVALID_ENCODE_ARGS = -9,
-        AIMG_WRITE_NOT_SUPPORTED_FOR_FORMAT = -10
+        AIMG_WRITE_NOT_SUPPORTED_FOR_FORMAT = -10,
+        AIMG_EXIF_DATA_NOT_SUPPORTED = -11,
+        AIMG_EXIF_DATA_NOT_FOUND = -12,
+        AIMG_EXIF_INVALID_DATA = -13
     };
 
     enum AImgFileFormat
@@ -155,8 +177,9 @@ extern "C"
     EXPORT_FUNC int32_t AIChangeBitDepth(int32_t format, int32_t newBitDepth);
     EXPORT_FUNC void AIGetFormatDetails(int32_t format, int32_t* numChannels, int32_t* bytesPerChannel, int32_t* floatOrInt);
     EXPORT_FUNC int32_t AImgConvertFormat(void* src, void* dest, int32_t width, int32_t height, int32_t inFormat, int32_t outFormat);
+    EXPORT_FUNC int32_t AImgConvertOrientation(void* src, void* dest, int32_t width, int32_t height, int32_t inFormat, int32_t outFormat, int32_t orientationFlag);
 
-    EXPORT_FUNC int32_t AImgIsFormatSupported(int32_t fileFormat, int32_t outputFormat);
+    EXPORT_FUNC bool AImgIsFormatSupported(int32_t fileFormat, int32_t outputFormat);
 
     EXPORT_FUNC int32_t AImgGetWhatFormatWillBeWrittenForData(int32_t fileFormat, int32_t inputFormat, int32_t outputFormat);
 

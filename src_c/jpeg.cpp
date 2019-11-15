@@ -6,6 +6,7 @@
 #include <cstring>
 #include <setjmp.h>
 #include <jpeglib.h>
+#include "JpegExifHandler.hpp"
 
 #ifdef HAVE_JPEG
 namespace AImg
@@ -188,13 +189,19 @@ namespace AImg
 
     class JPEGFile : public AImgBase
     {
-    public:
+    private:
         jpeg_decompress_struct jpeg_read_struct;
         ArtomatixErrorStruct err_mgr;
+        int orientation_flag;
+
+        std::shared_ptr<IExifHandler> exifData;
+    public:
 
         JPEGFile()
         {
             jpeg_create_decompress(&jpeg_read_struct);
+
+            exifData = std::make_shared<JpegExifHandler>(&jpeg_read_struct);
         }
 
         virtual ~JPEGFile()
@@ -228,15 +235,50 @@ namespace AImg
 
             jpeg_read_struct.err->emit_message = JPEGCallbackFunctions::lessAnnoyingEmitMessage;
             jpeg_read_struct.err->error_exit = JPEGCallbackFunctions::handleFatalError;
+
+            jpeg_save_markers(&jpeg_read_struct, JPEG_APP0 + 1, 0xffff);
+
             jpeg_read_header(&jpeg_read_struct, TRUE);
 
             return AImgErrorCode::AIMG_SUCCESS;
         }
 
-        virtual int32_t getImageInfo(int32_t *width, int32_t *height, int32_t *numChannels, int32_t *bytesPerChannel, int32_t *floatOrInt, int32_t *decodedImgFormat, uint32_t *colourProfileLen)
+        virtual int32_t getImageInfo(
+            int32_t *width,
+            int32_t *height,
+            int32_t *numChannels,
+            int32_t *bytesPerChannel,
+            int32_t *floatOrInt,
+            int32_t *decodedImgFormat,
+            uint32_t *colourProfileLen)
         {
-            *width = jpeg_read_struct.image_width;
-            *height = jpeg_read_struct.image_height;
+            if (this->exifData->SupportsExif())
+            {
+                int16_t error;
+
+                auto orientationFlag = this->exifData->GetOrientationField(&error);
+
+                if (error == AIMG_SUCCESS)
+                {
+                    this->orientation_flag = orientationFlag;
+                }
+            }
+            else
+            {
+                this->orientation_flag = 0;
+            }
+
+            bool rotate = false;
+
+            // landscape <=> portrait
+            if (this->orientation_flag >= 5 && this->orientation_flag <= 8)
+            {
+                rotate = true;
+            }
+
+            *width = rotate ? jpeg_read_struct.image_height : jpeg_read_struct.image_width;
+            *height = rotate ? jpeg_read_struct.image_width : jpeg_read_struct.image_height;
+
             *bytesPerChannel = 1;
             *numChannels = jpeg_read_struct.num_components;
             *floatOrInt = AImgFloatOrIntType::FITYPE_INT;
@@ -318,6 +360,21 @@ namespace AImg
                     return err;
             }
 
+            if (this->orientation_flag > 1 && this->orientation_flag <= 8)
+            {
+                int32_t err = AImgConvertOrientation(
+                    destBuffer,
+                    realDestBuffer,
+                    jpeg_read_struct.image_width,
+                    jpeg_read_struct.image_height,
+                    AImgFormat::RGB8U,
+                    forceImageFormat,
+                    this->orientation_flag);
+
+                if (err != AImgErrorCode::AIMG_SUCCESS)
+                    return err;
+            }
+
             return AImgErrorCode::AIMG_SUCCESS;
         }
 
@@ -390,6 +447,21 @@ namespace AImg
             jpeg_destroy_compress(&cinfo);
 
             return AImgErrorCode::AIMG_SUCCESS;
+        }
+
+        virtual bool SupportsExif() const noexcept override
+        {
+            return true;
+        }
+
+        virtual std::shared_ptr<IExifHandler> GetExifData(int32_t * error) override
+        {
+            if (error != nullptr)
+            {
+                *error = AIMG_SUCCESS;
+            }
+
+            return this->exifData;
         }
     };
 

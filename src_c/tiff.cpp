@@ -21,12 +21,12 @@ namespace AImg
         if (inputFormat <= AImgFormat::INVALID_FORMAT || inputFormat > AImgFormat::RGBA32F)
             return AImgFormat::INVALID_FORMAT;
 
-        if(inputFormat == outputFormat || outputFormat == AImgFormat::INVALID_FORMAT)
+        if (inputFormat == outputFormat || outputFormat == AImgFormat::INVALID_FORMAT)
             return (AImgFormat)inputFormat;
 
         int32_t outDepth = AIGetBitDepth(outputFormat);
 
-        if(outDepth == AImgFormat::INVALID_FORMAT)
+        if (outDepth == AImgFormat::INVALID_FORMAT)
             return (AImgFormat)inputFormat;
 
         return (AImgFormat)AIChangeBitDepth(inputFormat, outDepth);
@@ -203,7 +203,7 @@ namespace AImg
         {
             if (channels > 0 && channels <= 4)
             {
-                // handle 24-bit float (lolwtf)
+                // handle 24-bit float
                 if (bitsPerChannel == 24 && sampleFormat == SAMPLEFORMAT_IEEEFP)
                     return AImgFormat::_32BITS | AImgFormat::FLOAT_FORMAT | (AImgFormat::R << (channels - 1));
 
@@ -231,8 +231,8 @@ namespace AImg
             *width = this->width;
             *height = this->height;
             *numChannels = this->channels;
-            if(colourProfileLen != NULL)
-            {   
+            if (colourProfileLen != NULL)
+            {
                 *colourProfileLen = this->compressedProfileLen;
             }
 
@@ -257,7 +257,7 @@ namespace AImg
         {
             if (colourProfile != NULL)
             {
-                if(this->compressedProfile != NULL)
+                if (this->compressedProfile != NULL)
                 {
                     memcpy(colourProfile, this->compressedProfile, this->compressedProfileLen);
                 }
@@ -463,9 +463,9 @@ namespace AImg
 
             AImgErrorCode retval = AImgErrorCode::AIMG_SUCCESS;
 
-            if(!hasSamplesPerPixel)
+            if (!hasSamplesPerPixel)
                 channels = 1;
-            
+
             if (channels > 0 && channels <= 4)
             {
                 int16_t bpsNotRead = -999;
@@ -481,7 +481,7 @@ namespace AImg
                     TIFFGetField(tiff, TIFFTAG_ROWSPERSTRIP, &rowsPerStrip) &&
                     TIFFGetField(tiff, TIFFTAG_PLANARCONFIG, &planarConfig) &&
                     TIFFGetField(tiff, TIFFTAG_STRIPBYTECOUNTS, &stripByteCounts);
-                
+
                 if (hasEssentialTiffTags)
                 {
                     bitsPerChannel = bitsPerSampleValues[0];
@@ -514,9 +514,9 @@ namespace AImg
 
             if (!TIFFGetField(tiff, TIFFTAG_SAMPLEFORMAT, &sampleFormat))
                 sampleFormat = SAMPLEFORMAT_UINT; // default to uint format if no SAMPLEFORMAT tifftag is present
-            
-            if(!TIFFGetField(tiff, TIFFTAG_ICCPROFILE, &compressedProfileLen, &compressedProfile))
-            {                
+
+            if (!TIFFGetField(tiff, TIFFTAG_ICCPROFILE, &compressedProfileLen, &compressedProfile))
+            {
                 compressedProfile = NULL;
             }
 
@@ -560,7 +560,7 @@ namespace AImg
         {
             // Suppress unused warning
             (void)profileName;
-            
+
             AIL_UNUSED_PARAM(encodingOptions);
 
             tiffCallbackData wCallbacks;
@@ -621,7 +621,7 @@ namespace AImg
                 int proflength = colourProfileLen;
                 const void* profdata = colourProfile;
                 if (profdata)
-                  TIFFSetField(wTiff, TIFFTAG_ICCPROFILE, proflength, profdata);
+                    TIFFSetField(wTiff, TIFFTAG_ICCPROFILE, proflength, profdata);
 
                 for (int32_t y = 0; y < height; y++)
                 {
@@ -640,6 +640,22 @@ namespace AImg
             wCallbacks.mSeekCallback(wCallbacks.callbackData, wCallbacks.furthestPositionWritten);
 
             return retval;
+        }
+
+        // False for now
+        virtual bool SupportsExif() const noexcept override
+        {
+            return false;
+        }
+
+        virtual  std::shared_ptr<IExifHandler> GetExifData(int32_t * error) override
+        {
+            if (error != nullptr)
+            {
+                *error = AIMG_EXIF_DATA_NOT_SUPPORTED;
+            }
+
+            return std::shared_ptr<IExifHandler>();
         }
     };
 

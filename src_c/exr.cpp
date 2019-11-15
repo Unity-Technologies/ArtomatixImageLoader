@@ -487,6 +487,21 @@ namespace AImg
                 return AImgErrorCode::AIMG_WRITE_FAILED_EXTERNAL;
             }
         }
+
+        virtual bool SupportsExif() const noexcept override
+        {
+            return false;
+        }
+
+        virtual std::shared_ptr<IExifHandler> GetExifData(int32_t * error) override
+        {
+            if (error != nullptr)
+            {
+                *error = AIMG_EXIF_DATA_NOT_SUPPORTED;
+            }
+
+            return std::shared_ptr<IExifHandler>();
+        }
     };
 
     AImgBase *ExrImageLoader::getAImg()

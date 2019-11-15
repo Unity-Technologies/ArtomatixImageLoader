@@ -1,9 +1,6 @@
-﻿using System.Runtime.InteropServices;
-using System;
+﻿using System;
 using System.IO;
-using System.Text;
-using System.Runtime.CompilerServices;
-using Stugo.Interop;
+using System.Runtime.InteropServices;
 
 namespace Artomatix.ImageLoader
 {
@@ -25,7 +22,7 @@ namespace Artomatix.ImageLoader
             return Marshal.PtrToStringAnsi(cstr);
         }
 
-        public static ReadCallback getReadCallback(Stream s)
+        public static ReadCallback GetReadCallback(Stream s)
         {
             return (_, dest, count) =>
             {
@@ -46,7 +43,7 @@ namespace Artomatix.ImageLoader
             };
         }
 
-        public static WriteCallback getWriteCallback(Stream s)
+        public static WriteCallback GetWriteCallback(Stream s)
         {
             return (_, src, count) =>
             {
@@ -65,7 +62,7 @@ namespace Artomatix.ImageLoader
             };
         }
 
-        public static TellCallback getTellCallback(Stream s)
+        public static TellCallback GetTellCallback(Stream s)
         {
             return (_) =>
             {
@@ -73,7 +70,7 @@ namespace Artomatix.ImageLoader
             };
         }
 
-        public static SeekCallback getSeekCallback(Stream s)
+        public static SeekCallback GetSeekCallback(Stream s)
         {
             return (_, pos) =>
             {
